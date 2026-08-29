@@ -1,0 +1,21 @@
+valkey-svgs
+Copyright 2026 The valkey-svgs authors
+
+Licensed under the Apache License, Version 2.0 (the "License").
+You may obtain a copy of the License in the LICENSE file in this repository.
+
+TRADEMARKS
+
+This product includes the Valkey hexagon mark (assets/Valkey-logo.svg), which is
+embedded in the generated artwork.
+
+"Valkey" and the Valkey logo are trademarks of the Linux Foundation. They are NOT
+licensed under Apache-2.0, and the Apache License expressly grants no trademark
+rights (Section 6). Use of the mark is governed by the Linux Foundation trademark
+policy and the Valkey project's own brand guidance:
+
+  https://www.linuxfoundation.org/legal/trademark-usage
+
+These banners are intended for Valkey project and community use. Do not use them
+in a way that implies the Valkey project endorses something that is not part of
+the project.
