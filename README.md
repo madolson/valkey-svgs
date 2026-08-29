@@ -25,6 +25,12 @@ can't drift, and regenerating is a no-op diff.
 | `benchmarks` | Throughput bars climbing under flat P50/P99 latency | Benchmark results, observability, metrics |
 | `data-structures` | Hash buckets chaining out beside a skip list | Internals: hash tables, skip lists, new types, modules |
 | `how-to` | Step track with the current step lit | Tutorials, guides, getting started |
+| `keyspace-scan` | Cursor holding one lit window of a key field, uneven hop track below | `SCAN`, cursors, iterating a keyspace without blocking |
+| `acl-read-only` | Command grid with a bounded lit grant, one command struck out | Read-only ACL users, narrowing a grant |
+| `key-prefix-groups` | Sampled keys funnelling into prefix rows with count bars | Key naming, prefixes, keyspace browsing and clients |
+| `large-key-grid` | One key occupying the space of dozens, packed with elements | Large keys, hot keys, uneven key sizes |
+| `large-key-bars` | Key sizes on a common scale, one running off the frame | Large keys, when the point is the size gap |
+| `large-key-mass` | A key packed with elements among sparse ordinary keys | Large keys, collection cardinality |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Vector sources are in [`svg/`](svg/),
 committed so you can tweak one by hand without running Node.
@@ -50,7 +56,7 @@ produces byte-identical files. A rebuild should show no diff unless you changed 
 Two themes carry live text (`benchmarks` labels its series, `release-version` has a
 caption). Those depend on a font resolving at render time, so they reproduce identically on
 a given machine but can shift a pixel across machines with different font stacks. The other
-ten are geometry only and reproduce anywhere.
+thirteen are geometry only and reproduce anywhere.
 
 ## Captions
 

@@ -1108,6 +1108,325 @@ function slotMigrationRings(r) {
   ].join('\n');
 }
 
+// Keyspace scan: a cursor holding one bounded window of a large keyspace, with
+// the keys behind it already visited and the rest still ahead. The hop track
+// below it steps in uneven bites, because COUNT is a hint and not a batch size.
+function keyspaceScan(r) {
+  const cx = 960; // where the cursor is
+  const half = 168; // half-width of the window it is holding
+  const top = 268;
+  const bottom = 800;
+
+  const keys = [];
+  let guard = 0;
+  while (keys.length < 185 && guard++ < 30000) {
+    const x = 50 + r() * (W - 100);
+    const y = top + r() * (bottom - top);
+    if (keys.every((k) => (k.x - x) ** 2 + (k.y - y) ** 2 > 46 ** 2)) keys.push({ x, y });
+  }
+
+  const held = [];
+  const rest = [];
+  for (const k of keys) {
+    if (Math.abs(k.x - cx) < half) {
+      held.push(dot(k.x, k.y, 6 + r() * 2.5, C.mint, 'mint', 0.95, 3.2));
+    } else if (k.x < cx) {
+      rest.push(dot(k.x, k.y, 4 + r() * 2.5, C.cyanLt, 'cyan', 0.5, 2.6));
+    } else {
+      rest.push(dot(k.x, k.y, 3.5 + r() * 2, C.violet, 'violet', 0.44, 2.8));
+    }
+  }
+
+  // Cursor hops along the bottom, deliberately uneven. Everything up to the
+  // current window is done, the rest is still pending.
+  const track = 872;
+  const hops = [200];
+  while (hops[hops.length - 1] < 1720) hops.push(hops[hops.length - 1] + 86 + r() * 178);
+  const steps = [];
+  for (let i = 0; i < hops.length - 1; i++) {
+    const [a, b] = [hops[i], Math.min(hops[i + 1], 1720)];
+    const done = b <= cx - half;
+    const current = a < cx + half && b > cx - half;
+    if (current) {
+      steps.push(
+        `<line x1="${n(a)}" y1="${track}" x2="${n(b)}" y2="${track}" stroke="${C.ice}" stroke-width="7" stroke-linecap="round" opacity="0.95"/>`
+      );
+    } else {
+      steps.push(
+        `<line x1="${n(a)}" y1="${track}" x2="${n(b)}" y2="${track}" stroke="${done ? C.mint : C.cyanLt}" ` +
+          `stroke-width="${done ? 5 : 2.4}" stroke-linecap="round" opacity="${done ? 0.7 : 0.25}"/>`
+      );
+    }
+    steps.push(
+      `<line x1="${n(a)}" y1="${track - 11}" x2="${n(a)}" y2="${track + 11}" stroke="${C.ice}" stroke-width="2" opacity="${done || current ? 0.45 : 0.16}"/>`
+    );
+  }
+
+  return [
+    starfield(r, 55),
+    `  <ellipse cx="${cx}" cy="540" rx="470" ry="400" fill="url(#h-mint)" opacity="0.16"/>`,
+    `  <line x1="180" y1="${track}" x2="1740" y2="${track}" stroke="${C.ice}" stroke-width="1.6" stroke-dasharray="9 15" opacity="0.22"/>`,
+    `  <rect x="${cx - half}" y="${top - 52}" width="${half * 2}" height="${bottom - top + 104}" rx="26" fill="${C.ice}" opacity="0.07"/>`,
+    `  <g stroke="${C.ice}" stroke-width="12" opacity="0.28" filter="url(#blur18)">` +
+      `<line x1="${cx - half}" y1="${top - 52}" x2="${cx - half}" y2="${bottom + 52}"/>` +
+      `<line x1="${cx + half}" y1="${top - 52}" x2="${cx + half}" y2="${bottom + 52}"/></g>`,
+    `  <g>${rest.join('')}</g>`,
+    `  <g stroke="${C.ice}" stroke-width="3.4" opacity="0.9">` +
+      `<line x1="${cx - half}" y1="${top - 52}" x2="${cx - half}" y2="${bottom + 52}"/>` +
+      `<line x1="${cx + half}" y1="${top - 52}" x2="${cx + half}" y2="${bottom + 52}"/></g>`,
+    `  <g>${held.join('')}</g>`,
+    `  <g>${steps.join('')}</g>`,
+    `  <line x1="${cx + half}" y1="${track - 18}" x2="${cx + half}" y2="${track + 18}" stroke="${C.ice}" stroke-width="4" stroke-linecap="round" opacity="0.95"/>`,
+    `  <path d="M ${cx + half + 52} ${track - 15} L ${cx + half + 74} ${track} L ${cx + half + 52} ${track + 15}" fill="none" stroke="${C.ice}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>`,
+  ].join('\n');
+}
+
+// Read-only ACL: the command space as a grid, with the grant drawn as a bounded
+// region lit inside it and one command struck back out of that region.
+function aclReadOnly(r) {
+  const cols = 8;
+  const rows = 14;
+  const pitchX = 196;
+  const pitchY = 44;
+  const tileH = 24;
+  const x0 = 198;
+  const y0 = 250;
+  const GRANT = { c0: 2, c1: 4, r0: 3, r1: 10 };
+  const CUT = { c: 3, r: 6 };
+
+  const inGrant = (c, i) => c >= GRANT.c0 && c <= GRANT.c1 && i >= GRANT.r0 && i <= GRANT.r1;
+  const box = {
+    x: x0 + GRANT.c0 * pitchX - 26,
+    y: y0 + GRANT.r0 * pitchY - 26,
+    w: (GRANT.c1 - GRANT.c0) * pitchX + 152 + 52,
+    h: (GRANT.r1 - GRANT.r0) * pitchY + tileH + 52,
+  };
+
+  const outside = [];
+  const granted = [];
+  const cut = [];
+  for (let c = 0; c < cols; c++) {
+    for (let i = 0; i < rows; i++) {
+      const x = x0 + c * pitchX;
+      const y = y0 + i * pitchY;
+      const w = 94 + r() * 58;
+      if (CUT.c === c && CUT.r === i) {
+        cut.push(
+          `<rect x="${n(x)}" y="${y}" width="${n(w)}" height="${tileH}" rx="12" fill="${C.coral}" opacity="0.3"/>`,
+          `<rect x="${n(x)}" y="${y}" width="${n(w)}" height="${tileH}" rx="12" fill="none" stroke="${C.coral}" stroke-width="2.4" opacity="0.9"/>`,
+          `<line x1="${n(x - 10)}" y1="${y + tileH / 2}" x2="${n(x + w + 10)}" y2="${y + tileH / 2}" stroke="${C.coral}" stroke-width="4" stroke-linecap="round" opacity="0.95"/>`,
+          `<circle cx="${n(x + w + 66)}" cy="${y + tileH / 2}" r="54" fill="url(#h-coral)" opacity="0.95"/>`,
+          `<path d="M ${n(x + w + 48)} ${y + tileH / 2 - 18} L ${n(x + w + 84)} ${y + tileH / 2 + 18} M ${n(x + w + 84)} ${y + tileH / 2 - 18} L ${n(x + w + 48)} ${y + tileH / 2 + 18}" stroke="${C.coral}" stroke-width="5" stroke-linecap="round" opacity="0.95"/>`
+        );
+      } else if (inGrant(c, i)) {
+        granted.push(
+          `<rect x="${n(x)}" y="${y}" width="${n(w)}" height="${tileH}" rx="12" fill="${C.mint}" opacity="${n(0.5 + r() * 0.35)}"/>`
+        );
+      } else {
+        outside.push(
+          `<rect x="${n(x)}" y="${y}" width="${n(w)}" height="${tileH}" rx="12" fill="${C.ice}" opacity="${n(0.07 + r() * 0.07)}"/>`
+        );
+      }
+    }
+  }
+
+  return [
+    starfield(r, 50),
+    `  <ellipse cx="${n(box.x + box.w / 2)}" cy="${n(box.y + box.h / 2)}" rx="520" ry="380" fill="url(#h-mint)" opacity="0.17"/>`,
+    `  <g>${outside.join('')}</g>`,
+    `  <rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" rx="34" fill="${C.mint}" opacity="0.06"/>`,
+    `  <rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" rx="34" fill="none" stroke="${C.mint}" stroke-width="12" opacity="0.3" filter="url(#blur18)"/>`,
+    `  <rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" rx="34" fill="none" stroke="${C.mint}" stroke-width="3.4" opacity="0.9"/>`,
+    `  <g>${granted.join('')}</g>`,
+    `  <g>${cut.join('')}</g>`,
+  ].join('\n');
+}
+
+// Key prefix groups: a scattered sample of keys on the left resolving into a
+// short list of prefix groups with counts on the right.
+function keyPrefixGroups(r) {
+  const ROWS = 6;
+  const anchorX = 940;
+  const rowY = [292, 392, 492, 592, 692, 792];
+  const COUNTS = [1, 0.78, 0.55, 0.4, 0.28, 0.16];
+
+  const keys = [];
+  let guard = 0;
+  while (keys.length < 92 && guard++ < 30000) {
+    const x = 400 + r() * 430;
+    const y = 250 + r() * 590;
+    if (keys.every((k) => (k.x - x) ** 2 + (k.y - y) ** 2 > 42 ** 2)) keys.push({ x, y, g: (r() * ROWS) | 0 });
+  }
+
+  const edges = keys
+    .map((k) => {
+      const ty = rowY[k.g];
+      const mx = (k.x + anchorX) / 2 + 60;
+      return `<path d="M ${n(k.x)} ${n(k.y)} C ${n(mx)} ${n(k.y)} ${n(mx)} ${n(ty)} ${n(anchorX - 18)} ${n(ty)}" fill="none" opacity="${n(0.1 + r() * 0.16)}"/>`;
+    })
+    .join('');
+
+  const dots = keys
+    .map((k) => dot(k.x, k.y, 3.4 + r() * 2.6, C.cyanLt, 'cyan', 0.4 + r() * 0.35, 2.8))
+    .join('');
+
+  const list = [];
+  for (let i = 0; i < ROWS; i++) {
+    const y = rowY[i];
+    const labelW = 118 + r() * 54;
+    const barW = 40 + COUNTS[i] * 180;
+    list.push(
+      dot(anchorX, y, 8, C.mint, 'mint', 0.95, 3.2),
+      `<rect x="${anchorX + 26}" y="${n(y - 9)}" width="${n(labelW)}" height="18" rx="9" fill="${C.ice}" opacity="0.55"/>`,
+      `<rect x="${n(anchorX + 26 + labelW + 16)}" y="${n(y - 9)}" width="24" height="18" rx="9" fill="${C.ice}" opacity="0.22"/>`,
+      `<rect x="${n(anchorX + 250)}" y="${n(y - 7)}" width="${n(barW)}" height="14" rx="7" fill="${C.mint}" opacity="${n(0.4 + 0.4 * COUNTS[i])}"/>`
+    );
+  }
+
+  return [
+    starfield(r, 55),
+    `  <ellipse cx="940" cy="540" rx="520" ry="430" fill="url(#h-cyan)" opacity="0.16"/>`,
+    `  <rect x="900" y="240" width="550" height="604" rx="30" fill="${C.ink}" opacity="0.3"/>`,
+    `  <rect x="900" y="240" width="550" height="604" rx="30" fill="none" stroke="${C.ice}" stroke-width="2" opacity="0.18"/>`,
+    `  <g stroke="${C.cyanLt}" stroke-width="1.6">${edges}</g>`,
+    `  <g>${dots}</g>`,
+    `  <g>${list.join('')}</g>`,
+  ].join('\n');
+}
+
+// Large key, as a grid: an even field of ordinary keys with one key occupying the
+// space of dozens of them, and holding the elements to justify it.
+function largeKeyGrid(r) {
+  const pitchX = 118;
+  const pitchY = 40;
+  const tileH = 20;
+  const BIG = { x: 700, y: 300, w: 520, h: 500 };
+
+  const tiles = [];
+  for (let x = 140; x < 1800; x += pitchX) {
+    for (let y = 250; y < 860; y += pitchY) {
+      const w = 52 + r() * 34;
+      // Leave the big key its room, with a gap so the field reads as displaced.
+      const clear = x + w > BIG.x - 30 && x < BIG.x + BIG.w + 30 && y + tileH > BIG.y - 24 && y < BIG.y + BIG.h + 24;
+      if (clear) continue;
+      tiles.push(
+        `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${tileH}" rx="10" fill="${C.ice}" opacity="${n(0.09 + r() * 0.09)}"/>`
+      );
+    }
+  }
+
+  // The big key's contents, the same kind of thing at the same scale, just far
+  // more of it than any of the tiles beside it holds.
+  const inner = [];
+  for (let y = BIG.y + 24; y < BIG.y + BIG.h - 14; y += 20) {
+    let x = BIG.x + 26 + r() * 22;
+    while (x < BIG.x + BIG.w - 40) {
+      const w = 40 + r() * 130;
+      if (x + w > BIG.x + BIG.w - 26) break;
+      inner.push(
+        `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="10" rx="5" fill="${C.coral}" opacity="${n(0.34 + r() * 0.34)}"/>`
+      );
+      x += w + 14 + r() * 30;
+    }
+  }
+
+  return [
+    starfield(r, 50),
+    `  <ellipse cx="960" cy="550" rx="480" ry="420" fill="url(#h-coral)" opacity="0.17"/>`,
+    `  <g>${tiles.join('')}</g>`,
+    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="34" fill="${C.ink}" opacity="0.4"/>`,
+    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="34" fill="${C.coral}" opacity="0.07"/>`,
+    `  <g>${inner.join('')}</g>`,
+    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="34" fill="none" stroke="${C.coral}" stroke-width="14" opacity="0.3" filter="url(#blur18)"/>`,
+    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="34" fill="none" stroke="${C.coral}" stroke-width="3.6" opacity="0.92"/>`,
+  ].join('\n');
+}
+
+// Large key, as a measurement: key sizes side by side, all of them short except
+// one that runs clean off the frame.
+function largeKeyBars(r) {
+  const anchor = 520;
+  const rowY = [300, 388, 476, 564, 652, 740, 828];
+  const BIG = 3; // the row that does not fit
+
+  // Faint scale behind the bars, so length reads as a measured size.
+  const ticks = [];
+  for (let x = anchor; x < 1860; x += 96) {
+    ticks.push(
+      `<line x1="${n(x)}" y1="270" x2="${n(x)}" y2="858" stroke="${C.ice}" stroke-width="1.4" opacity="${x === anchor ? 0.32 : 0.09}"/>`
+    );
+  }
+
+  const rows = [];
+  rowY.forEach((y, i) => {
+    const big = i === BIG;
+    const w = big ? 1920 - anchor : 74 + r() * 132;
+    rows.push(
+      dot(anchor, y, big ? 11 : 7, big ? C.coral : C.mint, big ? 'coral' : 'mint', 0.95, 3.2),
+      `<rect x="${anchor}" y="${n(y - (big ? 26 : 13))}" width="${n(w)}" height="${big ? 52 : 26}" rx="${big ? 26 : 13}" ` +
+        `fill="${big ? C.coral : C.mint}" opacity="${big ? 0.85 : n(0.42 + r() * 0.22)}"/>`
+    );
+    if (big) {
+      rows.push(
+        `<rect x="${anchor}" y="${n(y - 26)}" width="${n(w)}" height="52" rx="26" fill="none" stroke="${C.coral}" stroke-width="16" opacity="0.3" filter="url(#blur18)"/>`
+      );
+    }
+  });
+
+  return [
+    starfield(r, 50),
+    `  <ellipse cx="1000" cy="560" rx="520" ry="400" fill="url(#h-coral)" opacity="0.15"/>`,
+    `  <g>${ticks.join('')}</g>`,
+    `  <g>${rows.join('')}</g>`,
+  ].join('\n');
+}
+
+// Large key, as mass: one key holding more elements than the whole keyspace
+// around it holds keys.
+function largeKeyMass(r) {
+  const cx = 960;
+  const cy = 540;
+  const R = 250;
+
+  // Packed contents, drawn as the same unit as the keys outside it.
+  const packed = [];
+  let guard = 0;
+  const inside = [];
+  while (inside.length < 300 && guard++ < 60000) {
+    const a = r() * Math.PI * 2;
+    const d = Math.sqrt(r()) * (R - 20);
+    const x = cx + d * Math.cos(a);
+    const y = cy + d * Math.sin(a);
+    if (inside.every((p) => (p.x - x) ** 2 + (p.y - y) ** 2 > 24 ** 2)) inside.push({ x, y });
+  }
+  for (const p of inside) {
+    packed.push(
+      `<circle cx="${n(p.x)}" cy="${n(p.y)}" r="${n(2.8 + r() * 1.6)}" fill="${C.coral}" opacity="${n(0.5 + r() * 0.4)}"/>`
+    );
+  }
+
+  const outside = [];
+  guard = 0;
+  const pts = [];
+  while (pts.length < 46 && guard++ < 40000) {
+    const x = 60 + r() * (W - 120);
+    const y = 240 + r() * 610;
+    if ((x - cx) ** 2 + (y - cy) ** 2 < (R + 84) ** 2) continue;
+    if (pts.every((p) => (p.x - x) ** 2 + (p.y - y) ** 2 > 92 ** 2)) pts.push({ x, y });
+  }
+  for (const p of pts) outside.push(dot(p.x, p.y, 4.5 + r() * 2.5, C.mint, 'mint', 0.6 + r() * 0.3, 3));
+
+  return [
+    starfield(r, 50),
+    `  <circle cx="${cx}" cy="${cy}" r="430" fill="url(#h-coral)" opacity="0.2"/>`,
+    `  <g>${outside.join('')}</g>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="${C.ink}" opacity="0.45"/>`,
+    `  <g>${packed.join('')}</g>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${C.coral}" stroke-width="16" opacity="0.3" filter="url(#blur18)"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${C.coral}" stroke-width="3.6" opacity="0.92"/>`,
+  ].join('\n');
+}
+
 const THEMES = [
   { name: 'community', seed: 1041, focal: [960, 540], zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, focal: [1530, 505], zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -1121,6 +1440,12 @@ const THEMES = [
   { name: 'benchmarks', seed: 7741, focal: [960, 560], zoom: 1.12, center: [900, 568], title: 'Valkey benchmarks', desc: 'A bar chart of throughput climbing left to right, beneath two flat latency series labelled P99 in green and P50 in red, representing benchmarking and observability.', art: observability },
   { name: 'data-structures', seed: 8849, focal: [820, 540], zoom: 1.22, center: [960, 540], title: 'Valkey data structures', desc: 'Abstract hash table buckets chaining outward beside a skip list of express lanes, representing Valkey data structures and internals.', art: dataStructures },
   { name: 'how-to', seed: 9953, focal: [1180, 540], zoom: 1.22, center: [960, 540], title: 'Valkey how-to', desc: 'An abstract track of numbered steps with the current step lit, representing a step-by-step guide.', art: howTo },
+  { name: 'keyspace-scan', seed: 19087, focal: [960, 540], zoom: 1.26, center: [960, 540], title: 'Valkey keyspace scan', desc: 'A wide field of keys with one bounded window lit in green, the keys behind it dimmed and the keys ahead of it unlit, above a track of uneven cursor steps, representing scanning a keyspace a window at a time instead of reading it all at once.', art: keyspaceScan },
+  { name: 'acl-read-only', seed: 21193, focal: [960, 540], zoom: 1.4, center: [960, 548], title: 'Valkey read-only access', desc: 'A grid of abstract command names with one bounded group lit in green and a single command inside that group struck out in red, representing a read-only access control list grant with one command taken back out.', art: aclReadOnly },
+  { name: 'key-prefix-groups', seed: 23299, focal: [1000, 540], zoom: 1.3, center: [960, 542], title: 'Valkey key prefix groups', desc: 'A scattered cloud of sampled keys on the left funnelling into a short list of prefix rows with count bars on the right, representing a sample of key names grouped into browsable prefixes.', art: keyPrefixGroups },
+  { name: 'large-key-grid', seed: 25309, focal: [960, 550], zoom: 1.4, center: [960, 552], title: 'Valkey large key', desc: 'An even field of small key tiles with one key occupying the space of dozens of them, outlined in red and densely packed with elements, representing a single key far larger than the rest of the keyspace.', art: largeKeyGrid },
+  { name: 'large-key-bars', seed: 27407, focal: [1000, 560], zoom: 1.3, center: [960, 564], title: 'Valkey large key', desc: 'Seven key sizes measured against a common scale, six of them short and one running clean off the frame in red, representing a single key far larger than the rest of the keyspace.', art: largeKeyBars },
+  { name: 'large-key-mass', seed: 29501, focal: [960, 540], zoom: 1.3, center: [960, 540], title: 'Valkey large key', desc: 'One key drawn as a large circle packed with hundreds of elements, surrounded by a sparse scattering of ordinary single keys, representing a single key holding more than the rest of the keyspace around it.', art: largeKeyMass },
 ];
 
 // -------------------------------------------------------------------- render

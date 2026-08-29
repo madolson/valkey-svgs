@@ -22,6 +22,16 @@ the image will read as generic tech decoration and it is not worth adding.
 Check it is not a duplicate. If the idea is a variation on an existing theme, restyle that
 theme instead of adding a near-copy.
 
+**Work out several metaphors before you write any code.** For "one key is much larger than
+the rest" the candidates are at least: an oversized block displacing a uniform grid, a length
+comparison where one bar runs off the frame, and a dense mass surrounded by sparse singles.
+They are not equally good, and which one wins is not obvious until rendered. Write the
+shortlist down, then build the two or three that survive.
+
+**Deliver options, not one answer.** Unless told otherwise, register 2-3 distinct candidates
+for a new subject and render all of them for review. Each has to be a different idea, not the
+same idea at three zoom levels. Delete the losers once one is picked.
+
 ## How a theme is built
 
 ```js
@@ -103,6 +113,29 @@ vx = clamp(centerX - vw / 2, 0, 1920 - vw)
 safe x = vx + 0.15 * vw  ..  vx + 0.85 * vw
 ```
 
+### 1b. Vertical dead space, and lopsided framing
+
+Two composition faults that get flagged every time, both fixed with `zoom`/`center` rather
+than by redrawing.
+
+**Fill 75-80% of the framed height.** Measure it: motif height divided by `1080 / zoom`.
+Below ~70% the banner reads as a small motif floating in empty gradient. Above ~80% there is
+no margin left, because the wide crop already removes 12% of the height, so a motif at 85%
+gets sliced there. Themes drawn inside `BAND_TOP`/`BAND_BOTTOM` and left at `zoom: 1.1` land
+around 55-60%: extend the motif to the full band *and* raise the zoom.
+
+**Balance the left and right margins.** An asymmetric composition (a field on one side, a
+panel on the other) will sit visibly off-centre if you only set `zoom`. Compute the visual
+centre of the drawn content and compare it with the frame centre; if they differ by more than
+about 3% of the framed width, move the drawing, not the crop. Moving the crop is a trap: a
+crop shifted right pushes content further right in frame, which is the opposite of what you
+want.
+
+These two pull against each other, because the narrow crop keeps only the middle 70% of the
+width. Anything that must stay whole therefore has at least 15% of the frame to its right,
+which caps how tight the right margin can ever look. Do not fight it by pushing a panel past
+the safe edge; make the composition narrower and taller instead.
+
 ### 2. Ambient glow painted over the motif
 
 Order matters. A big `url(#h-*)` halo circle placed *after* the motif in the returned array
@@ -144,6 +177,46 @@ EOF
 Look at the images. Do not assume the code did what you intended — every fix in this repo's
 history came from looking at a render, not from reasoning about the markup.
 
+### Contrast on the purple background
+
+The gradient is not black, so low-opacity accents vanish into it. A field of dots meant to be
+*read* as content needs opacity around 0.4 or higher; below that it reads as starfield and the
+motif loses whatever the dots were carrying. Small glyphs need to be much bigger than they
+look in code: an X badge at `r="24"` was invisible at banner size and had to go to `r="54"`.
+
+### Checking it in the real site, not a mock-up
+
+A hand-written HTML page with the right pixel sizes is useful for a first look, but it is not
+what ships, and it will not catch a wrong `featured_image` path or a template that ignores it.
+To see a banner the way the site renders it:
+
+```sh
+git clone --depth 30 https://github.com/valkey-io/valkey-io.github.io.git
+cd valkey-io.github.io
+cp /path/to/valkey-svgs/images/my-theme.webp static/assets/media/featured/
+zola serve --port 1111        # zola 0.22.0 in the deploy workflow
+```
+
+Point a post at it in the post's frontmatter, under `[extra]`:
+
+```toml
+featured = true
+featured_image = "/assets/media/featured/my-theme.webp"
+```
+
+Four things that will waste your time otherwise:
+
+- **URLs drop the date prefix.** `content/blog/2026-08-28-my-slug.md` serves at `/blog/my-slug/`,
+  not `/blog/2026-08-28-my-slug/`. Check `ls public/blog/` rather than guessing.
+- **`/blog/` only shows images in the Featured block**, and `blog.html` filters that on
+  `extra.featured == true`, capped at four posts. A post with `featured = false` renders
+  text-only in the listing however good its banner is.
+- **The post header is the 400px crop.** `.feature-img` in `sass/_valkey.scss` is
+  `width: 100%; height: 400px; object-fit: cover`, dropping to `200px` below 1024px. That is
+  where the two crop shapes in this skill come from.
+- To compare candidates in one pass, copy the post once per candidate with different
+  `featured_image` values and a letter prefix on the title, then look at `/blog/`.
+
 Then prove you changed nothing else:
 
 ```sh
@@ -171,8 +244,10 @@ for name in ['themeA', 'themeB']:
 ## Definition of done
 
 - [ ] The image says one thing, and you can state it in a sentence.
+- [ ] You shortlisted other metaphors before settling, and 2-3 candidates are on offer.
 - [ ] Palette is `C` only; no new colours.
 - [ ] `desc` reads as usable alt text.
+- [ ] Motif fills 75-80% of the framed height; left and right margins look balanced.
 - [ ] Both crops inspected visually; nothing that matters is clipped.
 - [ ] Ambient glow is behind the motif.
 - [ ] `node generate.mjs` twice in a row produces no diff.
