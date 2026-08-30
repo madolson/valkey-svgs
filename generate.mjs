@@ -2249,15 +2249,21 @@ function k8sSpecFanout(r) {
   const sw = 296;
   const sTop = 250;
   const sH = 580;
-  const cols = [1012, 1188, 1364];
-  const rows = [300, 540, 780];
-  const tile = 140;
-  const railX0 = 924;
-  const railX1 = 1452;
+  // Tiers of items, strictly decreasing in size, bottom-aligned on a baseline
+  // each. The first tier is the point: two items several times the size of
+  // anything below them, with the drop from 164 to 100 wide enough that they read
+  // as outliers rather than as the top of a smooth ramp.
+  const TIERS = [
+    { baseline: 450, sizes: [200, 164], gap: 24 },
+    { baseline: 600, sizes: [100, 88, 78, 70], gap: 18 },
+    { baseline: 700, sizes: [54, 48, 42, 38, 34, 30], gap: 14 },
+    { baseline: 780, sizes: [24, 22, 20, 18, 16, 15, 14, 13, 12, 11], gap: 11 },
+  ];
+  const itemX0 = 930;
+  const railX0 = 866;
 
   // The declared values, suggested as indented rows rather than written out. One
-  // row is picked out in gold: the replica count, which the right-hand side is a
-  // picture of.
+  // row is picked out in gold: the value the right-hand side is a picture of.
   const spec = [];
   let ly = sTop + 96;
   let i = 0;
@@ -2281,55 +2287,55 @@ function k8sSpecFanout(r) {
       `stroke-width="1.8" opacity="0.45"/>` +
     `<g opacity="0.92">${mark(sx + 56, sTop + 38, 38)}</g>`;
 
-  // One curve per row of instances, all of them leaving the same spec.
-  const fanPaths = rows
-    .map((y) => {
-      const x0 = sx + sw + 10;
-      return `<path d="M ${n(x0)} 540 C ${n(x0 + 130)} 540 ${railX0 - 130} ${n(y)} ${railX0} ${n(y)}"/>`;
-    })
-    .join('');
-
-  const rails = rows
-    .map(
-      (y) =>
-        `<line x1="${railX0}" y1="${n(y)}" x2="${railX1}" y2="${n(y)}" stroke="${C.cyanLt}" ` +
-        `stroke-width="2" opacity="0.32"/>`
-    )
-    .join('');
-
-  const packets = rows
-    .map((y) =>
-      [0.1, 0.4, 0.7]
-        .map((t) => dot(railX0 + t * (railX1 - railX0), y, 4.5, C.mint, 'mint', 0.75, 3))
-        .join('')
-    )
-    .join('');
+  // Routing out of the spec: one stub to a vertical bus, and the tier baselines
+  // run off that. Four separate curves bunched and crossed each other right where
+  // they left the panel.
+  const baselines = TIERS.map((t) => t.baseline);
+  const fanPaths =
+    `<path d="M ${n(sx + sw + 10)} 540 L ${railX0} 540"/>` +
+    `<path d="M ${railX0} ${n(Math.min(...baselines))} L ${railX0} ${n(Math.max(...baselines))}"/>`;
 
   const glows = [];
-  const pods = [];
-  for (const y of rows) {
-    for (const x of cols) {
-      glows.push(`<circle cx="${x}" cy="${y}" r="104" fill="url(#h-cyan)" opacity="0.2"/>`);
-      pods.push(
-        `<rect x="${n(x - tile / 2)}" y="${n(y - tile / 2)}" width="${tile}" height="${tile}" rx="26" ` +
-          `fill="${C.cyan}" fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="2.4" opacity="0.9"/>`,
-        `<circle cx="${n(x)}" cy="${n(y)}" r="54" fill="url(#scrim)"/>`,
-        mark(x, y, 72),
-        dot(x + tile / 2 - 24, y - tile / 2 + 24, 5, C.mint, 'mint', 0.9, 3)
+  const items = [];
+  const rails = [];
+  for (const { baseline, sizes, gap } of TIERS) {
+    let x = itemX0;
+    const runEnd = itemX0 + sizes.reduce((a, b) => a + b, 0) + gap * (sizes.length - 1);
+    rails.push(
+      `<line x1="${railX0}" y1="${n(baseline)}" x2="${n(runEnd)}" y2="${n(baseline)}" stroke="${C.cyanLt}" ` +
+        `stroke-width="2" opacity="0.3"/>`
+    );
+    for (const size of sizes) {
+      const cx = x + size / 2;
+      const cy = baseline - size / 2;
+      // Same rounded-square shape at every size, so the tail reads as more of the
+      // same thing rather than as different objects.
+      if (size >= 150) glows.push(`<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(size * 0.78)}" fill="url(#h-cyan)" opacity="0.22"/>`);
+      items.push(
+        `<rect x="${n(x)}" y="${n(baseline - size)}" width="${n(size)}" height="${n(size)}" ` +
+          `rx="${n(size * 0.19)}" fill="${C.cyan}" fill-opacity="0.18" stroke="${C.cyanLt}" ` +
+          `stroke-width="${n(size >= 60 ? 2.4 : 1.8)}" opacity="0.9"/>`
       );
+      if (size >= 150) {
+        items.push(
+          `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(size * 0.38)}" fill="url(#scrim)"/>`,
+          mark(cx, cy, size * 0.5),
+          dot(x + size - 22, baseline - size + 22, 5, C.mint, 'mint', 0.9, 3)
+        );
+      }
+      x += size + gap;
     }
   }
 
   return [
     starfield(r, 55),
     `  <circle cx="${n(sx + sw / 2)}" cy="540" r="340" fill="url(#h-violet)" opacity="0.32"/>`,
-    `  <circle cx="1188" cy="540" r="470" fill="url(#h-cyan)" opacity="0.14"/>`,
+    `  <circle cx="1130" cy="500" r="470" fill="url(#h-cyan)" opacity="0.14"/>`,
     `  <g stroke="${C.cyanLt}" stroke-width="13" fill="none" opacity="0.16" filter="url(#blur8)">${fanPaths}</g>`,
     `  <g stroke="${C.cyanLt}" stroke-width="2.4" fill="none" opacity="0.55">${fanPaths}</g>`,
-    `  <g>${rails}</g>`,
-    `  <g>${packets}</g>`,
+    `  <g>${rails.join('')}</g>`,
     `  <g>${glows.join('')}</g>`,
-    `  <g>${pods.join('')}</g>`,
+    `  <g>${items.join('')}</g>`,
     `  <g>${panel}</g>`,
     `  <g>${spec.join('')}</g>`,
   ].join('\n');
@@ -3002,7 +3008,7 @@ const THEMES = [
   { name: 'bundle-one-install', seed: 33207, focal: [860, 540], zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A port marked with the white Valkey hexagon fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a padlock, representing one install that delivers all four bundled modules.', art: bundleOneInstall },
   { name: 'tooling-stack', seed: 33311, focal: [960, 620], zoom: 1.25, center: [960, 540], title: 'Valkey primitives and tools', desc: 'A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives.', art: toolingStack },
   { name: 'data-structures-grid', seed: 33419, focal: [960, 540], zoom: 1.2, center: [960, 540], title: 'Valkey data types', desc: 'Six Valkey value types laid out one per cell on an even three-by-two grid: a run of bytes, a linked list, unordered members inside a boundary, field and value pairs, members ranked by score, and a dense bitmap, representing the range of structures Valkey stores.', art: dataStructuresGrid },
-  { name: 'k8s-spec-fanout', seed: 42011, focal: [1150, 520], zoom: 1.34, center: [960, 540], title: 'Valkey deployed from a chart', desc: 'A declared specification panel on the left fanning out along rails into a grid of nine identical instances, each drawn as the white Valkey hexagon mark, representing deploying Valkey on Kubernetes from a Helm chart.', art: k8sSpecFanout },
+  { name: 'k8s-spec-fanout', seed: 42011, focal: [1100, 520], zoom: 1.45, center: [928, 540], title: 'Valkey items by size', desc: 'A declared specification panel on the left fanning out along four baselines into a run of rounded items ordered by decreasing size, the top two several times larger than anything below them and carrying the white Valkey hexagon mark, trailing off into a long tail of small ones.', art: k8sSpecFanout },
   { name: 'k8s-desired-count', seed: 42021, focal: [960, 400], zoom: 1.34, center: [960, 540], title: 'Valkey replicas reaching the declared count', desc: 'Six declared slots under a gold span, four filled with instances drawn as the white Valkey hexagon mark, one instance rising into place and one slot still empty, representing a declared replica count and the running instances converging on it.', art: k8sDesiredCount },
   { name: 'limits-tight-envelope', seed: 42031, focal: [960, 540], zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
   { name: 'limits-gauge-pinned', seed: 42041, focal: [960, 540], zoom: 1.34, center: [960, 540], title: 'Valkey pinned near its limit', desc: 'A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.', art: limitsGaugePinned },

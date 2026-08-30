@@ -274,10 +274,10 @@
     },
     {
       "name": "k8s-spec-fanout",
-      "title": "Valkey deployed from a chart",
-      "desc": "A declared specification panel on the left fanning out along rails into a grid of nine identical instances, each drawn as the white Valkey hexagon mark, representing deploying Valkey on Kubernetes from a Helm chart.",
-      "motif": "A declared spec panel fanning out along rails into a grid of identical instances",
-      "useFor": "Helm charts, operators, declarative deployment",
+      "title": "Valkey items by size",
+      "desc": "A declared specification panel on the left fanning out along four baselines into a run of rounded items ordered by decreasing size, the top two several times larger than anything below them and carrying the white Valkey hexagon mark, trailing off into a long tail of small ones.",
+      "motif": "A spec panel fanning out into items ranked by size, two large outliers above a long tail",
+      "useFor": "Size distributions, skew, heavy hitters, long tails",
       "image": "images/k8s-spec-fanout.webp",
       "svg": "svg/k8s-spec-fanout.svg",
       "captioned": false
