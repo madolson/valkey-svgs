@@ -1181,64 +1181,45 @@ function keyspaceScan(r) {
   ].join('\n');
 }
 
-// Read-only ACL: the command space as a grid, with the grant drawn as a bounded
-// region lit inside it and one command struck back out of that region.
-function aclReadOnly(r) {
-  const cols = 8;
-  const rows = 14;
-  const pitchX = 196;
-  const pitchY = 44;
-  const tileH = 24;
-  const x0 = 198;
-  const y0 = 250;
-  const GRANT = { c0: 2, c1: 4, r0: 3, r1: 10 };
-  const CUT = { c: 3, r: 6 };
+// Large key: an even field of ordinary keys, all the same size, and one key of
+// exactly the same shape scaled up until it dwarfs every one of them. Nothing
+// inside it, because the point is the footprint and not the contents.
+function largeKey(r) {
+  const pitchX = 140;
+  const pitchY = 40;
+  const tileH = 22;
+  const x0 = 150;
+  const y0 = 240;
+  const cols = 12;
+  const rows = 16;
+  // The one key that does not fit the grid, same rounded-tile shape, ~5x across
+  // and ~7x tall. Ordinary tiles stay visible either side of it so the jump in
+  // scale is a comparison rather than an assertion.
+  const BIG = { x: 690, y: 470, w: 540, h: 160 };
+  const PAD = 26;
 
-  const inGrant = (c, i) => c >= GRANT.c0 && c <= GRANT.c1 && i >= GRANT.r0 && i <= GRANT.r1;
-  const box = {
-    x: x0 + GRANT.c0 * pitchX - 26,
-    y: y0 + GRANT.r0 * pitchY - 26,
-    w: (GRANT.c1 - GRANT.c0) * pitchX + 152 + 52,
-    h: (GRANT.r1 - GRANT.r0) * pitchY + tileH + 52,
-  };
-
-  const outside = [];
-  const granted = [];
-  const cut = [];
+  const tiles = [];
   for (let c = 0; c < cols; c++) {
     for (let i = 0; i < rows; i++) {
       const x = x0 + c * pitchX;
       const y = y0 + i * pitchY;
-      const w = 94 + r() * 58;
-      if (CUT.c === c && CUT.r === i) {
-        cut.push(
-          `<rect x="${n(x)}" y="${y}" width="${n(w)}" height="${tileH}" rx="12" fill="${C.coral}" opacity="0.3"/>`,
-          `<rect x="${n(x)}" y="${y}" width="${n(w)}" height="${tileH}" rx="12" fill="none" stroke="${C.coral}" stroke-width="2.4" opacity="0.9"/>`,
-          `<line x1="${n(x - 10)}" y1="${y + tileH / 2}" x2="${n(x + w + 10)}" y2="${y + tileH / 2}" stroke="${C.coral}" stroke-width="4" stroke-linecap="round" opacity="0.95"/>`,
-          `<circle cx="${n(x + w + 66)}" cy="${y + tileH / 2}" r="54" fill="url(#h-coral)" opacity="0.95"/>`,
-          `<path d="M ${n(x + w + 48)} ${y + tileH / 2 - 18} L ${n(x + w + 84)} ${y + tileH / 2 + 18} M ${n(x + w + 84)} ${y + tileH / 2 - 18} L ${n(x + w + 48)} ${y + tileH / 2 + 18}" stroke="${C.coral}" stroke-width="5" stroke-linecap="round" opacity="0.95"/>`
-        );
-      } else if (inGrant(c, i)) {
-        granted.push(
-          `<rect x="${n(x)}" y="${y}" width="${n(w)}" height="${tileH}" rx="12" fill="${C.mint}" opacity="${n(0.5 + r() * 0.35)}"/>`
-        );
-      } else {
-        outside.push(
-          `<rect x="${n(x)}" y="${y}" width="${n(w)}" height="${tileH}" rx="12" fill="${C.ice}" opacity="${n(0.07 + r() * 0.07)}"/>`
-        );
-      }
+      const w = 70 + r() * 40;
+      const clashes =
+        x + w > BIG.x - PAD && x < BIG.x + BIG.w + PAD && y + tileH > BIG.y - PAD && y < BIG.y + BIG.h + PAD;
+      if (clashes) continue;
+      tiles.push(
+        `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${tileH}" rx="11" fill="${C.ice}" opacity="${n(0.1 + r() * 0.09)}"/>`
+      );
     }
   }
 
   return [
     starfield(r, 50),
-    `  <ellipse cx="${n(box.x + box.w / 2)}" cy="${n(box.y + box.h / 2)}" rx="520" ry="380" fill="url(#h-mint)" opacity="0.17"/>`,
-    `  <g>${outside.join('')}</g>`,
-    `  <rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" rx="34" fill="${C.mint}" opacity="0.06"/>`,
-    `  <rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" rx="34" fill="none" stroke="${C.mint}" stroke-width="12" opacity="0.3" filter="url(#blur18)"/>`,
-    `  <rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" rx="34" fill="none" stroke="${C.mint}" stroke-width="3.4" opacity="0.9"/>`,
-    `  <g>${granted.join('')}</g>`,
-    `  <g>${cut.join('')}</g>`,
+    `  <ellipse cx="${n(BIG.x + BIG.w / 2)}" cy="${n(BIG.y + BIG.h / 2)}" rx="500" ry="420" fill="url(#h-coral)" opacity="0.18"/>`,
+    `  <g>${tiles.join('')}</g>`,
+    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="${BIG.h / 2}" fill="${C.coral}" opacity="0.32"/>`,
+    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="${BIG.h / 2}" fill="none" stroke="${C.coral}" stroke-width="18" opacity="0.3" filter="url(#blur18)"/>`,
+    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="${BIG.h / 2}" fill="none" stroke="${C.coral}" stroke-width="4" opacity="0.95"/>`,
   ].join('\n');
 }
 
@@ -1294,193 +1275,6 @@ function keyPrefixGroups(r) {
   ].join('\n');
 }
 
-// Large key, as a grid: an even field of ordinary keys with one key occupying the
-// space of dozens of them, and holding the elements to justify it.
-function largeKeyGrid(r) {
-  const pitchX = 118;
-  const pitchY = 40;
-  const tileH = 20;
-  const BIG = { x: 700, y: 300, w: 520, h: 500 };
-
-  const tiles = [];
-  for (let x = 140; x < 1800; x += pitchX) {
-    for (let y = 250; y < 860; y += pitchY) {
-      const w = 52 + r() * 34;
-      // Leave the big key its room, with a gap so the field reads as displaced.
-      const clear = x + w > BIG.x - 30 && x < BIG.x + BIG.w + 30 && y + tileH > BIG.y - 24 && y < BIG.y + BIG.h + 24;
-      if (clear) continue;
-      tiles.push(
-        `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${tileH}" rx="10" fill="${C.ice}" opacity="${n(0.09 + r() * 0.09)}"/>`
-      );
-    }
-  }
-
-  // The big key's contents, the same kind of thing at the same scale, just far
-  // more of it than any of the tiles beside it holds.
-  const inner = [];
-  for (let y = BIG.y + 24; y < BIG.y + BIG.h - 14; y += 20) {
-    let x = BIG.x + 26 + r() * 22;
-    while (x < BIG.x + BIG.w - 40) {
-      const w = 40 + r() * 130;
-      if (x + w > BIG.x + BIG.w - 26) break;
-      inner.push(
-        `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="10" rx="5" fill="${C.coral}" opacity="${n(0.34 + r() * 0.34)}"/>`
-      );
-      x += w + 14 + r() * 30;
-    }
-  }
-
-  return [
-    starfield(r, 50),
-    `  <ellipse cx="960" cy="550" rx="480" ry="420" fill="url(#h-coral)" opacity="0.17"/>`,
-    `  <g>${tiles.join('')}</g>`,
-    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="34" fill="${C.ink}" opacity="0.4"/>`,
-    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="34" fill="${C.coral}" opacity="0.07"/>`,
-    `  <g>${inner.join('')}</g>`,
-    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="34" fill="none" stroke="${C.coral}" stroke-width="14" opacity="0.3" filter="url(#blur18)"/>`,
-    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="34" fill="none" stroke="${C.coral}" stroke-width="3.6" opacity="0.92"/>`,
-  ].join('\n');
-}
-
-// Large key, as a measurement: key sizes side by side, all of them short except
-// one that runs clean off the frame.
-function largeKeyBars(r) {
-  const anchor = 520;
-  const rowY = [300, 388, 476, 564, 652, 740, 828];
-  const BIG = 3; // the row that does not fit
-
-  // Faint scale behind the bars, so length reads as a measured size.
-  const ticks = [];
-  for (let x = anchor; x < 1860; x += 96) {
-    ticks.push(
-      `<line x1="${n(x)}" y1="270" x2="${n(x)}" y2="858" stroke="${C.ice}" stroke-width="1.4" opacity="${x === anchor ? 0.32 : 0.09}"/>`
-    );
-  }
-
-  const rows = [];
-  rowY.forEach((y, i) => {
-    const big = i === BIG;
-    const w = big ? 1920 - anchor : 74 + r() * 132;
-    rows.push(
-      dot(anchor, y, big ? 11 : 7, big ? C.coral : C.mint, big ? 'coral' : 'mint', 0.95, 3.2),
-      `<rect x="${anchor}" y="${n(y - (big ? 26 : 13))}" width="${n(w)}" height="${big ? 52 : 26}" rx="${big ? 26 : 13}" ` +
-        `fill="${big ? C.coral : C.mint}" opacity="${big ? 0.85 : n(0.42 + r() * 0.22)}"/>`
-    );
-    if (big) {
-      rows.push(
-        `<rect x="${anchor}" y="${n(y - 26)}" width="${n(w)}" height="52" rx="26" fill="none" stroke="${C.coral}" stroke-width="16" opacity="0.3" filter="url(#blur18)"/>`
-      );
-    }
-  });
-
-  return [
-    starfield(r, 50),
-    `  <ellipse cx="1000" cy="560" rx="520" ry="400" fill="url(#h-coral)" opacity="0.15"/>`,
-    `  <g>${ticks.join('')}</g>`,
-    `  <g>${rows.join('')}</g>`,
-  ].join('\n');
-}
-
-// Large key, as mass: one key holding more elements than the whole keyspace
-// around it holds keys.
-function largeKeyMass(r) {
-  const cx = 960;
-  const cy = 540;
-  const R = 250;
-
-  // Packed contents, drawn as the same unit as the keys outside it.
-  const packed = [];
-  let guard = 0;
-  const inside = [];
-  while (inside.length < 300 && guard++ < 60000) {
-    const a = r() * Math.PI * 2;
-    const d = Math.sqrt(r()) * (R - 20);
-    const x = cx + d * Math.cos(a);
-    const y = cy + d * Math.sin(a);
-    if (inside.every((p) => (p.x - x) ** 2 + (p.y - y) ** 2 > 24 ** 2)) inside.push({ x, y });
-  }
-  for (const p of inside) {
-    packed.push(
-      `<circle cx="${n(p.x)}" cy="${n(p.y)}" r="${n(2.8 + r() * 1.6)}" fill="${C.coral}" opacity="${n(0.5 + r() * 0.4)}"/>`
-    );
-  }
-
-  const outside = [];
-  guard = 0;
-  const pts = [];
-  while (pts.length < 46 && guard++ < 40000) {
-    const x = 60 + r() * (W - 120);
-    const y = 240 + r() * 610;
-    if ((x - cx) ** 2 + (y - cy) ** 2 < (R + 84) ** 2) continue;
-    if (pts.every((p) => (p.x - x) ** 2 + (p.y - y) ** 2 > 92 ** 2)) pts.push({ x, y });
-  }
-  for (const p of pts) outside.push(dot(p.x, p.y, 4.5 + r() * 2.5, C.mint, 'mint', 0.6 + r() * 0.3, 3));
-
-  return [
-    starfield(r, 50),
-    `  <circle cx="${cx}" cy="${cy}" r="430" fill="url(#h-coral)" opacity="0.2"/>`,
-    `  <g>${outside.join('')}</g>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="${C.ink}" opacity="0.45"/>`,
-    `  <g>${packed.join('')}</g>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${C.coral}" stroke-width="16" opacity="0.3" filter="url(#blur18)"/>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${C.coral}" stroke-width="3.6" opacity="0.92"/>`,
-  ].join('\n');
-}
-
-// Event, as a date: a month of days with exactly one lit, and travel converging
-// on it. The set forbids text, so the day is circled rather than written.
-function eventCalendarDay(r) {
-  const CW = 150;
-  const CH = 110;
-  const GAP = 20;
-  const COLS = 7;
-  const ROWS = 5;
-  const x0 = 960 - (COLS * (CW + GAP) - GAP) / 2;
-  const y0 = 540 - (ROWS * (CH + GAP) - GAP) / 2;
-  const MC = 3;
-  const MR = 2;
-  const mx = x0 + MC * (CW + GAP) + CW / 2;
-  const my = y0 + MR * (CH + GAP) + CH / 2;
-
-  const cells = [];
-  for (let c = 0; c < COLS; c++) {
-    for (let i = 0; i < ROWS; i++) {
-      if (c === MC && i === MR) continue;
-      const x = x0 + c * (CW + GAP);
-      const y = y0 + i * (CH + GAP);
-      cells.push(
-        `<rect x="${n(x)}" y="${n(y)}" width="${CW}" height="${CH}" rx="16" fill="${C.ice}" opacity="${n(0.05 + r() * 0.05)}"/>`,
-        `<rect x="${n(x)}" y="${n(y)}" width="${CW}" height="${CH}" rx="16" fill="none" stroke="${C.ice}" stroke-width="1.6" opacity="0.12"/>`
-      );
-    }
-  }
-
-  // Travel in from off-frame, stopping short of the marked day.
-  const trips = [];
-  for (const [sx, sy] of [[70, 150], [1850, 170], [40, 930], [1880, 900], [1900, 540]]) {
-    const a = Math.atan2(my - sy, mx - sx);
-    const ex = mx - Math.cos(a) * 168;
-    const ey = my - Math.sin(a) * 168;
-    const bend = 150 - r() * 300;
-    trips.push(
-      `<path d="M ${n(sx)} ${n(sy)} Q ${n((sx + ex) / 2 + bend)} ${n((sy + ey) / 2 - bend)} ${n(ex)} ${n(ey)}" ` +
-        `fill="none" stroke="${C.cyanLt}" stroke-width="2.6" stroke-dasharray="14 12" opacity="0.5"/>`,
-      dot(ex, ey, 6, C.cyanLt, 'cyan', 0.85, 3)
-    );
-  }
-
-  return [
-    starfield(r, 50),
-    `  <ellipse cx="${n(mx)}" cy="${n(my)}" rx="470" ry="420" fill="url(#h-mint)" opacity="0.17"/>`,
-    `  <g>${cells.join('')}</g>`,
-    `  <g>${trips.join('')}</g>`,
-    `  <circle cx="${n(mx)}" cy="${n(my)}" r="132" fill="none" stroke="${C.mint}" stroke-width="14" opacity="0.28" filter="url(#blur18)"/>`,
-    `  <circle cx="${n(mx)}" cy="${n(my)}" r="132" fill="none" stroke="${C.mint}" stroke-width="3.4" opacity="0.9"/>`,
-    `  <rect x="${n(x0 + MC * (CW + GAP))}" y="${n(y0 + MR * (CH + GAP))}" width="${CW}" height="${CH}" rx="16" fill="${C.mint}" opacity="0.24"/>`,
-    `  <rect x="${n(x0 + MC * (CW + GAP))}" y="${n(y0 + MR * (CH + GAP))}" width="${CW}" height="${CH}" rx="16" fill="none" stroke="${C.mint}" stroke-width="3.6" opacity="0.95"/>`,
-  ].join('\n');
-}
-
 // Event, as a gathering: arrivals from every direction closing on one lit venue
 // centred on the mark, densest right up against it.
 function eventGatherRing(r) {
@@ -1489,17 +1283,17 @@ function eventGatherRing(r) {
   const R = 158;
 
   const arrivals = [];
-  for (let i = 0; i < 54; i++) {
+  for (let i = 0; i < 96; i++) {
     // Bias the radius inward so the crowd thickens toward the venue.
-    const rad = R + 46 + Math.pow(r(), 1.7) * 430;
+    const rad = R + 46 + Math.pow(r(), 1.7) * 320;
     const a = r() * Math.PI * 2;
-    const x = cx + rad * Math.cos(a) * 1.5;
+    const x = cx + rad * Math.cos(a);
     const y = cy + rad * Math.sin(a);
     if (y < 210 || y > 870) continue;
     // The dot leads and the trail sits behind it, further out, so the crowd
     // reads as arriving rather than as rays leaving.
     const trail = 26 + r() * 54;
-    const tx = x + Math.cos(a) * trail * 1.5;
+    const tx = x + Math.cos(a) * trail;
     const ty = y + Math.sin(a) * trail;
     arrivals.push(
       `<line x1="${n(tx)}" y1="${n(ty)}" x2="${n(x)}" y2="${n(y)}" stroke="${C.cyanLt}" stroke-width="2" stroke-linecap="round" opacity="${n(0.2 + r() * 0.3)}"/>`,
@@ -1508,15 +1302,15 @@ function eventGatherRing(r) {
   }
 
   const rings = [];
-  for (const [rad, op] of [[R + 130, 0.13], [R + 260, 0.09], [R + 400, 0.06]]) {
+  for (const [rad, op] of [[R + 118, 0.13], [R + 236, 0.09], [R + 354, 0.06]]) {
     rings.push(
-      `<ellipse cx="${cx}" cy="${cy}" rx="${n(rad * 1.5)}" ry="${rad}" fill="none" stroke="${C.ice}" stroke-width="1.6" opacity="${op}"/>`
+      `<circle cx="${cx}" cy="${cy}" r="${n(rad)}" fill="none" stroke="${C.ice}" stroke-width="1.6" opacity="${op}"/>`
     );
   }
 
   return [
     starfield(r, 50),
-    `  <ellipse cx="${cx}" cy="${cy}" rx="560" ry="430" fill="url(#h-cyan)" opacity="0.2"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="470" fill="url(#h-cyan)" opacity="0.2"/>`,
     `  <g>${rings.join('')}</g>`,
     `  <g>${arrivals.join('')}</g>`,
     `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="${C.ink}" opacity="0.4"/>`,
@@ -1524,120 +1318,6 @@ function eventGatherRing(r) {
     `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${C.ice}" stroke-width="3.6" opacity="0.92"/>`,
     `  <circle cx="${cx}" cy="${cy}" r="120" fill="url(#scrim)"/>`,
     `  <g>${mark(cx, cy, 176)}</g>`,
-  ].join('\n');
-}
-
-// Release candidate, as a hold: the build arrives at a checkpoint that has not
-// opened, with the release itself waiting dim on the far side.
-function releaseCandidateHold(r) {
-  const gate = 1060;
-  const top = 240;
-  const bottom = 840;
-
-  const chevrons = [];
-  for (let i = 0; i < 6; i++) {
-    const y = 316 + i * 82 + (r() - 0.5) * 10;
-    let x = 180 + r() * 90;
-    while (x < gate - 150) {
-      const w = 26 + r() * 16;
-      const h = 26 + r() * 12;
-      if (x + w > gate - 130) break;
-      chevrons.push(
-        `<path d="M ${n(x)} ${n(y - h / 2)} L ${n(x + w)} ${n(y)} L ${n(x)} ${n(y + h / 2)}" fill="none" ` +
-          `stroke="${weighted(r, [[C.cyanLt, 7], [C.ice, 3]])}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" ` +
-          `opacity="${n(0.3 + r() * 0.45)}"/>`
-      );
-      x += w + 22 + r() * 40;
-    }
-  }
-
-  // The release on the far side, present but not let out yet.
-  const rays = [];
-  for (let i = 0; i < 26; i++) {
-    const a = -0.85 + (i / 25) * 1.7;
-    const len = 150 + r() * 330;
-    rays.push(
-      `<line x1="${n(1250 + Math.cos(a) * 40)}" y1="${n(540 + Math.sin(a) * 40)}" ` +
-        `x2="${n(1250 + Math.cos(a) * len)}" y2="${n(540 + Math.sin(a) * len)}" ` +
-        `stroke="${C.gold}" stroke-width="${n(2 + r() * 3)}" stroke-linecap="round" opacity="${n(0.1 + r() * 0.14)}"/>`
-    );
-  }
-
-  const ticks = [];
-  for (let i = 0; i <= 26; i++) {
-    const y = top + (i / 26) * (bottom - top);
-    ticks.push(
-      `<line x1="${gate - 22}" y1="${n(y)}" x2="${gate + 22}" y2="${n(y)}" stroke="${C.ice}" stroke-width="1.6" opacity="${i % 4 === 0 ? 0.36 : 0.14}"/>`
-    );
-  }
-
-  return [
-    starfield(r, 50),
-    `  <ellipse cx="1140" cy="540" rx="520" ry="420" fill="url(#h-gold)" opacity="0.12"/>`,
-    `  <g>${rays.join('')}</g>`,
-    `  <g>${chevrons.join('')}</g>`,
-    `  <rect x="${gate - 21}" y="${top}" width="42" height="${bottom - top}" rx="21" fill="${C.ice}" opacity="0.18"/>`,
-    `  <line x1="${gate}" y1="${top}" x2="${gate}" y2="${bottom}" stroke="${C.ice}" stroke-width="14" opacity="0.32" filter="url(#blur18)"/>`,
-    `  <g>${ticks.join('')}</g>`,
-    `  <line x1="${gate}" y1="${top}" x2="${gate}" y2="${bottom}" stroke="${C.ice}" stroke-width="3.8" opacity="0.95"/>`,
-    `  <circle cx="${gate}" cy="540" r="58" fill="${C.ink}" opacity="0.6"/>`,
-    `  <circle cx="${gate}" cy="540" r="58" fill="none" stroke="${C.ice}" stroke-width="3.6" opacity="0.95"/>`,
-    `  <circle cx="${gate}" cy="540" r="14" fill="${C.ice}" opacity="0.9"/>`,
-  ].join('\n');
-}
-
-// Release candidate, as a soak: time deliberately spent under test before the
-// release at the end of the bar is allowed to happen.
-function releaseCandidateSoak(r) {
-  const x0 = 340;
-  const x1 = 1320;
-  const done = 900; // how far the soak has got
-  const by = 500;
-  const bh = 80;
-
-  const results = [];
-  for (const [ymin, ymax] of [[260, 462], [618, 820]]) {
-    for (let y = ymin; y < ymax; y += 42) {
-      let x = x0 + 6;
-      while (x < x1 - 20) {
-        const past = x < done;
-        const bad = past && r() < 0.07;
-        results.push(
-          dot(x, y, past ? 6 : 4.5, bad ? C.coral : past ? C.mint : C.cyanLt, bad ? 'coral' : past ? 'mint' : 'cyan', past ? 0.85 : 0.28, 2.8)
-        );
-        x += 40 + r() * 26;
-      }
-    }
-  }
-
-  const ticks = [];
-  for (let x = x0; x <= x1; x += 70) {
-    ticks.push(
-      `<line x1="${n(x)}" y1="${by - 22}" x2="${n(x)}" y2="${by + bh + 22}" stroke="${C.ice}" stroke-width="1.6" opacity="0.12"/>`
-    );
-  }
-
-  const rays = [];
-  for (let i = 0; i < 22; i++) {
-    const a = -0.8 + (i / 21) * 1.6;
-    const len = 120 + r() * 280;
-    rays.push(
-      `<line x1="${n(1370 + Math.cos(a) * 34)}" y1="${n(540 + Math.sin(a) * 34)}" ` +
-        `x2="${n(1370 + Math.cos(a) * len)}" y2="${n(540 + Math.sin(a) * len)}" ` +
-        `stroke="${C.gold}" stroke-width="${n(2 + r() * 3)}" stroke-linecap="round" opacity="${n(0.09 + r() * 0.13)}"/>`
-    );
-  }
-
-  return [
-    starfield(r, 50),
-    `  <ellipse cx="960" cy="540" rx="560" ry="420" fill="url(#h-mint)" opacity="0.15"/>`,
-    `  <g>${rays.join('')}</g>`,
-    `  <g>${ticks.join('')}</g>`,
-    `  <g>${results.join('')}</g>`,
-    `  <rect x="${x0}" y="${by}" width="${x1 - x0}" height="${bh}" rx="${bh / 2}" fill="${C.ice}" opacity="0.1"/>`,
-    `  <rect x="${x0}" y="${by}" width="${x1 - x0}" height="${bh}" rx="${bh / 2}" fill="none" stroke="${C.ice}" stroke-width="2.4" opacity="0.4"/>`,
-    `  <rect x="${x0}" y="${by}" width="${done - x0}" height="${bh}" rx="${bh / 2}" fill="${C.mint}" opacity="0.8"/>`,
-    `  <line x1="${done}" y1="${by - 34}" x2="${done}" y2="${by + bh + 34}" stroke="${C.ice}" stroke-width="4" stroke-linecap="round" opacity="0.95"/>`,
   ].join('\n');
 }
 
@@ -1689,8 +1369,9 @@ function bloomBitArray(r) {
   const nodes = [];
   const drops = [];
   picks.forEach((i, k) => {
-    const t = (k - (K - 1) / 2) / ((K - 1) / 2);
-    const hx = mx + t * 300;
+    // Each hash node sits directly above the cell it sets, so its drop can be a
+    // plain vertical.
+    const hx = bc(i);
     spokes.push(
       `<line x1="${mx}" y1="${my + 72}" x2="${n(hx)}" y2="${hy - 20}" stroke="${C.violet}" stroke-width="1.8" opacity="0.45"/>`
     );
@@ -1700,7 +1381,9 @@ function bloomBitArray(r) {
       `<circle cx="${n(hx)}" cy="${hy}" r="5" fill="${C.ice}" opacity="0.85"/>`
     );
     drops.push(
-      `<path d="M ${n(hx)} ${hy + 18} Q ${n(hx)} ${top - 58} ${n(bc(i))} ${top - 8}" fill="none" stroke="${C.mint}" stroke-width="2.4" opacity="0.6"/>`
+      // Straight verticals: a hash node sits directly over the cell it sets, so
+      // the drop reads as an index rather than as routing.
+      `<line x1="${n(bc(i))}" y1="${hy + 18}" x2="${n(bc(i))}" y2="${top - 8}" stroke="${C.mint}" stroke-width="2.4" opacity="0.6"/>`
     );
   });
 
@@ -1737,130 +1420,12 @@ function bloomBitArray(r) {
   ].join('\n');
 }
 
-// Bloom filter, read side. Two lookups over the same bit field. The upper probe
-// finds every position set and can only answer "probably": a soft, dashed tick.
-// The lower probe finds a clear bit at its third position and short-circuits to
-// a hard cross; the two positions after it are never examined.
-function bloomVerdict(r) {
-  const COLS = 24;
-  const ROWS = 12;
-  const SX = 52;
-  const SY = 54;
-  const gx0 = 960 - ((COLS - 1) * SX) / 2;
-  const gy0 = 540 - ((ROWS - 1) * SY) / 2;
-  const colX = (c) => gx0 + c * SX;
-  const rowY = (v) => gy0 + v * SY;
-
-  const maybe = [[4, 3], [7, 1], [10, 3], [13, 1], [16, 2]];
-  const absent = [[4, 8], [7, 10], [10, 8], [13, 10], [16, 9]];
-  const CLEAR = 2; // the position in `absent` that lands on a clear bit
-
-  // Field state first, then the probes force the cells they need, so what the
-  // verdicts claim matches what is actually drawn.
-  const on = new Set();
-  for (let c = 0; c < COLS; c++) {
-    for (let v = 0; v < ROWS; v++) if (r() < 0.4) on.add(`${c},${v}`);
-  }
-  maybe.forEach(([c, v]) => on.add(`${c},${v}`));
-  absent.forEach(([c, v], i) => (i === CLEAR ? on.delete(`${c},${v}`) : on.add(`${c},${v}`)));
-
-  const field = [];
-  for (let c = 0; c < COLS; c++) {
-    for (let v = 0; v < ROWS; v++) {
-      const x = colX(c) - 11;
-      const y = rowY(v) - 11;
-      field.push(
-        on.has(`${c},${v}`)
-          ? `<rect x="${n(x)}" y="${n(y)}" width="22" height="22" rx="5" fill="${C.cyanLt}" opacity="${n(0.38 + r() * 0.3)}"/>`
-          : `<rect x="${n(x)}" y="${n(y)}" width="22" height="22" rx="5" fill="${C.cyan}" fill-opacity="0.06" stroke="${C.cyanLt}" stroke-width="1.3" opacity="0.26"/>`
-      );
-    }
-  }
-
-  // Routed at right angles, like an address bus, so a probe does not read as a
-  // line chart the way `benchmarks` deliberately does.
-  const trace = (pts, color, width, opacity, dash = '') => {
-    const d = [`M ${n(pts[0][0])} ${n(pts[0][1])}`];
-    for (let i = 1; i < pts.length; i++) {
-      const [px, py] = pts[i - 1];
-      const [x, y] = pts[i];
-      if (Math.abs(y - py) < 1) d.push(`L ${n(x)} ${n(y)}`);
-      else {
-        const mid = (px + x) / 2;
-        d.push(`L ${n(mid)} ${n(py)}`, `L ${n(mid)} ${n(y)}`, `L ${n(x)} ${n(y)}`);
-      }
-    }
-    return (
-      `<path d="${d.join(' ')}" fill="none" stroke="${color}" stroke-width="${width}" opacity="${opacity}" ` +
-      `stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`
-    );
-  };
-
-  const ring = (x, y, color, key) =>
-    `<circle cx="${n(x)}" cy="${n(y)}" r="34" fill="url(#h-${key})" opacity="0.7"/>` +
-    `<circle cx="${n(x)}" cy="${n(y)}" r="19" fill="none" stroke="${color}" stroke-width="3.2" opacity="0.92"/>`;
-
-  const mPts = maybe.map(([c, v]) => [colX(c), rowY(v)]);
-  const aPts = absent.map(([c, v]) => [colX(c), rowY(v)]);
-  const mEnd = [1348, rowY(2)];
-  const aEnd = [1348, rowY(9)];
-  const lead = (p) => [gx0 - 140, p[1]];
-
-  const probes = [
-    trace([lead(mPts[0]), ...mPts, mEnd], C.mint, 2.6, 0.75),
-    ...mPts.map(([x, y]) => ring(x, y, C.mint, 'mint')),
-    // Solid up to the clear bit, then a faint continuation nobody has to walk.
-    trace([lead(aPts[0]), ...aPts.slice(0, CLEAR + 1)], C.coral, 2.6, 0.8),
-    trace([aPts[CLEAR], aEnd], C.coral, 2.6, 0.8),
-    trace(aPts.slice(CLEAR), C.coral, 1.8, 0.3, '8 12'),
-    ...aPts.slice(0, CLEAR).map(([x, y]) => ring(x, y, C.coral, 'coral')),
-    ...aPts.slice(CLEAR + 1).map(([x, y]) => `<circle cx="${n(x)}" cy="${n(y)}" r="19" fill="none" stroke="${C.coral}" stroke-width="1.8" opacity="0.3"/>`),
-    // The clear bit: circled hard, and left visibly empty, because the empty cell
-    // is the whole evidence.
-    `<circle cx="${n(aPts[CLEAR][0])}" cy="${n(aPts[CLEAR][1])}" r="36" fill="url(#scrim)"/>`,
-    `<circle cx="${n(aPts[CLEAR][0])}" cy="${n(aPts[CLEAR][1])}" r="27" fill="none" stroke="${C.coral}" stroke-width="4.4" opacity="0.95"/>`,
-    `<rect x="${n(aPts[CLEAR][0] - 11)}" y="${n(aPts[CLEAR][1] - 11)}" width="22" height="22" rx="5" fill="${C.cyan}" fill-opacity="0.06" stroke="${C.coral}" stroke-width="1.8" opacity="0.6"/>`,
-  ];
-
-  const sources = [
-    dot(lead(mPts[0])[0], mPts[0][1], 9, C.ice, 'ice', 0.9),
-    dot(lead(aPts[0])[0], aPts[0][1], 9, C.ice, 'ice', 0.9),
-  ];
-
-  // The asymmetry, carried by the drawing style: the yes is soft and dashed, the
-  // no is solid and crisp.
-  const verdicts = [
-    `<circle cx="${mEnd[0]}" cy="${n(mEnd[1])}" r="72" fill="url(#scrim)"/>`,
-    `<circle cx="${mEnd[0]}" cy="${n(mEnd[1])}" r="76" fill="url(#h-mint)" opacity="0.85"/>`,
-    `<circle cx="${mEnd[0]}" cy="${n(mEnd[1])}" r="42" fill="none" stroke="${C.mint}" stroke-width="3.4" stroke-dasharray="11 13" opacity="0.85"/>`,
-    // A second, looser ring: the yes has a margin of error the no does not.
-    `<circle cx="${mEnd[0]}" cy="${n(mEnd[1])}" r="56" fill="none" stroke="${C.mint}" stroke-width="2" stroke-dasharray="5 17" opacity="0.4"/>`,
-    `<path d="M ${mEnd[0] - 20} ${n(mEnd[1] + 2)} L ${mEnd[0] - 6} ${n(mEnd[1] + 17)} L ${mEnd[0] + 22} ${n(mEnd[1] - 17)}" fill="none" stroke="${C.mint}" stroke-width="9" opacity="0.35" filter="url(#blur8)"/>`,
-    `<path d="M ${mEnd[0] - 20} ${n(mEnd[1] + 2)} L ${mEnd[0] - 6} ${n(mEnd[1] + 17)} L ${mEnd[0] + 22} ${n(mEnd[1] - 17)}" fill="none" stroke="${C.mint}" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`,
-    `<circle cx="${aEnd[0]}" cy="${n(aEnd[1])}" r="72" fill="url(#scrim)"/>`,
-    `<circle cx="${aEnd[0]}" cy="${n(aEnd[1])}" r="62" fill="url(#h-coral)" opacity="0.7"/>`,
-    `<circle cx="${aEnd[0]}" cy="${n(aEnd[1])}" r="42" fill="none" stroke="${C.coral}" stroke-width="5.4" opacity="0.95"/>`,
-    `<path d="M ${aEnd[0] - 17} ${n(aEnd[1] - 17)} L ${aEnd[0] + 17} ${n(aEnd[1] + 17)} M ${aEnd[0] + 17} ${n(aEnd[1] - 17)} L ${aEnd[0] - 17} ${n(aEnd[1] + 17)}" fill="none" stroke="${C.coral}" stroke-width="5.4" stroke-linecap="round" opacity="0.95"/>`,
-  ];
-
-  return [
-    starfield(r, 55),
-    `  <ellipse cx="960" cy="${n(rowY(2))}" rx="620" ry="220" fill="url(#h-mint)" opacity="0.12"/>`,
-    `  <ellipse cx="960" cy="${n(rowY(9))}" rx="620" ry="220" fill="url(#h-coral)" opacity="0.1"/>`,
-    `  <g>${field.join('')}</g>`,
-    `  <g>${sources.join('')}</g>`,
-    `  <g>${probes.join('')}</g>`,
-    `  <g>${verdicts.join('')}</g>`,
-  ].join('\n');
-}
-
 // ----------------------------------------------------------- valkey-search
 //
-// Three readings of one claim: a query lands in an indexed field, and only a
-// small part of that field has to be looked at. What separates these from each
-// other is where the narrowing happens — around the query (`searchNearest`),
-// along the pipeline (`searchNarrowing`), or inside one indexed field
-// (`searchFieldIndex`).
+// Two readings of one claim: a query lands in an indexed field, and only a
+// small part of that field has to be looked at. What separates them is where the
+// narrowing happens — around the query (`searchNearest`), or inside one indexed
+// field (`searchFieldIndex`).
 
 // Vector similarity: the query sits at the centre of an indexed field and only
 // the handful of vectors inside its search radius light up. Everything past the
@@ -1938,85 +1503,6 @@ function searchNearest(r) {
     `  <circle cx="${cx}" cy="${cy}" r="128" fill="url(#scrim)"/>`,
     `  <g filter="url(#blur18)" opacity="0.5">${mark(cx, cy, 176)}</g>`,
     `  <g>${mark(cx, cy, 176)}</g>`,
-  ].join('\n');
-}
-
-// The index as a funnel: the whole indexed space on the left, the candidate set
-// the index keeps in the middle, the few results that come back on the right.
-// The dots thin out and brighten together, so "fewer" and "better" are the same
-// gesture.
-function searchNarrowing(r) {
-  const cy = 540;
-  const x0 = 230;
-  const x1 = 1360; // the tip, where the mark sits, clear of the narrow crop's edge
-  const h0 = 384;
-  const h1 = 66;
-  const halfAt = (x) => h0 + ((x - x0) / (x1 - x0)) * (h1 - h0);
-
-  // Five passes rather than two, so the thinning reads as a gradient instead of
-  // as three unrelated columns. Count falls, size and brightness rise, and the
-  // vertical spread is tied to the wedge, so all four cues say "fewer" together.
-  const PASSES = 5;
-  const stages = Array.from({ length: PASSES }, (_, i) => {
-    const t = i / (PASSES - 1);
-    const x = 240 + t * 960;
-    const count = Math.round(46 - t * 41);
-    const pts = [];
-    // Stratified down the column, so no pass leaves a hole the eye reads as a gap.
-    for (let j = 0; j < count; j++) {
-      const half = halfAt(x);
-      const y = cy - half + ((j + r()) / count) * half * 2;
-      pts.push({
-        x: x + (r() - 0.5) * (58 - t * 40),
-        y,
-        rad: 2.6 + t * 4.4 + r() * 1.6,
-        op: 0.3 + t * 0.62 + r() * 0.12,
-      });
-    }
-    return { x, t, pts, color: t > 0.7 ? C.mint : C.cyanLt, key: t > 0.7 ? 'mint' : 'cyan' };
-  });
-
-  // Each survivor is wired back to the nearest couple it came from, so the
-  // funnel reads as selection rather than as five separate scatters.
-  const sift = [];
-  for (let i = 1; i < PASSES; i++) {
-    for (const p of stages[i].pts) {
-      stages[i - 1].pts
-        .map((q) => ({ q, d: Math.abs(p.y - q.y) }))
-        .sort((a, b) => a.d - b.d)
-        .slice(0, 2)
-        .forEach(({ q }) => sift.push(`<line x1="${n(q.x)}" y1="${n(q.y)}" x2="${n(p.x)}" y2="${n(p.y)}"/>`));
-    }
-  }
-
-  const results = stages[PASSES - 1].pts
-    .map((p) => `<line x1="${n(p.x)}" y1="${n(p.y)}" x2="${n(x1 - 104)}" y2="${cy}"/>`)
-    .join('');
-
-  const cloud = stages
-    .map((s) => s.pts.map((p) => dot(p.x, p.y, p.rad, s.color, s.key, p.op, 2.6 + s.t * 1.8)).join(''))
-    .join('');
-
-  const edge = (sign) =>
-    `<line x1="${x0}" y1="${n(cy + sign * h0)}" x2="${x1}" y2="${n(cy + sign * h1)}" ` +
-    `stroke="${C.ice}" stroke-width="2.2" opacity="0.32"/>`;
-
-  return [
-    starfield(r, 55),
-    `  <linearGradient id="sift" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">` +
-      `<stop offset="0" stop-color="${C.cyan}" stop-opacity="0.24"/>` +
-      `<stop offset="1" stop-color="${C.mint}" stop-opacity="0.07"/></linearGradient>`,
-    `  <circle cx="420" cy="${cy}" r="470" fill="url(#h-cyan)" opacity="0.13"/>`,
-    `  <circle cx="${x1}" cy="${cy}" r="330" fill="url(#h-mint)" opacity="0.28"/>`,
-    `  <path d="M ${x0} ${n(cy - h0)} L ${x1} ${n(cy - h1)} L ${x1} ${n(cy + h1)} L ${x0} ${n(cy + h0)} Z" fill="url(#sift)"/>`,
-    `  ${edge(-1)}`,
-    `  ${edge(1)}`,
-    `  <g stroke="${C.cyanLt}" stroke-width="1.1" opacity="0.14">${sift.join('')}</g>`,
-    `  <g stroke="${C.mint}" stroke-width="2" opacity="0.5">${results}</g>`,
-    `  <g>${cloud}</g>`,
-    `  <circle cx="${x1}" cy="${cy}" r="130" fill="url(#scrim)"/>`,
-    `  <g filter="url(#blur18)" opacity="0.5">${mark(x1, cy, 180)}</g>`,
-    `  <g>${mark(x1, cy, 180)}</g>`,
   ].join('\n');
 }
 
@@ -2131,271 +1617,6 @@ function searchFieldIndex(r) {
 // read geometrically is that the callers are visibly *different from each other*
 // — not the uniform traffic `performance` draws — and that whatever they send
 // arrives in the same shape at a single server.
-
-// Confluence: five callers, each drawn in its own grammar, bending through one
-// aperture and leaving it as a single uniform protocol stream.
-function clientConfluence(r) {
-  const cy = 540;
-  const waist = 1010; // where the callers stop being different
-  const mx = 1440; // the server
-  const x0 = 90;
-
-  // One quadratic per caller: flat while it is still in its own idiom, bending
-  // only near the waist. Sampled once, then walked by arc length so a grammar
-  // can be laid along it.
-  const channel = (y) => {
-    const c = [x0 + 0.66 * (waist - x0), y];
-    const pts = [];
-    for (let i = 0; i <= 96; i++) {
-      const t = i / 96;
-      const u = 1 - t;
-      pts.push([u * u * x0 + 2 * t * u * c[0] + t * t * waist, u * u * y + 2 * t * u * c[1] + t * t * cy]);
-    }
-    const cum = [0];
-    for (let i = 1; i < pts.length; i++) {
-      cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-    }
-    const total = cum[cum.length - 1];
-    const at = (s) => {
-      const d = clamp(s, 0, total);
-      let i = 1;
-      while (i < cum.length - 1 && cum[i] < d) i++;
-      const f = (d - cum[i - 1]) / (cum[i] - cum[i - 1] || 1);
-      const a = Math.atan2(pts[i][1] - pts[i - 1][1], pts[i][0] - pts[i - 1][0]);
-      return [
-        pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f,
-        pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f,
-        a,
-      ];
-    };
-    // The same curve offset along its own normal, for rails and sawtooths.
-    const rail = (off, step = 16) => {
-      const out = [];
-      for (let s = 0; s <= total; s += step) {
-        const [x, yy, a] = at(s);
-        const o = typeof off === 'function' ? off(s) : off;
-        out.push([x - Math.sin(a) * o, yy + Math.cos(a) * o]);
-      }
-      return out.map((p, i) => `${i ? 'L' : 'M'} ${n(p[0])} ${n(p[1])}`).join(' ');
-    };
-    const d = pts.map((p, i) => `${i ? 'L' : 'M'} ${n(p[0])} ${n(p[1])}`).join(' ');
-    return { at, rail, total, d };
-  };
-
-  const lanes = [
-    { y: 190, color: C.mint, key: 'mint', kind: 'beads' },
-    { y: 364, color: C.coral, key: 'coral', kind: 'blocks' },
-    { y: 540, color: C.gold, key: 'gold', kind: 'ladder' },
-    { y: 718, color: C.violet, key: 'violet', kind: 'sawtooth' },
-    { y: 890, color: C.cyanLt, key: 'cyan', kind: 'ticks' },
-  ];
-
-  const guides = [];
-  const callers = [];
-  for (const lane of lanes) {
-    const p = channel(lane.y);
-    const end = p.total - 58; // stop short of the aperture
-    guides.push(`<path d="${p.d}" fill="none" stroke="${lane.color}" stroke-width="2" opacity="0.14"/>`);
-
-    if (lane.kind === 'beads') {
-      for (let s = 10; s < end; s += 46 + r() * 12) {
-        const [x, y] = p.at(s);
-        callers.push(dot(x, y, 7 + r() * 3.5, lane.color, lane.key, 0.55 + r() * 0.4, 3));
-      }
-    } else if (lane.kind === 'blocks') {
-      for (let s = 8; s < end; ) {
-        const len = 46 + r() * 42;
-        if (s + len > end) break;
-        const [x, y, a] = p.at(s + len / 2);
-        callers.push(
-          `<rect x="${n(x - len / 2)}" y="${n(y - 12)}" width="${n(len)}" height="24" rx="7" ` +
-            `fill="${lane.color}" opacity="${n(0.45 + r() * 0.42)}" ` +
-            `transform="rotate(${n((a * 180) / Math.PI)} ${n(x)} ${n(y)})"/>`
-        );
-        s += len + 22 + r() * 18;
-      }
-    } else if (lane.kind === 'ladder') {
-      callers.push(
-        `<path d="${p.rail(-11)}" fill="none" stroke="${lane.color}" stroke-width="3.4" opacity="0.62"/>`,
-        `<path d="${p.rail(11)}" fill="none" stroke="${lane.color}" stroke-width="3.4" opacity="0.62"/>`
-      );
-      for (let s = 18; s < end; s += 54) {
-        const [x, y, a] = p.at(s);
-        const nx = -Math.sin(a) * 11;
-        const ny = Math.cos(a) * 11;
-        callers.push(
-          `<line x1="${n(x - nx)}" y1="${n(y - ny)}" x2="${n(x + nx)}" y2="${n(y + ny)}" ` +
-            `stroke="${lane.color}" stroke-width="3" opacity="${n(0.4 + r() * 0.35)}"/>`
-        );
-      }
-    } else if (lane.kind === 'sawtooth') {
-      let flip = 1;
-      const zig = [];
-      for (let s = 0; s <= end; s += 34) {
-        const [x, y, a] = p.at(s);
-        const o = 15 * flip;
-        zig.push([x - Math.sin(a) * o, y + Math.cos(a) * o]);
-        flip = -flip;
-      }
-      callers.push(
-        `<path d="${zig.map((q, i) => `${i ? 'L' : 'M'} ${n(q[0])} ${n(q[1])}`).join(' ')}" fill="none" ` +
-          `stroke="${lane.color}" stroke-width="4" stroke-linejoin="round" opacity="0.8"/>`
-      );
-    } else {
-      callers.push(`<path d="${p.rail(0)}" fill="none" stroke="${lane.color}" stroke-width="4.5" opacity="0.65"/>`);
-      for (let s = 14; s < end; s += 28) {
-        const [x, y, a] = p.at(s);
-        const nx = -Math.sin(a) * 15;
-        const ny = Math.cos(a) * 15;
-        callers.push(
-          `<line x1="${n(x)}" y1="${n(y)}" x2="${n(x + nx)}" y2="${n(y + ny)}" stroke="${lane.color}" ` +
-            `stroke-width="3" stroke-linecap="round" opacity="${n(0.35 + r() * 0.4)}"/>`
-        );
-      }
-    }
-  }
-
-  // Downstream of the aperture every packet is the same length, the same gap and
-  // the same colour: one protocol, whoever asked.
-  const SEG = 34;
-  const GAP = 13;
-  const flow = [];
-  for (let x = waist + 56; x + SEG <= mx - 126; x += SEG + GAP) {
-    flow.push(
-      `<rect x="${n(x)}" y="${cy - 14}" width="${SEG}" height="28" rx="14" fill="${C.ice}" opacity="0.92"/>`
-    );
-  }
-  const walls = [-38, 38]
-    .map(
-      (o) =>
-        `<line x1="${waist + 44}" y1="${cy + o}" x2="${mx - 116}" y2="${cy + o}" stroke="${C.ice}" ` +
-        `stroke-width="2.4" opacity="0.34"/>`
-    )
-    .join('');
-
-  return [
-    starfield(r, 55),
-    `  <circle cx="${waist}" cy="${cy}" r="300" fill="url(#h-ice)" opacity="0.16"/>`,
-    `  <circle cx="${mx}" cy="${cy}" r="340" fill="url(#h-cyan)" opacity="0.2"/>`,
-    `  <g>${guides.join('')}</g>`,
-    `  <g filter="url(#blur18)" opacity="0.3">${callers.join('')}</g>`,
-    `  <g>${callers.join('')}</g>`,
-    `  <g>${walls}</g>`,
-    `  <g filter="url(#blur8)" opacity="0.5">${flow.join('')}</g>`,
-    `  <g>${flow.join('')}</g>`,
-    // The aperture: one opening, and nothing reaches the server except through it.
-    `  <circle cx="${waist}" cy="${cy}" r="50" fill="none" stroke="${C.ice}" stroke-width="18" opacity="0.3" filter="url(#blur8)"/>`,
-    `  <circle cx="${waist}" cy="${cy}" r="50" fill="none" stroke="${C.ice}" stroke-width="9" opacity="0.95"/>`,
-    `  <circle cx="${mx}" cy="${cy}" r="150" fill="url(#scrim)"/>`,
-    `  <g filter="url(#blur18)" opacity="0.5">${mark(mx, cy, 210)}</g>`,
-    `  <g>${mark(mx, cy, 210)}</g>`,
-  ].join('\n');
-}
-
-// Round trip: three unlike callers on their own lifelines, one server lifeline,
-// a handshake at the top and then request and response rungs interleaving. Every
-// response comes back in the same colour because it comes back in one protocol.
-function clientRoundTrip(r) {
-  const server = 1250;
-  const head = 300;
-  const first = 404;
-  const step = 44;
-  const bot = 916;
-
-  const clients = [
-    { x: 420, color: C.mint, key: 'mint', glyph: 'ring' },
-    { x: 650, color: C.coral, key: 'coral', glyph: 'square' },
-    { x: 880, color: C.violet, key: 'violet', glyph: 'triangle' },
-  ];
-
-  const rows = [
-    { c: 0, out: true, hs: true },
-    { c: 0, out: false, hs: true },
-    { c: 1, out: true, hs: true },
-    { c: 1, out: false, hs: true },
-    { c: 2, out: true, hs: true },
-    { c: 2, out: false, hs: true },
-    { c: 0, out: true },
-    { c: 1, out: true },
-    { c: 0, out: false },
-    { c: 2, out: true },
-    { c: 1, out: false },
-    { c: 2, out: false },
-  ];
-
-  const arrow = (from, to, y, color, width, dash, op) => {
-    const dir = Math.sign(to - from);
-    const tip = to - dir * 4;
-    return (
-      `<line x1="${n(from)}" y1="${n(y)}" x2="${n(tip - dir * 15)}" y2="${n(y)}" stroke="${color}" ` +
-      `stroke-width="${width}" ${dash} stroke-linecap="round" opacity="${op}"/>` +
-      `<path d="M ${n(tip)} ${n(y)} L ${n(tip - dir * 19)} ${n(y - 10)} L ${n(tip - dir * 19)} ${n(y + 10)} Z" ` +
-      `fill="${color}" opacity="${op}"/>`
-    );
-  };
-
-  const lifelines = clients.map(
-    (c) =>
-      `<line x1="${c.x}" y1="${head + 50}" x2="${c.x}" y2="${bot}" stroke="${c.color}" stroke-width="2.2" ` +
-      `stroke-dasharray="5 15" opacity="0.34"/>`
-  );
-
-  const heads = clients.map((c) => {
-    const g = `<circle cx="${c.x}" cy="${head}" r="60" fill="url(#h-${c.key})" opacity="0.55"/>`;
-    if (c.glyph === 'ring') {
-      return (
-        g +
-        `<circle cx="${c.x}" cy="${head}" r="36" fill="${C.ink}" fill-opacity="0.4" stroke="${c.color}" stroke-width="5.5"/>` +
-        `<circle cx="${c.x}" cy="${head}" r="11" fill="${c.color}"/>`
-      );
-    }
-    if (c.glyph === 'square') {
-      return (
-        g +
-        `<rect x="${c.x - 32}" y="${head - 32}" width="64" height="64" rx="10" fill="${C.ink}" fill-opacity="0.4" ` +
-        `stroke="${c.color}" stroke-width="5.5"/>` +
-        `<rect x="${c.x - 11}" y="${head - 11}" width="22" height="22" rx="4" fill="${c.color}"/>`
-      );
-    }
-    return (
-      g +
-      `<path d="M ${c.x} ${head - 39} L ${c.x + 37} ${head + 25} L ${c.x - 37} ${head + 25} Z" fill="${C.ink}" ` +
-      `fill-opacity="0.4" stroke="${c.color}" stroke-width="5.5" stroke-linejoin="round"/>` +
-      `<circle cx="${c.x}" cy="${head + 7}" r="9" fill="${c.color}"/>`
-    );
-  });
-
-  const rungs = [];
-  const ticks = [];
-  rows.forEach((row, i) => {
-    const c = clients[row.c];
-    const y = first + i * step;
-    const near = c.x + 10;
-    const far = server - 12;
-    if (row.out) {
-      rungs.push(arrow(near, far, y, c.color, row.hs ? 2.6 : 4.2, row.hs ? 'stroke-dasharray="9 10"' : '', row.hs ? 0.6 : 0.95));
-    } else {
-      rungs.push(arrow(far, near, y, C.ice, row.hs ? 2.6 : 3.6, row.hs ? 'stroke-dasharray="9 10"' : '', row.hs ? 0.55 : 0.88));
-    }
-    ticks.push(
-      `<rect x="${server - 13}" y="${n(y - 2.5)}" width="26" height="5" rx="2.5" fill="${C.ice}" opacity="${row.hs ? 0.45 : 0.85}"/>`
-    );
-  });
-
-  return [
-    starfield(r, 55),
-    `  <circle cx="${server}" cy="${head + 120}" r="420" fill="url(#h-cyan)" opacity="0.18"/>`,
-    `  <g>${lifelines.join('')}</g>`,
-    `  <line x1="${server}" y1="${head + 96}" x2="${server}" y2="${bot}" stroke="${C.ice}" stroke-width="16" opacity="0.26" filter="url(#blur8)"/>`,
-    `  <line x1="${server}" y1="${head + 96}" x2="${server}" y2="${bot}" stroke="${C.ice}" stroke-width="5" opacity="0.85"/>`,
-    `  <g>${rungs.join('')}</g>`,
-    `  <g>${ticks.join('')}</g>`,
-    `  <g>${heads.join('')}</g>`,
-    `  <circle cx="${server}" cy="${head}" r="126" fill="url(#scrim)"/>`,
-    `  <g filter="url(#blur18)" opacity="0.5">${mark(server, head, 178)}</g>`,
-    `  <g>${mark(server, head, 178)}</g>`,
-  ].join('\n');
-}
 
 // Ports: six unlike callers reaching in from outside, each ending in the same
 // port at the same radius. Outside that circle every spoke is drawn differently;
@@ -2693,7 +1914,7 @@ function aiAgentMemory(r) {
 // Workload fan-out: one incoming workload arrives as a single bundled stream,
 // and the store decomposes it into the primitives it already has, each landing
 // in a differently shaped structure.
-function aiWorkloadFanout(r) {
+function workloadFanout(r) {
   const hx = 640;
   const hy = 540;
   const glyphX = 1206;
@@ -2815,72 +2036,12 @@ function aiWorkloadFanout(r) {
   ].join('\n');
 }
 
-// Vector recall: a cloud of stored embeddings with a query at the centre. The
-// recall radius is fitted to the nearest handful, and only those come back.
-// Nothing here is addressed by a key: distance decides.
-function aiVectorRecall(r) {
-  const cx = 960;
-  const cy = 540;
-  const inner = 200; // the query itself, the mark sits inside this
-  const K = 7;
-
-  // Elliptical placement keeps the cloud banner-shaped; colour and size follow
-  // true radial distance, so the rings read as isolines of similarity.
-  const pts = [];
-  let guard = 0;
-  while (pts.length < 72 && guard++ < 40000) {
-    const a = r() * Math.PI * 2;
-    const rad = Math.sqrt(r());
-    const x = cx + Math.cos(a) * rad * 800;
-    const y = cy + Math.sin(a) * rad * 366;
-    const d = Math.hypot(x - cx, y - cy);
-    if (d < inner + 46) continue;
-    if (pts.every((p) => (p.x - x) ** 2 + (p.y - y) ** 2 > 96 ** 2)) pts.push({ x, y, d });
-  }
-  pts.sort((a, b) => a.d - b.d);
-  const recallR = pts[K - 1].d + 32;
-
-  const far = [];
-  const near = [];
-  pts.forEach((p, i) => {
-    if (i < K) {
-      const ux = (p.x - cx) / p.d;
-      const uy = (p.y - cy) / p.d;
-      near.push(
-        `<line x1="${n(cx + ux * inner)}" y1="${n(cy + uy * inner)}" x2="${n(p.x - ux * 14)}" y2="${n(p.y - uy * 14)}" ` +
-          `stroke="${C.mint}" stroke-width="2.2" opacity="${n(0.62 - (p.d / recallR) * 0.2)}"/>`,
-        dot(p.x, p.y, 10, C.mint, 'mint', 0.95, 3.4)
-      );
-    } else {
-      const fade = clamp(0.5 - ((p.d - recallR) / 620) * 0.42, 0.1, 0.5);
-      far.push(
-        dot(p.x, p.y, 3.4 + clamp(1 - (p.d - recallR) / 520, 0, 1) * 2.6, weighted(r, [[C.cyanLt, 6], [C.ice, 3], [C.violet, 3]]), 'cyan', fade, 2.4)
-      );
-    }
-  });
-
-  return [
-    starfield(r, 50),
-    `  <circle cx="${cx}" cy="${cy}" r="330" fill="url(#h-violet)" opacity="0.3"/>`,
-    `  <g>${far.join('')}</g>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${n(inner)}" fill="none" stroke="${C.ice}" stroke-width="1.8" stroke-dasharray="6 12" opacity="0.3"/>`,
-    `  <g>${near.join('')}</g>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${n(recallR)}" fill="none" stroke="${C.mint}" stroke-width="11" opacity="0.22" filter="url(#blur8)"/>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${n(recallR)}" fill="none" stroke="${C.mint}" stroke-width="3.2" stroke-dasharray="15 14" opacity="0.8"/>`,
-    `  <circle cx="${cx}" cy="${cy}" r="200" fill="url(#scrim)"/>`,
-    `  <g filter="url(#blur18)" opacity="0.5">${mark(cx, cy, 220)}</g>`,
-    `  <g>${mark(cx, cy, 220)}</g>`,
-  ].join('\n');
-}
-
-
 // -------------------------------------------------------- connection storms
 //
-// Two halves of the same subject. `connStormSpike` is the shape of the storm in
-// time: quiet, a wall of simultaneous connection attempts, quiet again, with the
-// part of the wall the server cannot accept in one pass stacked above its
-// capacity. `connStormJitter` is the remedy: the same synchronised wall combed
-// out into a spread. Neither draws a gate, which is `security-acl`'s job.
+// `connStormSpike` is the shape of the storm in time: quiet, a wall of
+// simultaneous connection attempts, quiet again, with the part of the wall the
+// server cannot accept in one pass stacked above its capacity. It does not draw
+// a gate, which is `security-acl`'s job.
 
 // The surge itself, as a timeline of attempts. Every cell is one connection, so
 // the spike reads as clients piling up rather than as an abstract bar, and the
@@ -2945,60 +2106,6 @@ function connStormSpike(r) {
   ].join('\n');
 }
 
-// The remedy: one synchronised wall of reconnects on the left, spreading into a
-// staggered fan as exponential backoff with jitter pushes each client's retries
-// further apart. Coral is the simultaneous attempt, mint is the one that lands.
-function connStormJitter(r) {
-  const cy = 540;
-  const wall = 430;
-  const reach = 1330;
-  const lanes = 24;
-  const wallSpan = 484;
-  const spread = 1.62; // the bundle opens out by this factor across the frame
-
-  const rays = [];
-  const wallDots = [];
-  const landed = [];
-  for (let i = 0; i < lanes; i++) {
-    const off = (i - (lanes - 1) / 2) * (wallSpan / (lanes - 1));
-    const yAt = (x) => cy + off * (1 + (spread - 1) * ((x - wall) / (reach - wall)));
-
-    // Retries, each gap roughly double the last and jittered per client, then
-    // fitted to how far this client happens to run before it lands.
-    const pts = [{ x: wall, y: yAt(wall) }];
-    const gaps = Array.from({ length: 4 + Math.floor(r() * 2) }, (_, k) => 1.75 ** k * (0.55 + r() * 0.9));
-    const scale = ((reach - wall) * (0.52 + r() * 0.48)) / gaps.reduce((a, b) => a + b, 0);
-    let x = wall;
-    for (const g of gaps) {
-      x += g * scale;
-      pts.push({ x, y: yAt(x) });
-    }
-
-    rays.push(
-      `<path d="${pts.map((p, k) => `${k ? 'L' : 'M'} ${n(p.x)} ${n(p.y)}`).join(' ')}" fill="none" ` +
-        `stroke="${C.cyanLt}" stroke-width="1.6" opacity="0.28"/>`
-    );
-    wallDots.push(dot(pts[0].x, pts[0].y, 6, C.coral, 'coral', 0.95, 2.6));
-    pts.slice(1, -1).forEach((p, k) => {
-      const color = k === 0 ? C.coral : C.gold;
-      rays.push(
-        `<circle cx="${n(p.x)}" cy="${n(p.y)}" r="${n(4.6 + k * 0.5)}" fill="${color}" opacity="${n(0.5 + k * 0.14)}"/>`
-      );
-    });
-    const end = pts[pts.length - 1];
-    landed.push(dot(end.x, end.y, 8, C.mint, 'mint', 0.95, 3.2));
-  }
-
-  return [
-    starfield(r, 55),
-    `  <ellipse cx="${wall}" cy="${cy}" rx="130" ry="300" fill="url(#h-coral)" opacity="0.4"/>`,
-    `  <ellipse cx="1180" cy="${cy}" rx="380" ry="420" fill="url(#h-mint)" opacity="0.14"/>`,
-    `  <g>${rays.join('')}</g>`,
-    `  <g>${wallDots.join('')}</g>`,
-    `  <g>${landed.join('')}</g>`,
-  ].join('\n');
-}
-
 // ------------------------------------------------------------- operations
 //
 // Both ops themes carry the same one idea: at scale you are looking at a fleet,
@@ -3006,166 +2113,6 @@ function connStormJitter(r) {
 // of it needs you; `ops-rolling-wave` says a change crosses that fleet one group
 // at a time. Neither reuses the slot ring (`clustering`) or a chart
 // (`benchmarks`).
-
-// Fleet triage: a wide field of identical deployments, unremarkable and healthy,
-// with the three that actually need attention lit and bracketed. The subject is
-// the ratio: almost everything is fine, and the work is picking out the few.
-function opsFleetTriage(r) {
-  const cols = 9;
-  const rows = 6;
-  const dx = 178;
-  const dy = 133;
-  const x0 = 246;
-  const y0 = 235;
-  const HEX = 46;
-
-  // Odd rows are offset half a step so the fleet reads as a field rather than a
-  // spreadsheet, and each unit is jittered a few pixels off its slot.
-  const units = [];
-  for (let j = 0; j < rows; j++) {
-    for (let i = 0; i < cols; i++) {
-      units.push({
-        i,
-        j,
-        x: x0 + i * dx + (j % 2) * (dx / 2) + (r() - 0.5) * 10,
-        y: y0 + j * dy + (r() - 0.5) * 8,
-      });
-    }
-  }
-
-  // Flagged by slot, not at random: all three sit inside the horizontal safe
-  // area, spread across the field so none reads as the subject of the image.
-  const FLAGS = ['1-2', '3-5', '4-4'];
-  const flagged = units.filter((u) => FLAGS.includes(`${u.j}-${u.i}`));
-  const quiet = units.filter((u) => !flagged.includes(u));
-
-  // The same signal read across every row, faint enough to stay a substrate.
-  const rails = units
-    .filter((u) => u.i === 0)
-    .map(
-      (u) =>
-        `<line x1="120" y1="${n(y0 + u.j * dy)}" x2="1800" y2="${n(y0 + u.j * dy)}" stroke="${C.cyanLt}" ` +
-        `stroke-width="1.2" stroke-dasharray="3 13" opacity="0.13"/>`
-    )
-    .join('');
-
-  const field = quiet
-    .map((u) => `<g opacity="${n(0.34 + r() * 0.16)}">${mark(u.x, u.y, HEX, C.cyanLt)}</g>`)
-    .join('');
-
-  // Corner brackets: a reticle rather than a ring, so it reads as "being looked
-  // at" instead of as another kind of node.
-  const bracket = (x, y, s = 58, arm = 21) =>
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]]
-      .map(
-        ([sx, sy]) =>
-          `<path d="M ${n(x + sx * s)} ${n(y + sy * (s - arm))} L ${n(x + sx * s)} ${n(y + sy * s)} ` +
-          `L ${n(x + sx * (s - arm))} ${n(y + sy * s)}" fill="none" stroke="${C.coral}" stroke-width="4" ` +
-          `stroke-linecap="round" opacity="0.92"/>`
-      )
-      .join('');
-
-  const attended = flagged
-    .map(
-      (u) =>
-        `<circle cx="${n(u.x)}" cy="${n(u.y)}" r="40" fill="url(#scrim)"/>` +
-        `<g filter="url(#blur8)" opacity="0.5">${mark(u.x, u.y, HEX + 12)}</g>` +
-        `<g>${mark(u.x, u.y, HEX + 12)}</g>` +
-        bracket(u.x, u.y)
-    )
-    .join('');
-
-  return [
-    starfield(r, 55),
-    // Ambient glow first: over the field it veils the hexagons into a smear.
-    `  <ellipse cx="960" cy="560" rx="830" ry="410" fill="url(#h-cyan)" opacity="0.16"/>`,
-    `  <g>${flagged.map((u) => `<circle cx="${n(u.x)}" cy="${n(u.y)}" r="82" fill="url(#h-coral)" opacity="0.95"/>`).join('')}</g>`,
-    `  <g>${rails}</g>`,
-    `  <g>${field}</g>`,
-    `  <g>${attended}</g>`,
-  ].join('\n');
-}
-
-// Rolling wave: the fleet as groups of nodes, and one operation crossing it a
-// group at a time. Everything behind the front is on the new state, everything
-// ahead of it is untouched, and exactly one group is in flight.
-function opsRollingWave(r) {
-  const groups = 9;
-  const per = 7;
-  const cur = 3; // the group currently being worked, kept inside the safe area
-  const gx = (i) => 240 + i * 180;
-  const ny = (j) => 250 + j * 100;
-  const top = 195;
-  const bot = 905;
-
-  const spines = [];
-  const nodes = [];
-  for (let i = 0; i < groups; i++) {
-    const x = gx(i);
-    const done = i < cur;
-    const live = i === cur;
-    const color = done ? C.mint : live ? C.ice : C.cyanLt;
-    spines.push(
-      `<line x1="${n(x)}" y1="${n(ny(0) - 36)}" x2="${n(x)}" y2="${n(ny(per - 1) + 36)}" stroke="${color}" ` +
-        `stroke-width="${live ? 2.6 : 1.6}" opacity="${done ? 0.42 : live ? 0.6 : 0.2}"/>`
-    );
-    for (let j = 0; j < per; j++) {
-      const y = ny(j);
-      // Inside the live group the roll is partway down: the top half has come
-      // back on the new state, the bottom half is still waiting its turn.
-      if (live && j === 3) continue; // the mark stands in for this node
-      const nodeDone = done || (live && j < 3);
-      if (nodeDone) {
-        nodes.push(dot(x, y, 7.5, C.mint, 'mint', done ? 0.8 : 0.95, 3));
-      } else if (live) {
-        // In flight: an open ring, still coming back up.
-        nodes.push(
-          `<circle cx="${n(x)}" cy="${n(y)}" r="13" fill="url(#h-ice)" opacity="0.8"/>` +
-            `<circle cx="${n(x)}" cy="${n(y)}" r="12" fill="none" stroke="${C.ice}" stroke-width="3.4" ` +
-            `stroke-dasharray="7 7" opacity="0.95"/>`
-        );
-      } else {
-        nodes.push(dot(x, y, 6.5, C.cyanLt, 'cyan', 0.52 + r() * 0.16, 2.8));
-      }
-    }
-  }
-
-  // The front itself: a lit capsule around the live group.
-  const fx = gx(cur);
-  const band =
-    `<rect x="${n(fx - 66)}" y="${top}" width="132" height="${bot - top}" rx="66" fill="${C.ice}" opacity="0.08"/>` +
-    `<rect x="${n(fx - 66)}" y="${top}" width="132" height="${bot - top}" rx="66" fill="none" stroke="${C.ice}" ` +
-    `stroke-width="14" opacity="0.22" filter="url(#blur8)"/>` +
-    `<rect x="${n(fx - 66)}" y="${top}" width="132" height="${bot - top}" rx="66" fill="none" stroke="${C.ice}" ` +
-    `stroke-width="3.2" opacity="0.85"/>`;
-
-  // Rails run the width of the fleet; the mint stretch behind the front is how
-  // far the operation has got.
-  const rail = (y) =>
-    `<line x1="110" y1="${y}" x2="1810" y2="${y}" stroke="${C.cyanLt}" stroke-width="1.6" ` +
-    `stroke-dasharray="5 15" opacity="0.2"/>` +
-    `<line x1="110" y1="${y}" x2="${n(fx - 66)}" y2="${y}" stroke="${C.mint}" stroke-width="3" opacity="0.5"/>`;
-
-  // Direction of travel, the same chevron the release art uses.
-  const chev = (x, w, sw, op) =>
-    `<path d="M ${n(x - w)} ${n(550 - w * 1.18)} L ${n(x)} 550 L ${n(x - w)} ${n(550 + w * 1.18)}" fill="none" ` +
-    `stroke="${C.mint}" stroke-width="${sw}" stroke-linejoin="miter" opacity="${op}"/>`;
-
-  return [
-    starfield(r, 55),
-    `  <ellipse cx="960" cy="550" rx="860" ry="380" fill="url(#h-cyan)" opacity="0.13"/>`,
-    `  <ellipse cx="${n(fx)}" cy="550" rx="230" ry="420" fill="url(#h-ice)" opacity="0.22"/>`,
-    `  <g>${rail(top)}${rail(bot)}</g>`,
-    `  <g>${spines.join('')}</g>`,
-    `  ${band}`,
-    `  <g>${nodes.join('')}</g>`,
-    `  ${chev(fx + 116, 26, 9, 0.3)}`,
-    `  ${chev(fx + 168, 26, 9, 0.16)}`,
-    `  <circle cx="${n(fx)}" cy="${n(ny(3))}" r="56" fill="url(#scrim)"/>`,
-    `  <g filter="url(#blur8)" opacity="0.5">${mark(fx, ny(3), 92)}</g>`,
-    `  <g>${mark(fx, ny(3), 92)}</g>`,
-  ].join('\n');
-}
 
 // ------------------------------------------------------------- valkey-bundle
 //
@@ -4057,10 +3004,11 @@ function azZoneLocalReads(r) {
     const gx = cxs[1] + s * (zoneW / 2 + gap / 2);
     const ax = cxs[1] + s * (zoneW + gap) - s * 96;
     cross.push(
-      `<path d="M ${n(cxs[1] + s * 48)} ${clientY} C ${n(gx)} ${clientY} ${n(gx)} ${n(clientY + 120)} ` +
-        `${n(gx)} ${n(clientY + 220)} L ${n(gx)} ${n(nodeY - 190)} C ${n(gx)} ${n(nodeY - 60)} ` +
-        `${n((gx + ax) / 2)} ${nodeY} ${n(ax)} ${nodeY}" fill="none" stroke="${C.cyanLt}" stroke-width="2.6" ` +
-        `stroke-dasharray="13 15" opacity="0.35"/>`
+      // Right angles only: out of the zone, straight down the gutter, then in to
+      // the far replica. Curves here read as decoration and cross each other.
+      `<path d="M ${n(cxs[1] + s * 48)} ${clientY} L ${n(gx)} ${clientY} L ${n(gx)} ${nodeY} ` +
+        `L ${n(ax)} ${nodeY}" fill="none" stroke="${C.cyanLt}" stroke-width="2.6" ` +
+        `stroke-linejoin="round" stroke-dasharray="13 15" opacity="0.35"/>`
     );
     const mx = cxs[1] + s * (zoneW / 2);
     cross.push(
@@ -4101,40 +3049,33 @@ function azShortPath(r) {
   const remoteX = 1330;
   const remoteYs = [268, 812];
 
-  const cube = (p, t) => {
-    const u = 1 - t;
-    const b = [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t];
-    return [0, 1].map((k) => p.reduce((s, q, i) => s + b[i] * q[k], 0));
-  };
-
-  // Each long route sweeps well clear of the local replica, so it reads as the
-  // expensive way round rather than as a second short hop.
+  // Each long route is one straight run out to a far zone. Straight lines keep the
+  // three routes from crossing each other and make the length comparison honest.
   const routes = [
-    [[618, cy - 48], [598, 262], [800, 178], [remoteX - 92, remoteYs[0]]],
-    [[618, cy + 48], [598, 818], [800, 902], [remoteX - 92, remoteYs[1]]],
+    [[clientX - 6, cy - 44], [remoteX - 92, remoteYs[0]]],
+    [[clientX - 6, cy + 44], [remoteX - 92, remoteYs[1]]],
   ];
 
   const long = [];
   for (const p of routes) {
-    const d =
-      `M ${n(p[0][0])} ${n(p[0][1])} C ${n(p[1][0])} ${n(p[1][1])} ${n(p[2][0])} ${n(p[2][1])} ` +
-      `${n(p[3][0])} ${n(p[3][1])}`;
+    const [[ax, ay], [bx2, by2]] = p;
+    const lerp = (t) => [ax + (bx2 - ax) * t, ay + (by2 - ay) * t];
     long.push(
-      `<path d="${d}" fill="none" stroke="${C.cyanLt}" stroke-width="2.8" stroke-dasharray="14 16" opacity="0.38"/>`
+      `<line x1="${n(ax)}" y1="${n(ay)}" x2="${n(bx2)}" y2="${n(by2)}" fill="none" stroke="${C.cyanLt}" ` +
+        `stroke-width="2.8" stroke-dasharray="14 16" opacity="0.38"/>`
     );
     // Meter ticks along the route: distance that gets charged for.
+    const len = Math.hypot(bx2 - ax, by2 - ay) || 1;
+    const nx = -(by2 - ay) / len;
+    const ny = (bx2 - ax) / len;
     for (const t of [0.2, 0.34, 0.48, 0.62, 0.76]) {
-      const [x, y] = cube(p, t);
-      const [x2, y2] = cube(p, t + 0.012);
-      const len = Math.hypot(x2 - x, y2 - y) || 1;
-      const nx = -(y2 - y) / len;
-      const ny = (x2 - x) / len;
+      const [x, y] = lerp(t);
       long.push(
         `<line x1="${n(x - nx * 12)}" y1="${n(y - ny * 12)}" x2="${n(x + nx * 12)}" y2="${n(y + ny * 12)}" ` +
           `stroke="${C.coral}" stroke-width="3" stroke-linecap="round" opacity="0.6"/>`
       );
     }
-    const [mx, my] = cube(p, 0.5);
+    const [mx, my] = lerp(0.5);
     long.push(
       `<circle cx="${n(mx)}" cy="${n(my)}" r="32" fill="url(#h-coral)" opacity="0.85"/>`,
       `<path d="M ${n(mx - 13)} ${n(my - 13)} L ${n(mx + 13)} ${n(my + 13)} M ${n(mx + 13)} ${n(my - 13)} ` +
@@ -4194,30 +3135,16 @@ const THEMES = [
   { name: 'data-structures', seed: 8849, focal: [820, 540], zoom: 1.22, center: [960, 540], title: 'Valkey data structures', desc: 'Abstract hash table buckets chaining outward beside a skip list of express lanes, representing Valkey data structures and internals.', art: dataStructures },
   { name: 'how-to', seed: 9953, focal: [1180, 540], zoom: 1.22, center: [960, 540], title: 'Valkey how-to', desc: 'An abstract track of numbered steps with the current step lit, representing a step-by-step guide.', art: howTo },
   { name: 'keyspace-scan', seed: 19087, focal: [960, 540], zoom: 1.26, center: [960, 540], title: 'Valkey keyspace scan', desc: 'A wide field of keys with one bounded window lit in green, the keys behind it dimmed and the keys ahead of it unlit, above a track of uneven cursor steps, representing scanning a keyspace a window at a time instead of reading it all at once.', art: keyspaceScan },
-  { name: 'acl-read-only', seed: 21193, focal: [960, 540], zoom: 1.4, center: [960, 548], title: 'Valkey read-only access', desc: 'A grid of abstract command names with one bounded group lit in green and a single command inside that group struck out in red, representing a read-only access control list grant with one command taken back out.', art: aclReadOnly },
+  { name: 'large-key', seed: 21193, focal: [960, 548], zoom: 1.4, center: [960, 548], title: 'Valkey large key', desc: 'An even field of small identical key tiles with one key of the same shape scaled up until it dwarfs them all, outlined in red, representing a single key far larger than everything else in the keyspace.', art: largeKey },
   { name: 'key-prefix-groups', seed: 23299, focal: [1000, 540], zoom: 1.3, center: [960, 542], title: 'Valkey key prefix groups', desc: 'A scattered cloud of sampled keys on the left funnelling into a short list of prefix rows with count bars on the right, representing a sample of key names grouped into browsable prefixes.', art: keyPrefixGroups },
-  { name: 'large-key-grid', seed: 25309, focal: [960, 550], zoom: 1.4, center: [960, 552], title: 'Valkey large key', desc: 'An even field of small key tiles with one key occupying the space of dozens of them, outlined in red and densely packed with elements, representing a single key far larger than the rest of the keyspace.', art: largeKeyGrid },
-  { name: 'large-key-bars', seed: 27407, focal: [1000, 560], zoom: 1.3, center: [960, 564], title: 'Valkey large key', desc: 'Seven key sizes measured against a common scale, six of them short and one running clean off the frame in red, representing a single key far larger than the rest of the keyspace.', art: largeKeyBars },
-  { name: 'event-calendar-day', seed: 38011, focal: [960, 540], zoom: 1.32, center: [960, 540], title: 'Valkey event', desc: 'A month of day cells with exactly one lit and circled in green, and travel converging on it from off the frame, representing a dated community event.', art: eventCalendarDay },
   { name: 'event-gather-ring', seed: 38029, focal: [960, 540], zoom: 1.3, center: [960, 540], title: 'Valkey event', desc: 'Arrivals closing in from every direction on a lit venue ring centred on the white Valkey hexagon mark, thickest right against it, representing a community gathering.', art: eventGatherRing },
-  { name: 'release-candidate-hold', seed: 38047, focal: [1140, 540], zoom: 1.4, center: [900, 540], title: 'Valkey release candidate', desc: 'A stream of chevrons stopped at a lit checkpoint that has not opened, with a dim golden burst waiting on the far side, representing a release candidate held for testing before general availability.', art: releaseCandidateHold },
-  { name: 'release-candidate-soak', seed: 38063, focal: [960, 540], zoom: 1.45, center: [900, 540], title: 'Valkey release candidate', desc: 'A soak bar part filled in green with test results accumulating above and below it and a dim golden burst at the unreached end, representing time deliberately spent under test before a release ships.', art: releaseCandidateSoak },
-  { name: 'large-key-mass', seed: 29501, focal: [960, 540], zoom: 1.3, center: [960, 540], title: 'Valkey large key', desc: 'One key drawn as a large circle packed with hundreds of elements, surrounded by a sparse scattering of ordinary single keys, representing a single key holding more than the rest of the keyspace around it.', art: largeKeyMass },
   { name: 'bloom-bit-array', seed: 31013, focal: [960, 400], zoom: 1.4, center: [960, 475], title: 'Valkey Bloom filters', desc: 'The white Valkey hexagon mark above a long row of bit cells, with five hash nodes fanning out of it and the five cells they land on lit in green, representing one item hashed to a handful of positions in a Bloom filter.', art: bloomBitArray },
-  { name: 'bloom-verdict', seed: 31029, focal: [960, 540], zoom: 1.36, center: [960, 540], title: 'Valkey Bloom filter lookups', desc: 'A grid of bit cells crossed by two lookups: an upper one in green that finds every position set and ends in a soft dashed tick, and a lower one in red that finds one clear cell and ends in a solid cross, representing a probable yes and a definite no.', art: bloomVerdict },
   { name: 'search-vector-nearest', seed: 32011, focal: [960, 540], zoom: 1.2, center: [960, 540], title: 'Valkey vector search', desc: 'A dark field of indexed vectors with the white Valkey hexagon mark at the centre as the query, spokes reaching out to six bright green nearest matches inside a dashed search radius, representing vector similarity search.', art: searchNearest },
-  { name: 'search-narrowing', seed: 32029, focal: [1200, 540], zoom: 1.12, center: [940, 540], title: 'Valkey search index', desc: 'A wedge narrowing from left to right, where a wide field of dim indexed points thins into a few bright green candidates converging on the white Valkey hexagon mark, representing an index reducing a large space to a small candidate set.', art: searchNarrowing },
   { name: 'search-field-index', seed: 32047, focal: [960, 600], zoom: 1.1, center: [960, 540], title: 'Valkey secondary indexing', desc: 'Four record cards each contributing one highlighted green field to a sorted index lane below, with a query caliper bracketing three matched entries above the white Valkey hexagon mark, representing secondary indexing on hashes and JSON.', art: searchFieldIndex },
-  { name: 'client-confluence', seed: 34011, focal: [1400, 520], zoom: 1.22, center: [1060, 540], title: 'Valkey client libraries', desc: 'Five inbound channels, each drawn in a different visual language, bending through one bright aperture and continuing as a single stream of identical packets into the white Valkey hexagon mark, representing many client libraries speaking one protocol to one server.', art: clientConfluence },
-  { name: 'client-round-trip', seed: 34023, focal: [1250, 430], zoom: 1.2, center: [860, 557], title: 'Valkey client round trip', desc: 'Three unlike client shapes on their own lifelines exchanging dashed handshakes and then coloured request and pale response arrows with a single bright server lifeline headed by the white Valkey hexagon mark, representing the request and response round trip a client library performs.', art: clientRoundTrip },
   { name: 'client-ports', seed: 34037, focal: [960, 540], zoom: 1, center: [960, 540], title: 'Valkey client protocol', desc: 'Six differently drawn channels reaching in from distinct outer shapes, each meeting an identical port at the same radius, beyond which every spoke becomes the same run of pale segments arriving at the white Valkey hexagon mark, representing different client libraries meeting one protocol at one server.', art: clientPorts },
   { name: 'ai-agent-memory', seed: 35011, focal: [1120, 380], zoom: 1.29, center: [960, 540], title: 'Valkey AI agent memory', desc: 'A row of conversation turns with the most recent ones lit inside a bright window, older turns dimmed and parked in an archive below the white Valkey hexagon mark, and two of them arcing back up into the window, representing agent memory with hot recent context and older context recalled on demand.', art: aiAgentMemory },
-  { name: 'ai-workload-fanout', seed: 35023, focal: [700, 520], zoom: 1.18, center: [960, 540], title: 'Valkey AI workload primitives', desc: 'A single bundled stream of requests arriving at the white Valkey hexagon mark and fanning out into five lanes, each ending in a differently shaped structure: a ring of slots, a chain of entries, a ranked stack, a grid of bits and a row of embedding magnitudes, representing an AI workload decomposing into the primitives Valkey already has.', art: aiWorkloadFanout },
-  { name: 'ai-vector-recall', seed: 35037, focal: [960, 540], zoom: 1.19, center: [960, 540], title: 'Valkey vector recall', desc: 'A cloud of stored points around the white Valkey hexagon mark, with a bright dashed radius enclosing the nearest handful, each tethered to the centre while everything farther out stays dim, representing an embedding recalled by similarity rather than by key.', art: aiVectorRecall },
+  { name: 'workload-fanout', seed: 35023, focal: [700, 520], zoom: 1.18, center: [960, 540], title: 'Valkey AI workload primitives', desc: 'A single bundled stream of requests arriving at the white Valkey hexagon mark and fanning out into five lanes, each ending in a differently shaped structure: a ring of slots, a chain of entries, a ranked stack, a grid of bits and a row of embedding magnitudes, representing an AI workload decomposing into the primitives Valkey already has.', art: workloadFanout },
   { name: 'conn-storm-spike', seed: 36011, focal: [960, 620], zoom: 1.34, center: [960, 547], title: 'Valkey connection storms', desc: 'A timeline of connection attempts that is quiet, then spikes into a wall of simultaneous reconnects whose top rises in red above a dashed accept-capacity line, then falls quiet again, representing a connection storm.', art: connStormSpike },
-  { name: 'conn-storm-jitter', seed: 36029, focal: [640, 540], zoom: 1.25, center: [880, 540], title: 'Valkey connection backoff jitter', desc: 'A tight vertical wall of simultaneous reconnect attempts in red on the left, fanning out to the right into a wide staggered spread of retries ending in green, representing backoff jitter spreading a connection storm out over time.', art: connStormJitter },
-  { name: 'ops-fleet-triage', seed: 41011, focal: [960, 540], zoom: 1.15, center: [960, 540], title: 'Valkey operations at fleet scale', desc: 'A wide field of identical small Valkey hexagon marks representing many deployments, with three of them lit and framed by red corner brackets, representing picking out the few deployments that need attention.', art: opsFleetTriage },
-  { name: 'ops-rolling-wave', seed: 41303, focal: [780, 540], zoom: 1.15, center: [900, 540], title: 'Valkey rolling fleet operation', desc: 'Columns of nodes across a fleet, the left ones green and finished, the right ones dim and waiting, and one column lit inside a bright capsule around the white Valkey hexagon mark, representing an operation rolling across a fleet one group at a time.', art: opsRollingWave },
   { name: 'bundle-crate', seed: 33101, focal: [960, 500], zoom: 1.2, center: [960, 540], title: 'Valkey bundle', desc: 'One bracketed package outline sealed with the white Valkey hexagon mark, holding six differently shaped module diagrams inside it, representing several separate modules shipped as a single bundle.', art: bundleCrate },
   { name: 'bundle-one-install', seed: 33207, focal: [760, 540], zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A single tapering conduit arriving at a port marked with the white Valkey hexagon, fanning out into five differently shaped modules, representing one install that delivers several distinct capabilities.', art: bundleOneInstall },
   { name: 'tooling-stack', seed: 33311, focal: [960, 620], zoom: 1.25, center: [960, 540], title: 'Valkey primitives and tools', desc: 'A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives.', art: toolingStack },

@@ -26,30 +26,16 @@ can't drift, and regenerating is a no-op diff.
 | `data-structures` | Hash buckets chaining out beside a skip list | Internals: hash tables, skip lists, new types, modules |
 | `how-to` | Step track with the current step lit | Tutorials, guides, getting started |
 | `keyspace-scan` | Cursor holding one lit window of a key field, uneven hop track below | `SCAN`, cursors, iterating a keyspace without blocking |
-| `acl-read-only` | Command grid with a bounded lit grant, one command struck out | Read-only ACL users, narrowing a grant |
+| `large-key` | A field of identical key tiles with one scaled up until it dwarfs them | Large keys, hot keys, uneven key sizes |
 | `key-prefix-groups` | Sampled keys funnelling into prefix rows with count bars | Key naming, prefixes, keyspace browsing and clients |
-| `large-key-grid` | One key occupying the space of dozens, packed with elements | Large keys, hot keys, uneven key sizes |
-| `large-key-bars` | Key sizes on a common scale, one running off the frame | Large keys, when the point is the size gap |
-| `large-key-mass` | A key packed with elements among sparse ordinary keys | Large keys, collection cardinality |
-| `event-calendar-day` | A month of days, one circled, travel converging on it | Meetups, conferences, save-the-dates |
 | `event-gather-ring` | Arrivals thickening against a lit venue ring | Events where the gathering is the point |
-| `release-candidate-hold` | Chevrons stopped at a closed checkpoint, the release dim beyond | Release candidates, betas, code freeze |
-| `release-candidate-soak` | A part-filled soak bar with test results accumulating | Soak testing, time-boxed pre-release validation |
 | `bloom-bit-array` | Hash nodes fanning out of the mark, lighting a handful of cells in a bit array | Bloom filters, valkey-bloom, probabilistic data structures |
-| `bloom-verdict` | Two lookups over one bit field: a soft dashed yes, a hard cross on a clear bit | Bloom filter lookups, false positives, approximate membership |
 | `search-vector-nearest` | Query at the centre of an indexed field, its nearest matches lit inside a search radius | Vector similarity search, KNN queries, embeddings |
-| `search-narrowing` | Wedge of indexed points thinning pass by pass into a few results | Query planning, index selection, "why not a full scan" |
 | `search-field-index` | Records giving up one field each to a sorted index, a query bracketing the matched run | Secondary indexing on hashes and JSON, FT.CREATE, filters |
-| `client-confluence` | Five unlike callers bending through one aperture into a single stream of identical packets | Client libraries and SDKs, protocol compatibility |
-| `client-round-trip` | Sequence ladder: three unlike callers, handshakes, then requests and responses on one server lifeline | Connection handshakes, request/response, RESP, pipelining |
 | `client-ports` | Six unlike callers docking into identical ports around the mark, uniform inside the port circle | A specific client release, client API design |
 | `ai-agent-memory` | Conversation turns on a tape, recent ones lit in a window, older ones archived below and arcing back | Agent memory, chat history, context windows, mem0 |
-| `ai-workload-fanout` | One inbound stream splitting at the mark into five differently shaped structures | AI workloads mapped onto Valkey primitives |
-| `ai-vector-recall` | A cloud of points with the nearest few inside a lit radius, tethered to the query | Vector search, embeddings, similarity recall, RAG |
+| `workload-fanout` | One inbound stream splitting at the mark into five differently shaped structures | AI workloads mapped onto Valkey primitives |
 | `conn-storm-spike` | Flat run of connection attempts spiking into a wall that overshoots the accept ceiling | Connection storms, accept backlog, reconnect surges |
-| `conn-storm-jitter` | A wall of simultaneous reconnects fanning out into staggered retries | Backoff and jitter, client retry policy, absorbing a storm |
-| `ops-fleet-triage` | A field of identical deployments, three flagged and bracketed | Operating at scale, fleet health, triage, on-call |
-| `ops-rolling-wave` | Fleet groups with one lit and in flight, the rest done or waiting | Rolling restarts and upgrades, phased fleet-wide change |
 | `bundle-crate` | One bracketed package sealed with the mark, six different module diagrams inside | valkey-bundle, module distributions, batteries-included packaging |
 | `bundle-one-install` | A single strap arriving at the mark and branching into five distinct modules | valkey-bundle, one install that delivers several capabilities |
 | `tooling-stack` | Identical primitives at the base, differently detailed tools resting on them, the mark on top | Server primitives, what gets built on them, extensibility |
@@ -85,7 +71,7 @@ produces byte-identical files. A rebuild should show no diff unless you changed 
 Two themes carry live text (`benchmarks` labels its series, `release-version` has a
 caption). Those depend on a font resolving at render time, so they reproduce identically on
 a given machine but can shift a pixel across machines with different font stacks. The other
-45 are geometry only and reproduce anywhere.
+31 are geometry only and reproduce anywhere.
 
 ## Captions
 

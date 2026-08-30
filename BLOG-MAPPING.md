@@ -21,7 +21,7 @@ To use one: copy `images/<theme>.webp` into the site's `static/assets/media/feat
 | `2024-04-26-modules-101` | `how-to` |
 | `2024-05-24-may-roundup` | `community` |
 | `2024-07-07-unlock-one-million-rps` | `performance` |
-| `2024-07-31-valkey-8-0-0-rc1` | `release-candidate-*` (new, see below) |
+| `2024-07-31-valkey-8-0-0-rc1` | `release-version` (caption `8.0 RC1`) |
 | `2024-08-29-valkey-memory-efficiency-8-0` | `memory-efficiency` |
 | `2024-09-13-unlock-one-million-rps-part2` | `performance` |
 | `2024-09-16-valkey-8-ga` | `release-version` (caption `8.0`) |
@@ -44,25 +44,25 @@ To use one: copy `images/<theme>.webp` into the site's `static/assets/media/feat
 
 ## Needed a new theme
 
-Each of these subjects has 2-3 candidate themes to choose between; the losing candidates are
-meant to be deleted once one is picked.
+One theme per subject, narrowed from 2-3 candidates in maintainer review. Two subjects still
+have no theme: every candidate for fleet operations and for release candidates was rejected.
 
-| Post | Subject | Candidates |
+| Post | Subject | Theme |
 | --- | --- | --- |
 | `2024-06-27-using-bitnami-valkey-chart` | Deploying by chart into Kubernetes | `k8s-*` |
 | `2024-11-21-testing-the-limits` | Valkey inside a very small resource envelope | `limits-*` |
 | `2024-12-22-az-affinity-strategy` | Reading from the replica in your own availability zone | `az-*` |
-| `2025-03-4-go-client-in-public-preview` | Client libraries: many languages, one protocol | `client-*` |
-| `2025-04-09-introducing-bloom-filters` | Probabilistic membership: a definite no, a probable yes | `bloom-*` |
-| `2025-06-13-introducing-valkey-search` | Nearest matches from an index, not a full scan | `search-*` |
+| `2025-03-4-go-client-in-public-preview` | Client libraries: many languages, one protocol | `client-ports` |
+| `2025-04-09-introducing-bloom-filters` | Hashing sets a handful of bits in a shared array | `bloom-bit-array` |
+| `2025-06-13-introducing-valkey-search` | Nearest matches from an index, not a full scan | `search-vector-nearest` |
 | `2025-06-23-valkey-bundle-one-stop-shop-for-low-latency-modern-applications` | One package carrying several modules | `bundle-*` |
-| `2025-07-10-keyspace-save-the-date` | A dated event | `event-*` |
-| `2025-08-04-valkey-swift` | Client libraries | `client-*` |
-| `2026-02-19-operational-lessons` | A fleet, not a server | `ops-*` |
-| `2026-03-10-valkey-search-1_2` | Search | `search-*` |
-| `2026-03-27-valkey-tooling-primitives` | Primitives composing into tools | `tooling-*` |
-| `2026-04-22-valkey-swift-1.0` | Client libraries | `client-*` |
-| `2026-04-28-on-release-candidates` | The checkpoint held open before GA | `release-candidate-*` |
-| `2026-05-05-ai-agent-memory-with-valkey-and-mem0` | Agent memory, hot turns and recalled ones | `ai-*` |
-| `2026-06-10-managing-connection-storms-in-valkey-at-scale` | A surge of simultaneous reconnects | `conn-*` |
-| `2026-08-05-modern-ai-workloads-mapping-to-valkey` | One workload fanning out into several primitives | `ai-*` |
+| `2025-07-10-keyspace-save-the-date` | A dated event | `event-gather-ring` |
+| `2025-08-04-valkey-swift` | Client libraries | `client-ports` |
+| `2026-02-19-operational-lessons` | A fleet, not a server | none yet, both candidates rejected |
+| `2026-03-10-valkey-search-1_2` | Search, secondary indexing | `search-field-index` |
+| `2026-03-27-valkey-tooling-primitives` | Primitives composing into tools | `tooling-stack` |
+| `2026-04-22-valkey-swift-1.0` | Client libraries | `client-ports` |
+| `2026-04-28-on-release-candidates` | The checkpoint held open before GA | none yet, both candidates rejected |
+| `2026-05-05-ai-agent-memory-with-valkey-and-mem0` | Agent memory, hot turns and recalled ones | `ai-agent-memory` |
+| `2026-06-10-managing-connection-storms-in-valkey-at-scale` | A surge of simultaneous reconnects | `conn-storm-spike` |
+| `2026-08-05-modern-ai-workloads-mapping-to-valkey` | One workload fanning out into several primitives | `workload-fanout` |
