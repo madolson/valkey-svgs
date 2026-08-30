@@ -36,10 +36,10 @@ can't drift, and regenerating is a no-op diff.
 | `ai-agent-memory` | Conversation turns on a tape, recent ones lit in a window, older ones archived below and arcing back | Agent memory, chat history, context windows, mem0 |
 | `workload-fanout` | One inbound stream splitting at the mark into five differently shaped structures | AI workloads mapped onto Valkey primitives |
 | `conn-storm-spike` | Flat run of connection attempts spiking into a wall that overshoots the accept ceiling | Connection storms, accept backlog, reconnect surges |
-| `bundle-crate` | One bracketed package sealed with the mark, six different module diagrams inside | valkey-bundle, module distributions, batteries-included packaging |
-| `bundle-one-install` | A single strap arriving at the mark and branching into five distinct modules | valkey-bundle, one install that delivers several capabilities |
+| `bundle-crate` | One bracketed package sealed with the mark, holding the bundle's four modules: bit array, nested document, magnifier, directory tree | valkey-bundle, module distributions, batteries-included packaging |
+| `bundle-one-install` | A single strap arriving at the mark and branching into the same four modules | valkey-bundle, one install that delivers several capabilities |
 | `tooling-stack` | Identical primitives at the base, differently detailed tools resting on them, the mark on top | Server primitives, what gets built on them, extensibility |
-| `tooling-recombine` | One primitive called out, wired to a chain, a cycle and a tree built from copies of it | The same primitive reused across different tools |
+| `data-structures-grid` | Six value types, one per cell on an even 3x2 grid: byte run, list, set, hash, sorted set, bitmap | Type overviews, command surveys, what Valkey stores |
 | `k8s-spec-fanout` | A declared spec panel fanning out along rails into a grid of identical instances | Helm charts, operators, declarative deployment |
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |

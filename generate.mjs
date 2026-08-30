@@ -2122,285 +2122,6 @@ function connStormSpike(r) {
 // repeated identical blocks say "many of the same" instead of "several
 // different capabilities in one package".
 
-// Containment: a single package boundary with six differently shaped modules
-// packed inside it, the mark sealing the lid.
-function bundleCrate(r) {
-  const x0 = 462;
-  const x1 = 1458;
-  const y0 = 212;
-  const y1 = 868;
-  const lid = y0 + 76;
-  const cx = (x0 + x1) / 2;
-
-  // A cell grid: on/off slots.
-  const cells = (mx, my, color) => {
-    const s = 28;
-    const gap = 9;
-    const cols = 5;
-    const rows = 4;
-    const w = cols * s + (cols - 1) * gap;
-    const h = rows * s + (rows - 1) * gap;
-    const out = [];
-    for (let i = 0; i < cols; i++) {
-      for (let j = 0; j < rows; j++) {
-        const on = r() < 0.5;
-        out.push(
-          `<rect x="${n(mx - w / 2 + i * (s + gap))}" y="${n(my - h / 2 + j * (s + gap))}" width="${s}" height="${s}" rx="5" ` +
-            `fill="${color}" fill-opacity="${on ? n(0.5 + r() * 0.4) : 0}" stroke="${color}" stroke-width="1.7" ` +
-            `opacity="${on ? 0.95 : 0.38}"/>`
-        );
-      }
-    }
-    return out.join('');
-  };
-
-  // A branching document tree.
-  const tree = (mx, my, color, key) => {
-    const root = [mx - 104, my];
-    const mid = [[mx - 4, my - 62], [mx - 4, my + 62]];
-    const leaf = [[mx + 96, my - 94], [mx + 96, my - 34], [mx + 96, my + 34], [mx + 96, my + 94]];
-    const lines = [...mid.map((m) => [root, m]), ...leaf.map((l, i) => [mid[i < 2 ? 0 : 1], l])]
-      .map(
-        ([a, b]) =>
-          `<line x1="${n(a[0])}" y1="${n(a[1])}" x2="${n(b[0])}" y2="${n(b[1])}" stroke="${color}" stroke-width="2" opacity="0.5"/>`
-      )
-      .join('');
-    return (
-      lines +
-      dot(root[0], root[1], 9, color, key, 0.95, 3.4) +
-      mid.map((m) => dot(m[0], m[1], 6.5, color, key, 0.85, 3.2)).join('') +
-      leaf.map((l) => dot(l[0], l[1], 5, color, key, 0.7, 3)).join('')
-    );
-  };
-
-  // A jagged series.
-  const spark = (mx, my, color, key) => {
-    const pts = [];
-    for (let i = 0; i <= 8; i++) pts.push([mx - 110 + i * 27.5, my + (r() - 0.5) * 112]);
-    const d = pts.map((p, i) => `${i ? 'L' : 'M'} ${n(p[0])} ${n(p[1])}`).join(' ');
-    return (
-      `<path d="${d}" fill="none" stroke="${color}" stroke-width="3.4" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>` +
-      pts.filter((_, i) => i % 2 === 0).map((p) => dot(p[0], p[1], 4, color, key, 0.85, 3)).join('')
-    );
-  };
-
-  // Ragged index rows, each anchored on a term.
-  const postings = (mx, my, color, key) => {
-    const out = [];
-    for (let i = 0; i < 5; i++) {
-      const y = my - 68 + i * 34;
-      const len = 66 + r() * 126;
-      out.push(
-        `<line x1="${n(mx - 100)}" y1="${n(y)}" x2="${n(mx - 100 + len)}" y2="${n(y)}" stroke="${color}" ` +
-          `stroke-width="3" stroke-linecap="round" opacity="${n(0.42 + r() * 0.42)}"/>`,
-        dot(mx - 100, y, 4.5, color, key, 0.9, 3)
-      );
-    }
-    return out.join('');
-  };
-
-  // A point cloud with a neighbourhood drawn round its middle.
-  const cloud = (mx, my, color, key) => {
-    const out = [
-      `<circle cx="${n(mx)}" cy="${n(my)}" r="56" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="6 9" opacity="0.6"/>`,
-    ];
-    for (let i = 0; i < 17; i++) {
-      const a = r() * Math.PI * 2;
-      const d = Math.pow(r(), 0.55) * 94;
-      out.push(dot(mx + Math.cos(a) * d, my + Math.sin(a) * d, 3.6, color, key, n(0.45 + r() * 0.5), 3));
-    }
-    return out.join('');
-  };
-
-  // A counter sketch.
-  const bars = (mx, my, color) => {
-    const out = [];
-    for (let i = 0; i < 6; i++) {
-      const h = 32 + r() * 108;
-      out.push(
-        `<rect x="${n(mx - 96 + i * 34)}" y="${n(my + 70 - h)}" width="22" height="${n(h)}" rx="4" fill="${color}" opacity="${n(0.38 + r() * 0.47)}"/>`
-      );
-    }
-    return out.join('');
-  };
-
-  // Scaled about the crate's middle so the six modules pack the box instead of
-  // leaving a dead band across the centre.
-  const modules =
-    `<g transform="translate(960 570) scale(1.13) translate(-960 -570)">` +
-    [
-      cells(668, 428, C.cyanLt),
-      tree(966, 424, C.mint, 'mint'),
-      spark(1268, 442, C.coral, 'coral'),
-      postings(664, 712, C.ice, 'ice'),
-      cloud(966, 716, C.violet, 'violet'),
-      bars(1266, 714, C.gold),
-    ].join('') +
-    `</g>`;
-
-  // Corner brackets, so the outline reads as a crate rather than a panel.
-  const arm = 96;
-  const brackets = [
-    [x0, y0, 1, 1],
-    [x1, y0, -1, 1],
-    [x0, y1, 1, -1],
-    [x1, y1, -1, -1],
-  ]
-    .map(
-      ([bx, by, sx, sy]) =>
-        `<path d="M ${n(bx + sx * arm)} ${n(by)} L ${n(bx + sx * 22)} ${n(by)} ` +
-        `A 22 22 0 0 ${sx * sy > 0 ? 0 : 1} ${n(bx)} ${n(by + sy * 22)} L ${n(bx)} ${n(by + sy * arm)}" ` +
-        `fill="none" stroke="${C.ice}" stroke-width="9" stroke-linecap="round" opacity="0.9"/>`
-    )
-    .join('');
-
-  return [
-    starfield(r, 55),
-    // Ambient glow behind the contents, never over them.
-    `  <ellipse cx="${cx}" cy="540" rx="520" ry="360" fill="url(#h-cyan)" opacity="0.22"/>`,
-    `  <rect x="${x0}" y="${y0}" width="${n(x1 - x0)}" height="${n(y1 - y0)}" rx="26" fill="${C.ink}" fill-opacity="0.3"/>`,
-    `  <g>${modules}</g>`,
-    `  <rect x="${x0}" y="${y0}" width="${n(x1 - x0)}" height="${n(y1 - y0)}" rx="26" fill="none" stroke="${C.ice}" stroke-width="14" opacity="0.28" filter="url(#blur8)"/>`,
-    `  <rect x="${x0}" y="${y0}" width="${n(x1 - x0)}" height="${n(y1 - y0)}" rx="26" fill="none" stroke="${C.ice}" stroke-width="3.6" opacity="0.85"/>`,
-    `  <line x1="${x0}" y1="${lid}" x2="${x1}" y2="${lid}" stroke="${C.ice}" stroke-width="2" stroke-dasharray="14 12" opacity="0.4"/>`,
-    `  <g>${brackets}</g>`,
-    // The seal: one mark on one lid.
-    `  <circle cx="${cx}" cy="${y0}" r="118" fill="url(#h-ice)" opacity="0.55"/>`,
-    `  <circle cx="${cx}" cy="${y0}" r="82" fill="url(#scrim)"/>`,
-    `  <g filter="url(#blur8)" opacity="0.5">${mark(cx, y0, 112)}</g>`,
-    `  <g>${mark(cx, y0, 112)}</g>`,
-  ].join('\n');
-}
-
-// Delivery: one conduit arrives, and five distinct modules come out of it. The
-// single strap on the left is what you install; the fan on the right is what
-// you get.
-function bundleOneInstall(r) {
-  const px = 700;
-  const cy = 540;
-
-  const shape = (kind, mx, my, color, key) => {
-    if (kind === 'ring') {
-      const out = [`<circle cx="${n(mx)}" cy="${n(my)}" r="50" fill="none" stroke="${color}" stroke-width="3.4" opacity="0.8"/>`];
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
-        out.push(dot(mx + Math.cos(a) * 50, my + Math.sin(a) * 50, 7, color, key, 0.9, 3.2));
-      }
-      return out.join('');
-    }
-    if (kind === 'lattice') {
-      const out = [];
-      const pts = [];
-      for (let i = -1; i <= 1; i++) {
-        for (let j = -1; j <= 1; j++) pts.push([mx + i * 46, my + j * 46]);
-      }
-      for (const [ax, ay] of pts) {
-        for (const [bx, by] of pts) {
-          if (bx > ax && Math.abs(bx - ax) === 46 && Math.abs(by - ay) === 46) {
-            out.push(`<line x1="${n(ax)}" y1="${n(ay)}" x2="${n(bx)}" y2="${n(by)}" stroke="${color}" stroke-width="2" opacity="0.45"/>`);
-          }
-        }
-      }
-      out.push(...pts.map(([ax, ay]) => dot(ax, ay, 5.5, color, key, 0.8, 3)));
-      return out.join('');
-    }
-    if (kind === 'stack') {
-      return [110, 88, 66, 44]
-        .map(
-          (w, i) =>
-            `<rect x="${n(mx - w / 2)}" y="${n(my - 54 + i * 30)}" width="${n(w)}" height="20" rx="10" fill="${color}" opacity="${n(0.9 - i * 0.16)}"/>`
-        )
-        .join('');
-    }
-    if (kind === 'triangle') {
-      const v = [[mx, my - 56], [mx + 56, my + 40], [mx - 56, my + 40]];
-      return (
-        `<path d="M ${n(v[0][0])} ${n(v[0][1])} L ${n(v[1][0])} ${n(v[1][1])} L ${n(v[2][0])} ${n(v[2][1])} Z" ` +
-        `fill="${color}" fill-opacity="0.16" stroke="${color}" stroke-width="3.4" stroke-linejoin="round" opacity="0.85"/>` +
-        v.map((p) => dot(p[0], p[1], 6, color, key, 0.9, 3)).join('')
-      );
-    }
-    // chevrons
-    return [0, 1, 2]
-      .map(
-        (i) =>
-          `<path d="M ${n(mx - 46 + i * 34)} ${n(my - 52)} L ${n(mx - 4 + i * 34)} ${n(my)} L ${n(mx - 46 + i * 34)} ${n(my + 52)}" ` +
-          `fill="none" stroke="${color}" stroke-width="9" stroke-linejoin="miter" opacity="${n(0.4 + i * 0.28)}"/>`
-      )
-      .join('');
-  };
-
-  const mods = [
-    { kind: 'ring', x: 1318, y: 248, color: C.cyanLt, key: 'cyan' },
-    { kind: 'lattice', x: 1340, y: 394, color: C.mint, key: 'mint' },
-    { kind: 'stack', x: 1354, y: 540, color: C.ice, key: 'ice' },
-    { kind: 'triangle', x: 1340, y: 686, color: C.gold, key: 'gold' },
-    { kind: 'chevrons', x: 1318, y: 832, color: C.coral, key: 'coral' },
-  ];
-
-  // The single strap: one bound thing, tapering into the port.
-  const strapD = `M 120 ${cy - 100} L ${px} ${cy - 64} L ${px} ${cy + 64} L 120 ${cy + 100} Z`;
-  const halfAt = (x) => 100 - ((x - 120) / (px - 120)) * 36;
-
-  const flow = [];
-  for (let i = 0; i < 34; i++) {
-    const t = r();
-    const x = 130 + t * (px - 250);
-    const y = cy + (r() * 2 - 1) * (halfAt(x) - 8);
-    const len = 60 + r() * 190;
-    flow.push(
-      `<line x1="${n(x)}" y1="${n(y)}" x2="${n(Math.min(px - 20, x + len))}" y2="${n(y)}" ` +
-        `stroke="${weighted(r, [[C.cyanLt, 6], [C.ice, 3], [C.mint, 1]])}" stroke-width="${n(1.6 + r() * 3)}" ` +
-        `stroke-linecap="round" opacity="${n(0.18 + r() * 0.4)}"/>`
-    );
-  }
-
-  // Binding straps, so the arriving thing reads as one parcel rather than a beam.
-  const bindings = [300, 452, 596]
-    .map(
-      (x) =>
-        `<line x1="${n(x)}" y1="${n(cy - halfAt(x))}" x2="${n(x)}" y2="${n(cy + halfAt(x))}" ` +
-        `stroke="${C.ice}" stroke-width="11" stroke-linecap="round" opacity="0.3"/>`
-    )
-    .join('');
-
-  // One strap in, five branches out.
-  const sx = 812;
-  const harness = mods
-    .map((m) => {
-      const ex = m.x - 78;
-      const d = `M ${sx} ${cy} C ${n(sx + 130)} ${cy} ${n(ex - 160)} ${n(m.y)} ${n(ex)} ${n(m.y)}`;
-      return (
-        `<path d="${d}" fill="none" stroke="${m.color}" stroke-width="14" opacity="0.22" filter="url(#blur8)"/>` +
-        `<path d="${d}" fill="none" stroke="${m.color}" stroke-width="3.4" opacity="0.75"/>` +
-        dot(ex, m.y, 5, m.color, m.key, 0.85, 3)
-      );
-    })
-    .join('');
-
-  return [
-    starfield(r, 55),
-    `  <clipPath id="strap"><path d="${strapD}"/></clipPath>`,
-    // Ambient glow behind everything that follows.
-    `  <circle cx="${px}" cy="${cy}" r="330" fill="url(#h-cyan)" opacity="0.18"/>`,
-    ...mods.map((m) => `  <circle cx="${n(m.x)}" cy="${n(m.y)}" r="122" fill="url(#h-${m.key})" opacity="0.24"/>`),
-    `  <path d="${strapD}" fill="${C.cyan}" fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="10" opacity="0.3" filter="url(#blur8)"/>`,
-    `  <g clip-path="url(#strap)">${flow.join('')}${bindings}</g>`,
-    `  <path d="${strapD}" fill="none" stroke="${C.ice}" stroke-width="3.8" opacity="0.9"/>`,
-    `  <g>${harness}</g>`,
-    `  <circle cx="${px}" cy="${cy}" r="150" fill="url(#scrim)"/>`,
-    `  <g filter="url(#blur18)" opacity="0.5">${mark(px, cy, 208)}</g>`,
-    `  <g>${mark(px, cy, 208)}</g>`,
-    `  <g>${mods.map((m) => shape(m.kind, m.x, m.y, m.color, m.key)).join('')}</g>`,
-  ].join('\n');
-}
-
-// ------------------------------------------------- primitives becoming tools
-//
-// Small server-side building blocks assembling into something larger than any
-// of them alone. Here the repetition is the point: the base units are meant to
-// be identical, and it is the things built on top of them that differ.
-
 // A base course of identical primitives, with progressively fewer and larger
 // composites resting on them, ending in one thing.
 function toolingStack(r) {
@@ -2520,84 +2241,6 @@ function toolingStack(r) {
     `  <circle cx="960" cy="${markY}" r="112" fill="url(#scrim)"/>`,
     `  <g filter="url(#blur18)" opacity="0.5">${mark(960, markY, 152)}</g>`,
     `  <g>${mark(960, markY, 152)}</g>`,
-  ].join('\n');
-}
-
-// The same primitive, recombined: one unit on the left, and three different
-// tools on the right that are all made of copies of it.
-function toolingRecombine(r) {
-  const ax = 600;
-  const ay = 540;
-
-  const chip = (x, y, s, color, key, op = 1) =>
-    `<rect x="${n(x - s / 2)}" y="${n(y - (s * 0.7) / 2)}" width="${n(s)}" height="${n(s * 0.7)}" rx="${n(s * 0.2)}" ` +
-    `fill="${color}" fill-opacity="${n(op * 0.22)}" stroke="${color}" stroke-width="${n(s * 0.045 + 1.2)}" opacity="${n(op)}"/>` +
-    dot(x, y, n(s * 0.075), color, key, n(op * 0.9), 3);
-
-  // Fat soft link under a crisp one: it binds each assembly into a single
-  // silhouette without drawing a box round it.
-  const link = (a, b, color) =>
-    `<line x1="${n(a[0])}" y1="${n(a[1])}" x2="${n(b[0])}" y2="${n(b[1])}" stroke="${color}" stroke-width="16" opacity="0.16" filter="url(#blur8)"/>` +
-    `<line x1="${n(a[0])}" y1="${n(a[1])}" x2="${n(b[0])}" y2="${n(b[1])}" stroke="${color}" stroke-width="3.4" opacity="0.7"/>`;
-
-  // Assembly 1: a chain.
-  const chain = [];
-  const chainPts = [0, 1, 2, 3, 4].map((i) => [1090 + (i - 2) * 94, 262]);
-  for (let i = 1; i < chainPts.length; i++) chain.push(link(chainPts[i - 1], chainPts[i], C.mint));
-  chain.push(...chainPts.map((p) => chip(p[0], p[1], 60, C.mint, 'mint', 0.95)));
-
-  // Assembly 2: a cycle.
-  const ring = [];
-  const ringPts = Array.from({ length: 6 }, (_, i) => {
-    const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
-    return [1090 + Math.cos(a) * 118, 545 + Math.sin(a) * 118];
-  });
-  for (let i = 0; i < ringPts.length; i++) ring.push(link(ringPts[i], ringPts[(i + 1) % ringPts.length], C.gold));
-  ring.push(...ringPts.map((p) => chip(p[0], p[1], 60, C.gold, 'gold', 0.95)));
-
-  // Assembly 3: a fan-out tree.
-  const treeRoot = [950, 805];
-  const treeMid = [[1072, 754], [1072, 856]];
-  const treeLeaf = [[1212, 726], [1212, 782], [1212, 828], [1212, 884]];
-  const tre = [
-    ...treeMid.map((m) => link(treeRoot, m, C.coral)),
-    ...treeLeaf.map((l, i) => link(treeMid[i < 2 ? 0 : 1], l, C.coral)),
-    chip(treeRoot[0], treeRoot[1], 60, C.coral, 'coral', 0.95),
-    ...treeMid.map((m) => chip(m[0], m[1], 54, C.coral, 'coral', 0.9)),
-    ...treeLeaf.map((l) => chip(l[0], l[1], 46, C.coral, 'coral', 0.8)),
-  ];
-
-  // The primitive itself, called out once and wired to every assembly built out
-  // of copies of it.
-  const feeds = [
-    [chainPts[0], C.mint, -34],
-    [ringPts[4], C.gold, 0],
-    [treeRoot, C.coral, 34],
-  ]
-    .map(
-      ([p, color, off]) =>
-        `<line x1="${n(ax + 96)}" y1="${n(ay + off)}" x2="${n(p[0] - 38)}" y2="${n(p[1])}" stroke="${color}" ` +
-        `stroke-width="2.4" stroke-dasharray="10 13" opacity="0.5"/>`
-    )
-    .join('');
-
-  const halos = [
-    `<ellipse cx="1090" cy="262" rx="300" ry="120" fill="url(#h-mint)" opacity="0.2"/>`,
-    `<circle cx="1090" cy="545" r="216" fill="url(#h-gold)" opacity="0.2"/>`,
-    `<ellipse cx="1075" cy="805" rx="256" ry="146" fill="url(#h-coral)" opacity="0.2"/>`,
-    `<circle cx="${ax}" cy="${ay}" r="240" fill="url(#h-cyan)" opacity="0.3"/>`,
-  ].join('');
-
-  return [
-    starfield(r, 55),
-    `  <g>${halos}</g>`,
-    `  <g>${feeds}</g>`,
-    `  <circle cx="${ax}" cy="${ay}" r="146" fill="none" stroke="${C.cyanLt}" stroke-width="2" stroke-dasharray="5 13" opacity="0.45"/>`,
-    `  <circle cx="${ax}" cy="${ay}" r="194" fill="none" stroke="${C.violet}" stroke-width="2" stroke-dasharray="4 20" opacity="0.3"/>`,
-    `  <g>${chip(ax, ay, 176, C.cyanLt, 'cyan', 1)}</g>`,
-    `  <g>${chain.join('')}</g>`,
-    `  <g>${ring.join('')}</g>`,
-    `  <g>${tre.join('')}</g>`,
   ].join('\n');
 }
 
@@ -3121,6 +2764,429 @@ function azShortPath(r) {
   ].join('\n');
 }
 
+// ------------------------------------------------------------- valkey-bundle
+//
+// One package that carries several capabilities you would otherwise install one
+// at a time. Two readings of that: containment (`bundleCrate`) and delivery
+// (`bundleOneInstall`). Both draw the *same four* modules valkey-bundle ships,
+// so the pair reads as two views of one thing rather than two piles of shapes.
+//
+//   bloom   a run of bit cells with a few of them set
+//   json    indented rows inside a bracket pair, i.e. a nested document
+//   search  a magnifier over a scatter of points, the hits inside it tethered
+//   ldap    a directory tree, a root branching down two levels to leaves
+//
+// Deterministic on purpose: a module glyph must not change shape depending on
+// how many PRNG draws happened before it.
+const GLYPH_HALF_W = { bloom: 172, json: 156, search: 121, ldap: 115 };
+
+function moduleGlyph(kind, cx, cy, s, color, key) {
+  const X = (v) => n(cx + v * s);
+  const Y = (v) => n(cy + v * s);
+  const w = (v) => n(v * s);
+  const glow = (x, y, rad, op = 0.9, halo = 3) =>
+    dot(cx + x * s, cy + y * s, rad * s, color, key, op, halo);
+
+  // valkey-bloom: a miniature bit array, three bits set.
+  if (kind === 'bloom') {
+    const cell = 40;
+    const gap = 9;
+    const cols = 7;
+    const total = cols * cell + (cols - 1) * gap;
+    const x0 = -total / 2;
+    const set = [1, 3, 6];
+    const out = [];
+    for (let i = 0; i < cols; i++) {
+      const on = set.includes(i);
+      out.push(
+        `<rect x="${X(x0 + i * (cell + gap))}" y="${Y(-cell / 2)}" width="${w(cell)}" height="${w(cell)}" rx="${w(7)}" ` +
+          `fill="${color}" fill-opacity="${on ? 0.85 : 0}" stroke="${color}" stroke-width="${w(2.6)}" opacity="${on ? 1 : 0.34}"/>`
+      );
+    }
+    // One tick dropping into each bit that got set.
+    for (const i of set) {
+      const x = x0 + i * (cell + gap) + cell / 2;
+      out.push(
+        `<line x1="${X(x)}" y1="${Y(-74)}" x2="${X(x)}" y2="${Y(-30)}" stroke="${color}" stroke-width="${w(3)}" stroke-linecap="round" opacity="0.75"/>`,
+        glow(x, -82, 6, 0.95, 3.2)
+      );
+    }
+    // A span under the run, so it reads as one array and not seven loose cells.
+    out.push(
+      `<path d="M ${X(x0)} ${Y(24)} L ${X(x0)} ${Y(38)} L ${X(x0 + total)} ${Y(38)} L ${X(x0 + total)} ${Y(24)}" ` +
+        `fill="none" stroke="${color}" stroke-width="${w(2.6)}" opacity="0.5"/>`
+    );
+    return out.join('');
+  }
+
+  // valkey-json: rows at three indent depths, held inside a bracket pair.
+  if (kind === 'json') {
+    const lvl = [0, 1, 2, 2, 1];
+    const len = [78, 104, 74, 92, 62];
+    const out = [];
+    for (const sgn of [-1, 1]) {
+      out.push(
+        `<path d="M ${X(sgn * 128)} ${Y(-100)} L ${X(sgn * 150)} ${Y(-100)} L ${X(sgn * 150)} ${Y(100)} L ${X(sgn * 128)} ${Y(100)}" ` +
+          `fill="none" stroke="${color}" stroke-width="${w(6)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>`
+      );
+    }
+    lvl.forEach((d, i) => {
+      const y = -64 + i * 32;
+      const x = -104 + d * 30;
+      out.push(
+        `<line x1="${X(x + 14)}" y1="${Y(y)}" x2="${X(x + 14 + len[i])}" y2="${Y(y)}" stroke="${color}" ` +
+          `stroke-width="${w(5)}" stroke-linecap="round" opacity="0.7"/>`,
+        glow(x, y, 5.5, 0.9, 3)
+      );
+    });
+    return out.join('');
+  }
+
+  // valkey-search: a query. Magnifier over a point set; whatever falls inside
+  // the ring is a hit and is tethered to the query point.
+  if (kind === 'search') {
+    const qx = -16;
+    const qy = -19;
+    const rad = 68;
+    const pts = [[-112, 50], [-60, -52], [-30, 6], [-4, -44], [22, 62], [66, -6], [104, 54], [112, -66]];
+    const out = [];
+    for (const [px, py] of pts) {
+      const hit = Math.hypot(px - qx, py - qy) < rad - 8;
+      if (hit) {
+        out.push(
+          `<line x1="${X(qx)}" y1="${Y(qy)}" x2="${X(px)}" y2="${Y(py)}" stroke="${color}" stroke-width="${w(2.2)}" opacity="0.55"/>`
+        );
+      }
+      out.push(glow(px, py, hit ? 7 : 4.5, hit ? 0.95 : 0.45, 3));
+    }
+    out.push(
+      `<line x1="${X(qx + 48)}" y1="${Y(qy + 48)}" x2="${X(86)}" y2="${Y(83)}" stroke="${color}" ` +
+        `stroke-width="${w(14)}" stroke-linecap="round" opacity="0.85"/>`,
+      `<circle cx="${X(qx)}" cy="${Y(qy)}" r="${w(rad)}" fill="${C.ink}" fill-opacity="0.16" ` +
+        `stroke="${color}" stroke-width="${w(7)}" opacity="0.9"/>`
+    );
+    return out.join('');
+  }
+
+  // valkey-ldap: a directory tree. Elbowed connectors, so it reads as a
+  // directory rather than as a graph fan.
+  const root = [0, -74];
+  const mid = [[-68, 0], [68, 0]];
+  const leaf = [[-104, 86], [-38, 86], [38, 86], [104, 86]];
+  const elbow = (a, b) => {
+    const my = (a[1] + b[1]) / 2;
+    return (
+      `<path d="M ${X(a[0])} ${Y(a[1])} L ${X(a[0])} ${Y(my)} L ${X(b[0])} ${Y(my)} L ${X(b[0])} ${Y(b[1])}" ` +
+      `fill="none" stroke="${color}" stroke-width="${w(2.6)}" opacity="0.55"/>`
+    );
+  };
+  const node = (p, size) =>
+    `<rect x="${X(p[0] - size / 2)}" y="${Y(p[1] - size * 0.34)}" width="${w(size)}" height="${w(size * 0.68)}" ` +
+    `rx="${w(size * 0.2)}" fill="${color}" fill-opacity="0.2" stroke="${color}" stroke-width="${w(2.8)}" opacity="0.9"/>`;
+  return [
+    ...mid.map((m) => elbow(root, m)),
+    ...leaf.map((l, i) => elbow(mid[i < 2 ? 0 : 1], l)),
+    node(root, 64),
+    ...mid.map((m) => node(m, 52)),
+    glow(root[0], root[1], 5.5, 0.95, 3),
+    ...mid.map((m) => glow(m[0], m[1], 4.5, 0.85, 3)),
+    ...leaf.map((l) => glow(l[0], l[1], 7, 0.85, 3)),
+  ].join('');
+}
+
+// The four modules, in a fixed order and a fixed colour each, so bundle-crate
+// and bundle-one-install label the same module the same way.
+const BUNDLE_MODULES = [
+  { kind: 'bloom', color: C.cyanLt, key: 'cyan' },
+  { kind: 'json', color: C.mint, key: 'mint' },
+  { kind: 'search', color: C.gold, key: 'gold' },
+  { kind: 'ldap', color: C.coral, key: 'coral' },
+];
+
+// Containment: one package boundary with the four modules packed inside it two
+// by two, the mark sealing the lid.
+function bundleCrate(r) {
+  const x0 = 462;
+  const x1 = 1458;
+  const y0 = 254;
+  const y1 = 872;
+  const lid = y0 + 76;
+  const mid = (lid + y1) / 2;
+  const cx = (x0 + x1) / 2;
+
+  const s = 1.02;
+  const slots = [
+    [731, 471],
+    [1189, 471],
+    [731, 731],
+    [1189, 731],
+  ];
+  const modules = BUNDLE_MODULES.map((m, i) => moduleGlyph(m.kind, slots[i][0], slots[i][1], s, m.color, m.key)).join('');
+
+  // Corner brackets, so the outline reads as a crate rather than a panel.
+  const arm = 96;
+  const brackets = [
+    [x0, y0, 1, 1],
+    [x1, y0, -1, 1],
+    [x0, y1, 1, -1],
+    [x1, y1, -1, -1],
+  ]
+    .map(
+      ([bx, by, sx, sy]) =>
+        `<path d="M ${n(bx + sx * arm)} ${n(by)} L ${n(bx + sx * 22)} ${n(by)} ` +
+        `A 22 22 0 0 ${sx * sy > 0 ? 0 : 1} ${n(bx)} ${n(by + sy * 22)} L ${n(bx)} ${n(by + sy * arm)}" ` +
+        `fill="none" stroke="${C.ice}" stroke-width="9" stroke-linecap="round" opacity="0.9"/>`
+    )
+    .join('');
+
+  return [
+    starfield(r, 55),
+    // Ambient glow behind the contents, never over them.
+    `  <ellipse cx="${cx}" cy="560" rx="520" ry="360" fill="url(#h-cyan)" opacity="0.22"/>`,
+    ...slots.map((p, i) => `  <circle cx="${p[0]}" cy="${p[1]}" r="150" fill="url(#h-${BUNDLE_MODULES[i].key})" opacity="0.18"/>`),
+    `  <rect x="${x0}" y="${y0}" width="${n(x1 - x0)}" height="${n(y1 - y0)}" rx="26" fill="${C.ink}" fill-opacity="0.3"/>`,
+    `  <g>${modules}</g>`,
+    `  <rect x="${x0}" y="${y0}" width="${n(x1 - x0)}" height="${n(y1 - y0)}" rx="26" fill="none" stroke="${C.ice}" stroke-width="14" opacity="0.28" filter="url(#blur8)"/>`,
+    `  <rect x="${x0}" y="${y0}" width="${n(x1 - x0)}" height="${n(y1 - y0)}" rx="26" fill="none" stroke="${C.ice}" stroke-width="3.6" opacity="0.85"/>`,
+    `  <line x1="${x0}" y1="${lid}" x2="${x1}" y2="${lid}" stroke="${C.ice}" stroke-width="2" stroke-dasharray="14 12" opacity="0.4"/>`,
+    `  <line x1="960" y1="${lid}" x2="960" y2="${y1}" stroke="${C.ice}" stroke-width="2" stroke-dasharray="14 12" opacity="0.22"/>`,
+    `  <line x1="${x0}" y1="${n(mid)}" x2="${x1}" y2="${n(mid)}" stroke="${C.ice}" stroke-width="2" stroke-dasharray="14 12" opacity="0.22"/>`,
+    `  <g>${brackets}</g>`,
+    // The seal: one mark on one lid.
+    `  <circle cx="${cx}" cy="${y0}" r="118" fill="url(#h-ice)" opacity="0.55"/>`,
+    `  <circle cx="${cx}" cy="${y0}" r="82" fill="url(#scrim)"/>`,
+    `  <g filter="url(#blur8)" opacity="0.5">${mark(cx, y0, 112)}</g>`,
+    `  <g>${mark(cx, y0, 112)}</g>`,
+  ].join('\n');
+}
+
+// Delivery: one conduit arrives, and the four modules come out of it. The single
+// strap on the left is what you install; the fan on the right is what you get.
+function bundleOneInstall(r) {
+  const px = 700;
+  const cy = 540;
+  const s = 0.92;
+
+  // json and ldap are the tallest glyphs, so they take the two ends of the fan
+  // and the whole thing stays vertically centred on the port.
+  const order = ['json', 'bloom', 'search', 'ldap'];
+  const mods = order.map((kind, i) => ({
+    ...BUNDLE_MODULES.find((m) => m.kind === kind),
+    x: 1310,
+    y: 275 + i * 178.7,
+  }));
+
+  // The single strap: one bound thing, tapering into the port.
+  const strapD = `M 120 ${cy - 100} L ${px} ${cy - 64} L ${px} ${cy + 64} L 120 ${cy + 100} Z`;
+  const halfAt = (x) => 100 - ((x - 120) / (px - 120)) * 36;
+
+  const flow = [];
+  for (let i = 0; i < 34; i++) {
+    const t = r();
+    const x = 130 + t * (px - 250);
+    const y = cy + (r() * 2 - 1) * (halfAt(x) - 8);
+    const len = 60 + r() * 190;
+    flow.push(
+      `<line x1="${n(x)}" y1="${n(y)}" x2="${n(Math.min(px - 20, x + len))}" y2="${n(y)}" ` +
+        `stroke="${weighted(r, [[C.cyanLt, 6], [C.ice, 3], [C.mint, 1]])}" stroke-width="${n(1.6 + r() * 3)}" ` +
+        `stroke-linecap="round" opacity="${n(0.18 + r() * 0.4)}"/>`
+    );
+  }
+
+  // Binding straps, so the arriving thing reads as one parcel rather than a beam.
+  const bindings = [300, 452, 596]
+    .map(
+      (x) =>
+        `<line x1="${n(x)}" y1="${n(cy - halfAt(x))}" x2="${n(x)}" y2="${n(cy + halfAt(x))}" ` +
+        `stroke="${C.ice}" stroke-width="11" stroke-linecap="round" opacity="0.3"/>`
+    )
+    .join('');
+
+  // One strap in, four branches out, each stopping at its module's edge.
+  const sx = 812;
+  const harness = mods
+    .map((m) => {
+      const ex = m.x - (GLYPH_HALF_W[m.kind] + 26) * s;
+      const d = `M ${sx} ${cy} C ${n(sx + 130)} ${cy} ${n(ex - 160)} ${n(m.y)} ${n(ex)} ${n(m.y)}`;
+      return (
+        `<path d="${d}" fill="none" stroke="${m.color}" stroke-width="14" opacity="0.22" filter="url(#blur8)"/>` +
+        `<path d="${d}" fill="none" stroke="${m.color}" stroke-width="3.4" opacity="0.75"/>` +
+        dot(ex, m.y, 5, m.color, m.key, 0.85, 3)
+      );
+    })
+    .join('');
+
+  return [
+    starfield(r, 55),
+    `  <clipPath id="strap"><path d="${strapD}"/></clipPath>`,
+    // Ambient glow behind everything that follows.
+    `  <circle cx="${px}" cy="${cy}" r="330" fill="url(#h-cyan)" opacity="0.18"/>`,
+    ...mods.map((m) => `  <circle cx="${n(m.x)}" cy="${n(m.y)}" r="150" fill="url(#h-${m.key})" opacity="0.22"/>`),
+    `  <path d="${strapD}" fill="${C.cyan}" fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="10" opacity="0.3" filter="url(#blur8)"/>`,
+    `  <g clip-path="url(#strap)">${flow.join('')}${bindings}</g>`,
+    `  <path d="${strapD}" fill="none" stroke="${C.ice}" stroke-width="3.8" opacity="0.9"/>`,
+    `  <g>${harness}</g>`,
+    `  <circle cx="${px}" cy="${cy}" r="150" fill="url(#scrim)"/>`,
+    `  <g filter="url(#blur18)" opacity="0.5">${mark(px, cy, 208)}</g>`,
+    `  <g>${mark(px, cy, 208)}</g>`,
+    `  <g>${mods.map((m) => moduleGlyph(m.kind, m.x, m.y, s, m.color, m.key)).join('')}</g>`,
+  ].join('\n');
+}
+
+// ------------------------------------------------------- data structure survey
+//
+// An ordered catalogue of Valkey value types, one per cell on an even grid.
+// `data-structures` looks *inside* two of them (hash buckets, a skip list);
+// this one is the survey across several, and the point of it is the order.
+function dataStructuresGrid(r) {
+  const cw = 320;
+  const chh = 338;
+  const gap = 40;
+  const cols = [960 - (cw + gap), 960, 960 + (cw + gap)];
+  const rows = [540 - (chh + gap) / 2, 540 + (chh + gap) / 2];
+
+  const glyph = (kind, cx, cy, color, key) => {
+    const X = (v) => n(cx + v);
+    const Y = (v) => n(cy + v);
+    const glow = (x, y, rad, op = 0.9, halo = 3) => dot(cx + x, cy + y, rad, color, key, op, halo);
+
+    // A string: one contiguous run of bytes, spanned as a single value.
+    if (kind === 'string') {
+      const out = [];
+      const cell = 40;
+      const g = 8;
+      const total = 6 * cell + 5 * g;
+      const x0 = -total / 2;
+      for (let i = 0; i < 6; i++) {
+        out.push(
+          `<rect x="${X(x0 + i * (cell + g))}" y="${Y(-10)}" width="${cell}" height="52" rx="7" fill="${color}" ` +
+            `fill-opacity="${n(0.4 + r() * 0.28)}" stroke="${color}" stroke-width="2.4" opacity="0.9"/>`
+        );
+      }
+      out.push(
+        `<path d="M ${X(x0)} ${Y(-24)} L ${X(x0)} ${Y(-36)} L ${X(x0 + total)} ${Y(-36)} L ${X(x0 + total)} ${Y(-24)}" ` +
+          `fill="none" stroke="${color}" stroke-width="2.6" opacity="0.55"/>`
+      );
+      return out.join('');
+    }
+
+    // A list: nodes linked head to tail, in order.
+    if (kind === 'list') {
+      const out = [];
+      const ys = [-105, -35, 35, 105];
+      for (let i = 0; i < ys.length - 1; i++) {
+        out.push(
+          `<line x1="${X(0)}" y1="${Y(ys[i] + 23)}" x2="${X(0)}" y2="${Y(ys[i + 1] - 30)}" stroke="${color}" stroke-width="3" opacity="0.6"/>`,
+          `<path d="M ${X(-8)} ${Y(ys[i + 1] - 36)} L ${X(0)} ${Y(ys[i + 1] - 23)} L ${X(8)} ${Y(ys[i + 1] - 36)}" ` +
+            `fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>`
+        );
+      }
+      for (const y of ys) {
+        out.push(
+          `<rect x="${X(-62)}" y="${Y(y - 23)}" width="124" height="46" rx="11" fill="${color}" fill-opacity="0.16" ` +
+            `stroke="${color}" stroke-width="2.8" opacity="0.9"/>`,
+          `<line x1="${X(18)}" y1="${Y(y - 23)}" x2="${X(18)}" y2="${Y(y + 23)}" stroke="${color}" stroke-width="2" opacity="0.5"/>`,
+          glow(-22, y, 5.5, 0.9, 3)
+        );
+      }
+      return out.join('');
+    }
+
+    // A set: unordered members inside a boundary, no position and no repeats.
+    if (kind === 'set') {
+      const out = [
+        `<circle cx="${X(0)}" cy="${Y(0)}" r="104" fill="${C.ink}" fill-opacity="0.14" stroke="${color}" ` +
+          `stroke-width="3" stroke-dasharray="9 12" opacity="0.7"/>`,
+      ];
+      for (let i = 0; i < 9; i++) {
+        const a = r() * Math.PI * 2;
+        const d = Math.pow(r(), 0.5) * 78;
+        out.push(glow(Math.cos(a) * d, Math.sin(a) * d, 7, 0.85, 3));
+      }
+      return out.join('');
+    }
+
+    // A hash: field on the left, value on the right, one pair per row.
+    if (kind === 'hash') {
+      const out = [];
+      const len = [70, 110, 84, 120];
+      [-66, -22, 22, 66].forEach((y, i) => {
+        out.push(
+          `<rect x="${X(-90)}" y="${Y(y - 18)}" width="36" height="36" rx="8" fill="${color}" fill-opacity="0.24" ` +
+            `stroke="${color}" stroke-width="2.6" opacity="0.9"/>`,
+          `<line x1="${X(-48)}" y1="${Y(y)}" x2="${X(-32)}" y2="${Y(y)}" stroke="${color}" stroke-width="2.4" opacity="0.55"/>`,
+          `<line x1="${X(-26)}" y1="${Y(y)}" x2="${X(-26 + len[i])}" y2="${Y(y)}" stroke="${color}" stroke-width="7" ` +
+            `stroke-linecap="round" opacity="0.7"/>`
+        );
+      });
+      return out.join('');
+    }
+
+    // A sorted set: members ranked by score, tallest first.
+    if (kind === 'zset') {
+      const out = [
+        `<line x1="${X(-126)}" y1="${Y(98)}" x2="${X(126)}" y2="${Y(98)}" stroke="${color}" stroke-width="2.4" opacity="0.45"/>`,
+      ];
+      const h = [190, 158, 128, 98, 70];
+      h.forEach((hh, i) => {
+        const x = -104 + i * 52;
+        out.push(
+          `<rect x="${X(x - 17)}" y="${Y(98 - hh)}" width="34" height="${hh}" rx="7" fill="${color}" ` +
+            `fill-opacity="${n(0.6 - i * 0.07)}" stroke="${color}" stroke-width="2.2" opacity="0.9"/>`,
+          glow(x, 98 - hh, 6, 0.9, 3)
+        );
+      });
+      return out.join('');
+    }
+
+    // A bitmap: dense on/off cells.
+    const out = [];
+    const cell = 24;
+    const g = 6;
+    const bw = 8 * cell + 7 * g;
+    const bh = 6 * cell + 5 * g;
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 6; j++) {
+        const on = r() < 0.45;
+        out.push(
+          `<rect x="${X(-bw / 2 + i * (cell + g))}" y="${Y(-bh / 2 + j * (cell + g))}" width="${cell}" height="${cell}" rx="4" ` +
+            `fill="${color}" fill-opacity="${on ? 0.82 : 0}" stroke="${color}" stroke-width="1.6" opacity="${on ? 0.95 : 0.26}"/>`
+        );
+      }
+    }
+    return out.join('');
+  };
+
+  const cells = [
+    { kind: 'string', color: C.cyanLt, key: 'cyan' },
+    { kind: 'list', color: C.mint, key: 'mint' },
+    { kind: 'set', color: C.gold, key: 'gold' },
+    { kind: 'hash', color: C.coral, key: 'coral' },
+    { kind: 'zset', color: C.violet, key: 'violet' },
+    { kind: 'bitmap', color: C.ice, key: 'ice' },
+  ].map((c, i) => ({ ...c, cx: cols[i % 3], cy: rows[Math.floor(i / 3)] }));
+
+  const frames = cells
+    .map(
+      (c) =>
+        `<rect x="${n(c.cx - cw / 2)}" y="${n(c.cy - chh / 2)}" width="${cw}" height="${chh}" rx="22" ` +
+        `fill="${C.ink}" fill-opacity="0.26" stroke="${C.ice}" stroke-width="2.4" opacity="0.32"/>` +
+        // A short coloured tab on the top edge ties the cell to its type.
+        `<line x1="${n(c.cx - cw / 2 + 26)}" y1="${n(c.cy - chh / 2)}" x2="${n(c.cx - cw / 2 + 100)}" y2="${n(c.cy - chh / 2)}" ` +
+        `stroke="${c.color}" stroke-width="6" stroke-linecap="round" opacity="0.9"/>`
+    )
+    .join('');
+
+  return [
+    starfield(r, 55),
+    // Ambient glow behind the grid, never over it.
+    `  <ellipse cx="960" cy="540" rx="640" ry="430" fill="url(#h-cyan)" opacity="0.16"/>`,
+    ...cells.map((c) => `  <circle cx="${n(c.cx)}" cy="${n(c.cy)}" r="168" fill="url(#h-${c.key})" opacity="0.16"/>`),
+    `  <g>${frames}</g>`,
+    `  <g>${cells.map((c) => glyph(c.kind, c.cx, c.cy, c.color, c.key)).join('')}</g>`,
+  ].join('\n');
+}
+
 const THEMES = [
   { name: 'community', seed: 1041, focal: [960, 540], zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, focal: [1530, 505], zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -3145,10 +3211,10 @@ const THEMES = [
   { name: 'ai-agent-memory', seed: 35011, focal: [1120, 380], zoom: 1.29, center: [960, 540], title: 'Valkey AI agent memory', desc: 'A row of conversation turns with the most recent ones lit inside a bright window, older turns dimmed and parked in an archive below the white Valkey hexagon mark, and two of them arcing back up into the window, representing agent memory with hot recent context and older context recalled on demand.', art: aiAgentMemory },
   { name: 'workload-fanout', seed: 35023, focal: [700, 520], zoom: 1.18, center: [960, 540], title: 'Valkey AI workload primitives', desc: 'A single bundled stream of requests arriving at the white Valkey hexagon mark and fanning out into five lanes, each ending in a differently shaped structure: a ring of slots, a chain of entries, a ranked stack, a grid of bits and a row of embedding magnitudes, representing an AI workload decomposing into the primitives Valkey already has.', art: workloadFanout },
   { name: 'conn-storm-spike', seed: 36011, focal: [960, 620], zoom: 1.34, center: [960, 547], title: 'Valkey connection storms', desc: 'A timeline of connection attempts that is quiet, then spikes into a wall of simultaneous reconnects whose top rises in red above a dashed accept-capacity line, then falls quiet again, representing a connection storm.', art: connStormSpike },
-  { name: 'bundle-crate', seed: 33101, focal: [960, 500], zoom: 1.2, center: [960, 540], title: 'Valkey bundle', desc: 'One bracketed package outline sealed with the white Valkey hexagon mark, holding six differently shaped module diagrams inside it, representing several separate modules shipped as a single bundle.', art: bundleCrate },
-  { name: 'bundle-one-install', seed: 33207, focal: [760, 540], zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A single tapering conduit arriving at a port marked with the white Valkey hexagon, fanning out into five differently shaped modules, representing one install that delivers several distinct capabilities.', art: bundleOneInstall },
+  { name: 'bundle-crate', seed: 33101, focal: [960, 500], zoom: 1.2, center: [960, 540], title: 'Valkey bundle', desc: 'One bracketed package outline sealed with the white Valkey hexagon mark, holding four module diagrams inside it: a bit array, a nested document in brackets, a magnifier over a scatter of points, and a directory tree, representing the four modules valkey-bundle ships as one package.', art: bundleCrate },
+  { name: 'bundle-one-install', seed: 33207, focal: [760, 540], zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A single tapering conduit arriving at a port marked with the white Valkey hexagon, fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a directory tree, representing one install that delivers all four bundled modules.', art: bundleOneInstall },
   { name: 'tooling-stack', seed: 33311, focal: [960, 620], zoom: 1.25, center: [960, 540], title: 'Valkey primitives and tools', desc: 'A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives.', art: toolingStack },
-  { name: 'tooling-recombine', seed: 33419, focal: [700, 540], zoom: 1.25, center: [910, 540], title: 'Valkey primitives recombined', desc: 'One highlighted primitive unit on the left wired to three assemblies of copies of itself on the right, a chain, a cycle and a branching tree, representing the same server primitive reused to build different tools.', art: toolingRecombine },
+  { name: 'data-structures-grid', seed: 33419, focal: [960, 540], zoom: 1.2, center: [960, 540], title: 'Valkey data types', desc: 'Six Valkey value types laid out one per cell on an even three-by-two grid: a run of bytes, a linked list, unordered members inside a boundary, field and value pairs, members ranked by score, and a dense bitmap, representing the range of structures Valkey stores.', art: dataStructuresGrid },
   { name: 'k8s-spec-fanout', seed: 42011, focal: [1150, 520], zoom: 1.34, center: [960, 540], title: 'Valkey deployed from a chart', desc: 'A declared specification panel on the left fanning out along rails into a grid of nine identical instances, each drawn as the white Valkey hexagon mark, representing deploying Valkey on Kubernetes from a Helm chart.', art: k8sSpecFanout },
   { name: 'k8s-desired-count', seed: 42021, focal: [960, 400], zoom: 1.34, center: [960, 540], title: 'Valkey replicas reaching the declared count', desc: 'Six declared slots under a gold span, four filled with instances drawn as the white Valkey hexagon mark, one instance rising into place and one slot still empty, representing a declared replica count and the running instances converging on it.', art: k8sDesiredCount },
   { name: 'limits-tight-envelope', seed: 42031, focal: [960, 540], zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
