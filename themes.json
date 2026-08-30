@@ -1,0 +1,316 @@
+{
+  "generatedBy": "generate.mjs",
+  "count": 31,
+  "themes": [
+    {
+      "name": "community",
+      "title": "Valkey community",
+      "desc": "An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.",
+      "motif": "Constellation graph, best-connected peers drawn as the Valkey mark",
+      "useFor": "Community highlights, contributor spotlights, roundups, governance",
+      "image": "images/community.webp",
+      "svg": "svg/community.svg",
+      "captioned": false
+    },
+    {
+      "name": "performance",
+      "title": "Valkey performance",
+      "desc": "Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.",
+      "motif": "Command traffic warping into the mark at a vanishing point",
+      "useFor": "Throughput, latency, speed work",
+      "image": "images/performance.webp",
+      "svg": "svg/performance.svg",
+      "captioned": false
+    },
+    {
+      "name": "memory-efficiency",
+      "title": "Valkey memory efficiency",
+      "desc": "An abstract grid of cells that grows denser from left to right, representing the same data stored in less memory.",
+      "motif": "Cell grid, pitted on the left, compacted dense on the right",
+      "useFor": "Memory footprint, encodings, defragmentation",
+      "image": "images/memory-efficiency.webp",
+      "svg": "svg/memory-efficiency.svg",
+      "captioned": false
+    },
+    {
+      "name": "clustering",
+      "title": "Valkey clustering and scale",
+      "desc": "An abstract ring of slot segments around a meshed core centred on the white Valkey hexagon mark, with shards joining from outside, representing cluster mode and horizontal scale.",
+      "motif": "Slot ring around a meshed core, shards joining from outside",
+      "useFor": "Cluster mode, replication, scaling out",
+      "image": "images/clustering.webp",
+      "svg": "svg/clustering.svg",
+      "captioned": false
+    },
+    {
+      "name": "release",
+      "title": "Valkey release",
+      "desc": "Valkey chevrons driving into a golden burst centred on the white Valkey hexagon mark, representing a new Valkey release.",
+      "motif": "Valkey chevrons driving into a golden burst",
+      "useFor": "Release and general announcements",
+      "image": "images/release.webp",
+      "svg": "svg/release.svg",
+      "captioned": false
+    },
+    {
+      "name": "release-version",
+      "title": "Valkey release with a caption",
+      "desc": "A golden burst centred on the white Valkey hexagon mark above a large caption, representing a specific Valkey release.",
+      "motif": "The same burst with a caption you set",
+      "useFor": "A specific release. See [Captions](#captions)",
+      "image": "images/release-version.webp",
+      "svg": "svg/release-version.svg",
+      "captioned": true
+    },
+    {
+      "name": "atomic-slot-migration",
+      "title": "Valkey atomic slot migration",
+      "desc": "Two shard slot rings, each centred on the white Valkey hexagon mark, with a chevron arrow driving a stream of slot segments from one to the other and a magnifier inspecting them mid-flight, representing atomic slot migration.",
+      "motif": "Two shard rings, a chevron driving slots between them, magnifier on the stream",
+      "useFor": "Slot migration and rebalancing",
+      "image": "images/atomic-slot-migration.webp",
+      "svg": "svg/atomic-slot-migration.svg",
+      "captioned": false
+    },
+    {
+      "name": "security",
+      "title": "Valkey security",
+      "desc": "An abstract shield woven from a lattice with the white Valkey hexagon mark at its centre, representing security and access control.",
+      "motif": "Shield woven from the lattice it protects",
+      "useFor": "Security in general, CVEs, hardening",
+      "image": "images/security.webp",
+      "svg": "svg/security.svg",
+      "captioned": false
+    },
+    {
+      "name": "security-acl",
+      "title": "Valkey access control",
+      "desc": "Streams of commands arriving at a lit gate centred on the white Valkey hexagon mark, most admitted in green and some turned away in red, representing access control and authentication.",
+      "motif": "Commands at a gate, most admitted, some turned away",
+      "useFor": "ACLs, authentication, TLS",
+      "image": "images/security-acl.webp",
+      "svg": "svg/security-acl.svg",
+      "captioned": false
+    },
+    {
+      "name": "benchmarks",
+      "title": "Valkey benchmarks",
+      "desc": "A bar chart of throughput climbing left to right, beneath two flat latency series labelled P99 in green and P50 in red, representing benchmarking and observability.",
+      "motif": "Throughput bars climbing under flat P50/P99 latency",
+      "useFor": "Benchmark results, observability, metrics",
+      "image": "images/benchmarks.webp",
+      "svg": "svg/benchmarks.svg",
+      "captioned": false
+    },
+    {
+      "name": "data-structures",
+      "title": "Valkey data structures",
+      "desc": "Abstract hash table buckets chaining outward beside a skip list of express lanes, representing Valkey data structures and internals.",
+      "motif": "Hash buckets chaining out beside a skip list",
+      "useFor": "Internals: hash tables, skip lists, new types, modules",
+      "image": "images/data-structures.webp",
+      "svg": "svg/data-structures.svg",
+      "captioned": false
+    },
+    {
+      "name": "how-to",
+      "title": "Valkey how-to",
+      "desc": "An abstract track of numbered steps with the current step lit, representing a step-by-step guide.",
+      "motif": "Step track with the current step lit",
+      "useFor": "Tutorials, guides, getting started",
+      "image": "images/how-to.webp",
+      "svg": "svg/how-to.svg",
+      "captioned": false
+    },
+    {
+      "name": "keyspace-scan",
+      "title": "Valkey keyspace scan",
+      "desc": "A wide field of keys with one bounded window lit in green, the keys behind it dimmed and the keys ahead of it unlit, above a track of uneven cursor steps, representing scanning a keyspace a window at a time instead of reading it all at once.",
+      "motif": "Cursor holding one lit window of a key field, uneven hop track below",
+      "useFor": "`SCAN`, cursors, iterating a keyspace without blocking",
+      "image": "images/keyspace-scan.webp",
+      "svg": "svg/keyspace-scan.svg",
+      "captioned": false
+    },
+    {
+      "name": "large-key",
+      "title": "Valkey large key",
+      "desc": "An even field of small identical key tiles with one key of the same shape scaled up until it dwarfs them all, outlined in red, representing a single key far larger than everything else in the keyspace.",
+      "motif": "A field of identical key tiles with one scaled up until it dwarfs them",
+      "useFor": "Large keys, hot keys, uneven key sizes",
+      "image": "images/large-key.webp",
+      "svg": "svg/large-key.svg",
+      "captioned": false
+    },
+    {
+      "name": "key-prefix-groups",
+      "title": "Valkey key prefix groups",
+      "desc": "A scattered cloud of sampled keys on the left funnelling into a short list of prefix rows with count bars on the right, representing a sample of key names grouped into browsable prefixes.",
+      "motif": "Sampled keys funnelling into prefix rows with count bars",
+      "useFor": "Key naming, prefixes, keyspace browsing and clients",
+      "image": "images/key-prefix-groups.webp",
+      "svg": "svg/key-prefix-groups.svg",
+      "captioned": false
+    },
+    {
+      "name": "event-gather-ring",
+      "title": "Valkey event",
+      "desc": "Arrivals closing in from every direction on a lit venue ring centred on the white Valkey hexagon mark, thickest right against it, representing a community gathering.",
+      "motif": "Arrivals thickening against a lit venue ring",
+      "useFor": "Events where the gathering is the point",
+      "image": "images/event-gather-ring.webp",
+      "svg": "svg/event-gather-ring.svg",
+      "captioned": false
+    },
+    {
+      "name": "bloom-bit-array",
+      "title": "Valkey Bloom filters",
+      "desc": "The white Valkey hexagon mark above a long row of bit cells, with five hash nodes fanning out of it and the five cells they land on lit in green, representing one item hashed to a handful of positions in a Bloom filter.",
+      "motif": "Hash nodes fanning out of the mark, lighting a handful of cells in a bit array",
+      "useFor": "Bloom filters, valkey-bloom, probabilistic data structures",
+      "image": "images/bloom-bit-array.webp",
+      "svg": "svg/bloom-bit-array.svg",
+      "captioned": false
+    },
+    {
+      "name": "search-vector-nearest",
+      "title": "Valkey vector search",
+      "desc": "A dark field of indexed vectors with the white Valkey hexagon mark at the centre as the query, spokes reaching out to six bright green nearest matches inside a dashed search radius, representing vector similarity search.",
+      "motif": "Query at the centre of an indexed field, its nearest matches lit inside a search radius",
+      "useFor": "Vector similarity search, KNN queries, embeddings",
+      "image": "images/search-vector-nearest.webp",
+      "svg": "svg/search-vector-nearest.svg",
+      "captioned": false
+    },
+    {
+      "name": "search-field-index",
+      "title": "Valkey secondary indexing",
+      "desc": "Four record cards each contributing one highlighted green field to a sorted index lane below, with a query caliper bracketing three matched entries above the white Valkey hexagon mark, representing secondary indexing on hashes and JSON.",
+      "motif": "Records giving up one field each to a sorted index, a query bracketing the matched run",
+      "useFor": "Secondary indexing on hashes and JSON, FT.CREATE, filters",
+      "image": "images/search-field-index.webp",
+      "svg": "svg/search-field-index.svg",
+      "captioned": false
+    },
+    {
+      "name": "client-ports",
+      "title": "Valkey client protocol",
+      "desc": "Six differently drawn channels reaching in from distinct outer shapes, each meeting an identical port at the same radius, beyond which every spoke becomes the same run of pale segments arriving at the white Valkey hexagon mark, representing different client libraries meeting one protocol at one server.",
+      "motif": "Six unlike callers docking into identical ports around the mark, uniform inside the port circle",
+      "useFor": "A specific client release, client API design",
+      "image": "images/client-ports.webp",
+      "svg": "svg/client-ports.svg",
+      "captioned": false
+    },
+    {
+      "name": "ai-agent-memory",
+      "title": "Valkey AI agent memory",
+      "desc": "A row of conversation turns with the most recent ones lit inside a bright window, older turns dimmed and parked in an archive below the white Valkey hexagon mark, and two of them arcing back up into the window, representing agent memory with hot recent context and older context recalled on demand.",
+      "motif": "Conversation turns on a tape, recent ones lit in a window, older ones archived below and arcing back",
+      "useFor": "Agent memory, chat history, context windows, mem0",
+      "image": "images/ai-agent-memory.webp",
+      "svg": "svg/ai-agent-memory.svg",
+      "captioned": false
+    },
+    {
+      "name": "workload-fanout",
+      "title": "Valkey workload primitives",
+      "desc": "The white Valkey hexagon mark fanning out into five lanes, each ending in a differently shaped structure: a ring of slots, a chain of entries, a ranked stack, a grid of bits and a row of embedding magnitudes, representing a workload decomposing into the primitives Valkey already has.",
+      "motif": "One inbound stream splitting at the mark into five differently shaped structures",
+      "useFor": "AI workloads mapped onto Valkey primitives",
+      "image": "images/workload-fanout.webp",
+      "svg": "svg/workload-fanout.svg",
+      "captioned": false
+    },
+    {
+      "name": "conn-storm-spike",
+      "title": "Valkey connection storms",
+      "desc": "A timeline of connection attempts that is quiet, then spikes into a wall of simultaneous reconnects whose top rises in red above a dashed accept-capacity line, then falls quiet again, representing a connection storm.",
+      "motif": "Flat run of connection attempts spiking into a wall that overshoots the accept ceiling",
+      "useFor": "Connection storms, accept backlog, reconnect surges",
+      "image": "images/conn-storm-spike.webp",
+      "svg": "svg/conn-storm-spike.svg",
+      "captioned": false
+    },
+    {
+      "name": "bundle-crate",
+      "title": "Valkey bundle",
+      "desc": "One bracketed package outline sealed with the white Valkey hexagon mark, holding four module diagrams inside it: a bit array, a nested document in brackets, a magnifier over a scatter of points, and a padlock, representing the four modules valkey-bundle ships as one package.",
+      "motif": "One bracketed package sealed with the mark, holding the bundle's four modules: bit array, nested document, magnifier, padlock",
+      "useFor": "valkey-bundle, module distributions, batteries-included packaging",
+      "image": "images/bundle-crate.webp",
+      "svg": "svg/bundle-crate.svg",
+      "captioned": false
+    },
+    {
+      "name": "bundle-one-install",
+      "title": "Valkey bundle, one install",
+      "desc": "A port marked with the white Valkey hexagon fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a padlock, representing one install that delivers all four bundled modules.",
+      "motif": "A single strap arriving at the mark and branching into the same four modules",
+      "useFor": "valkey-bundle, one install that delivers several capabilities",
+      "image": "images/bundle-one-install.webp",
+      "svg": "svg/bundle-one-install.svg",
+      "captioned": false
+    },
+    {
+      "name": "tooling-stack",
+      "title": "Valkey primitives and tools",
+      "desc": "A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives.",
+      "motif": "Identical primitives at the base, differently detailed tools resting on them, the mark on top",
+      "useFor": "Server primitives, what gets built on them, extensibility",
+      "image": "images/tooling-stack.webp",
+      "svg": "svg/tooling-stack.svg",
+      "captioned": false
+    },
+    {
+      "name": "data-structures-grid",
+      "title": "Valkey data types",
+      "desc": "Six Valkey value types laid out one per cell on an even three-by-two grid: a run of bytes, a linked list, unordered members inside a boundary, field and value pairs, members ranked by score, and a dense bitmap, representing the range of structures Valkey stores.",
+      "motif": "Six value types, one per cell on an even 3x2 grid: byte run, list, set, hash, sorted set, bitmap",
+      "useFor": "Type overviews, command surveys, what Valkey stores",
+      "image": "images/data-structures-grid.webp",
+      "svg": "svg/data-structures-grid.svg",
+      "captioned": false
+    },
+    {
+      "name": "k8s-spec-fanout",
+      "title": "Valkey deployed from a chart",
+      "desc": "A declared specification panel on the left fanning out along rails into a grid of nine identical instances, each drawn as the white Valkey hexagon mark, representing deploying Valkey on Kubernetes from a Helm chart.",
+      "motif": "A declared spec panel fanning out along rails into a grid of identical instances",
+      "useFor": "Helm charts, operators, declarative deployment",
+      "image": "images/k8s-spec-fanout.webp",
+      "svg": "svg/k8s-spec-fanout.svg",
+      "captioned": false
+    },
+    {
+      "name": "k8s-desired-count",
+      "title": "Valkey replicas reaching the declared count",
+      "desc": "Six declared slots under a gold span, four filled with instances drawn as the white Valkey hexagon mark, one instance rising into place and one slot still empty, representing a declared replica count and the running instances converging on it.",
+      "motif": "Six declared slots, four filled, one rising into place, one still empty",
+      "useFor": "Replica counts, scaling to a desired state, reconciliation",
+      "image": "images/k8s-desired-count.webp",
+      "svg": "svg/k8s-desired-count.svg",
+      "captioned": false
+    },
+    {
+      "name": "limits-tight-envelope",
+      "title": "Valkey in a tight resource envelope",
+      "desc": "A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.",
+      "motif": "A small box packed edge to edge, pushing out, inside far larger outlines",
+      "useFor": "Constrained hardware, small instances, resource ceilings",
+      "image": "images/limits-tight-envelope.webp",
+      "svg": "svg/limits-tight-envelope.svg",
+      "captioned": false
+    },
+    {
+      "name": "limits-gauge-pinned",
+      "title": "Valkey pinned near its limit",
+      "desc": "A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.",
+      "motif": "A gauge sweeping into gold and stopping short of a red end zone",
+      "useFor": "Running right up to a limit, headroom, saturation",
+      "image": "images/limits-gauge-pinned.webp",
+      "svg": "svg/limits-gauge-pinned.svg",
+      "captioned": false
+    }
+  ]
+}

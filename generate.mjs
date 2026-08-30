@@ -3077,6 +3077,35 @@ if (flags.text !== undefined && !(wanted.length && themes.every((t) => t.text !=
 mkdirSync(SVG_DIR, { recursive: true });
 mkdirSync(OUT_DIR, { recursive: true });
 
+// themes.json: the machine-readable index of the set, so consumers do not have to
+// parse this file or the README. madelynolson.com/valkey-banners reads it through
+// a submodule. Written on every run and always covering every theme, even when
+// only a subset was asked for, so it cannot drift from THEMES.
+{
+  const table = new Map();
+  for (const line of readFileSync(join(HERE, 'README.md'), 'utf8').split('\n')) {
+    const row = /^\|\s*`([\w.-]+)`\s*\|([^|]*)\|([^|]*)\|/.exec(line);
+    if (row) table.set(row[1], { motif: row[2].trim(), useFor: row[3].trim() });
+  }
+  const missing = THEMES.filter((t) => !table.has(t.name)).map((t) => t.name);
+  if (missing.length) throw new Error(`No README table row for: ${missing.join(', ')}`);
+  const manifest = {
+    generatedBy: 'generate.mjs',
+    count: THEMES.length,
+    themes: THEMES.map((t) => ({
+      name: t.name,
+      title: t.title,
+      desc: t.desc,
+      motif: table.get(t.name).motif,
+      useFor: table.get(t.name).useFor,
+      image: `images/${t.name}.webp`,
+      svg: `svg/${t.name}.svg`,
+      captioned: t.text !== undefined,
+    })),
+  };
+  writeFileSync(join(HERE, 'themes.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
 const chrome = findChrome();
 checkPillow();
 const scratch = mkdtempSync(join(tmpdir(), 'valkey-headers-'));

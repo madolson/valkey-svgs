@@ -48,6 +48,11 @@ can't drift, and regenerating is a no-op diff.
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Vector sources are in [`svg/`](svg/),
 committed so you can tweak one by hand without running Node.
 
+[`themes.json`](themes.json) is the machine-readable index of the table above, regenerated
+on every run from `THEMES` and the README rows. Consumers read it instead of parsing this
+file; the gallery at [madelynolson.com/valkey-banners](https://madelynolson.com/valkey-banners)
+pulls this repo in as a submodule and renders from it.
+
 ## Regenerating
 
 ```sh
