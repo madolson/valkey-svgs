@@ -2594,11 +2594,11 @@ function limitsGaugePinned(r) {
 //   bloom   a run of bit cells with a few of them set
 //   json    indented rows inside a bracket pair, i.e. a nested document
 //   search  a magnifier over a scatter of points, the hits inside it tethered
-//   ldap    a directory tree, a root branching down two levels to leaves
+//   ldap    a padlock, since the module is authentication against a directory
 //
 // Deterministic on purpose: a module glyph must not change shape depending on
 // how many PRNG draws happened before it.
-const GLYPH_HALF_W = { bloom: 172, json: 156, search: 121, ldap: 115 };
+const GLYPH_HALF_W = { bloom: 172, json: 156, search: 121, ldap: 82 };
 
 function moduleGlyph(kind, cx, cy, s, color, key) {
   const X = (v) => n(cx + v * s);
@@ -2688,29 +2688,26 @@ function moduleGlyph(kind, cx, cy, s, color, key) {
     return out.join('');
   }
 
-  // valkey-ldap: a directory tree. Elbowed connectors, so it reads as a
-  // directory rather than as a graph fan.
-  const root = [0, -74];
-  const mid = [[-68, 0], [68, 0]];
-  const leaf = [[-104, 86], [-38, 86], [38, 86], [104, 86]];
-  const elbow = (a, b) => {
-    const my = (a[1] + b[1]) / 2;
-    return (
-      `<path d="M ${X(a[0])} ${Y(a[1])} L ${X(a[0])} ${Y(my)} L ${X(b[0])} ${Y(my)} L ${X(b[0])} ${Y(b[1])}" ` +
-      `fill="none" stroke="${color}" stroke-width="${w(2.6)}" opacity="0.55"/>`
-    );
-  };
-  const node = (p, size) =>
-    `<rect x="${X(p[0] - size / 2)}" y="${Y(p[1] - size * 0.34)}" width="${w(size)}" height="${w(size * 0.68)}" ` +
-    `rx="${w(size * 0.2)}" fill="${color}" fill-opacity="0.2" stroke="${color}" stroke-width="${w(2.8)}" opacity="0.9"/>`;
+  // valkey-ldap: a padlock. The module is authentication against a directory, so
+  // the glyph has to read as auth. A tree of nodes reads as a data structure and
+  // sits oddly beside the other three, which are all storage shapes.
+  const bodyW = 150;
+  const bodyH = 120;
+  const bodyTop = -30;
+  const shackleR = 48;
+  const shackleCy = bodyTop + 6;
   return [
-    ...mid.map((m) => elbow(root, m)),
-    ...leaf.map((l, i) => elbow(mid[i < 2 ? 0 : 1], l)),
-    node(root, 64),
-    ...mid.map((m) => node(m, 52)),
-    glow(root[0], root[1], 5.5, 0.95, 3),
-    ...mid.map((m) => glow(m[0], m[1], 4.5, 0.85, 3)),
-    ...leaf.map((l) => glow(l[0], l[1], 7, 0.85, 3)),
+    // Shackle: a half arc rising out of the body.
+    `<path d="M ${X(-shackleR)} ${Y(shackleCy)} A ${w(shackleR)} ${w(shackleR)} 0 0 1 ${X(shackleR)} ${Y(shackleCy)}" ` +
+      `fill="none" stroke="${color}" stroke-width="${w(11)}" opacity="0.9"/>`,
+    `<rect x="${X(-bodyW / 2)}" y="${Y(bodyTop)}" width="${w(bodyW)}" height="${w(bodyH)}" rx="${w(22)}" ` +
+      `fill="${color}" fill-opacity="0.2" stroke="${color}" stroke-width="${w(3.2)}" opacity="0.9"/>`,
+    // Keyhole: a bored circle with a tapered slot under it.
+    `<circle cx="${X(0)}" cy="${Y(bodyTop + 42)}" r="${w(15)}" fill="none" stroke="${color}" ` +
+      `stroke-width="${w(3.2)}" opacity="0.95"/>`,
+    `<path d="M ${X(-7)} ${Y(bodyTop + 86)} L ${X(-3)} ${Y(bodyTop + 54)} L ${X(3)} ${Y(bodyTop + 54)} ` +
+      `L ${X(7)} ${Y(bodyTop + 86)} Z" fill="${color}" opacity="0.9"/>`,
+    glow(0, bodyTop + 42, 7, 0.9, 3.2),
   ].join('');
 }
 
@@ -3001,8 +2998,8 @@ const THEMES = [
   { name: 'ai-agent-memory', seed: 35011, focal: [1120, 380], zoom: 1.29, center: [960, 540], title: 'Valkey AI agent memory', desc: 'A row of conversation turns with the most recent ones lit inside a bright window, older turns dimmed and parked in an archive below the white Valkey hexagon mark, and two of them arcing back up into the window, representing agent memory with hot recent context and older context recalled on demand.', art: aiAgentMemory },
   { name: 'workload-fanout', seed: 35023, focal: [700, 520], zoom: 1.18, center: [960, 540], title: 'Valkey workload primitives', desc: 'The white Valkey hexagon mark fanning out into five lanes, each ending in a differently shaped structure: a ring of slots, a chain of entries, a ranked stack, a grid of bits and a row of embedding magnitudes, representing a workload decomposing into the primitives Valkey already has.', art: workloadFanout },
   { name: 'conn-storm-spike', seed: 36011, focal: [960, 620], zoom: 1.34, center: [960, 547], title: 'Valkey connection storms', desc: 'A timeline of connection attempts that is quiet, then spikes into a wall of simultaneous reconnects whose top rises in red above a dashed accept-capacity line, then falls quiet again, representing a connection storm.', art: connStormSpike },
-  { name: 'bundle-crate', seed: 33101, focal: [960, 500], zoom: 1.2, center: [960, 540], title: 'Valkey bundle', desc: 'One bracketed package outline sealed with the white Valkey hexagon mark, holding four module diagrams inside it: a bit array, a nested document in brackets, a magnifier over a scatter of points, and a directory tree, representing the four modules valkey-bundle ships as one package.', art: bundleCrate },
-  { name: 'bundle-one-install', seed: 33207, focal: [860, 540], zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A port marked with the white Valkey hexagon fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a directory tree, representing one install that delivers all four bundled modules.', art: bundleOneInstall },
+  { name: 'bundle-crate', seed: 33101, focal: [960, 500], zoom: 1.2, center: [960, 540], title: 'Valkey bundle', desc: 'One bracketed package outline sealed with the white Valkey hexagon mark, holding four module diagrams inside it: a bit array, a nested document in brackets, a magnifier over a scatter of points, and a padlock, representing the four modules valkey-bundle ships as one package.', art: bundleCrate },
+  { name: 'bundle-one-install', seed: 33207, focal: [860, 540], zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A port marked with the white Valkey hexagon fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a padlock, representing one install that delivers all four bundled modules.', art: bundleOneInstall },
   { name: 'tooling-stack', seed: 33311, focal: [960, 620], zoom: 1.25, center: [960, 540], title: 'Valkey primitives and tools', desc: 'A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives.', art: toolingStack },
   { name: 'data-structures-grid', seed: 33419, focal: [960, 540], zoom: 1.2, center: [960, 540], title: 'Valkey data types', desc: 'Six Valkey value types laid out one per cell on an even three-by-two grid: a run of bytes, a linked list, unordered members inside a boundary, field and value pairs, members ranked by score, and a dense bitmap, representing the range of structures Valkey stores.', art: dataStructuresGrid },
   { name: 'k8s-spec-fanout', seed: 42011, focal: [1150, 520], zoom: 1.34, center: [960, 540], title: 'Valkey deployed from a chart', desc: 'A declared specification panel on the left fanning out along rails into a grid of nine identical instances, each drawn as the white Valkey hexagon mark, representing deploying Valkey on Kubernetes from a Helm chart.', art: k8sSpecFanout },
