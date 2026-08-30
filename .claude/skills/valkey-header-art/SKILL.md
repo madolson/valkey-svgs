@@ -217,6 +217,11 @@ Four things that will waste your time otherwise:
 - To compare candidates in one pass, copy the post once per candidate with different
   `featured_image` values and a letter prefix on the title, then look at `/blog/`.
 
+Never leave a bare `node generate.mjs` running in the background while you keep editing. It
+reads the module once at startup, so when it finishes it writes the *old* drawing over the
+new one you just rendered and inspected, and the stale file is what gets committed. Render
+only your own themes while iterating, and run the full rebuild when you have stopped editing.
+
 Then prove you changed nothing else:
 
 ```sh

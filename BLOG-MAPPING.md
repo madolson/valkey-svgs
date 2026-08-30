@@ -44,14 +44,14 @@ To use one: copy `images/<theme>.webp` into the site's `static/assets/media/feat
 
 ## Needed a new theme
 
-One theme per subject, narrowed from 2-3 candidates in maintainer review. Two subjects still
-have no theme: every candidate for fleet operations and for release candidates was rejected.
+One theme per subject, narrowed from 2-3 candidates in maintainer review. Three subjects still have no theme:
+every candidate for fleet operations, release candidates and AZ affinity was rejected.
 
 | Post | Subject | Theme |
 | --- | --- | --- |
 | `2024-06-27-using-bitnami-valkey-chart` | Deploying by chart into Kubernetes | `k8s-*` |
 | `2024-11-21-testing-the-limits` | Valkey inside a very small resource envelope | `limits-*` |
-| `2024-12-22-az-affinity-strategy` | Reading from the replica in your own availability zone | `az-*` |
+| `2024-12-22-az-affinity-strategy` | Reading from the replica in your own availability zone | none yet, both candidates rejected |
 | `2025-03-4-go-client-in-public-preview` | Client libraries: many languages, one protocol | `client-ports` |
 | `2025-04-09-introducing-bloom-filters` | Hashing sets a handful of bits in a shared array | `bloom-bit-array` |
 | `2025-06-13-introducing-valkey-search` | Nearest matches from an index, not a full scan | `search-vector-nearest` |

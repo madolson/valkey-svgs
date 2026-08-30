@@ -44,8 +44,6 @@ can't drift, and regenerating is a no-op diff.
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
-| `az-zone-local-reads` | Three zones, in-zone reads lit, cross-zone paths struck out in red | AZ affinity, zone-local reads, cross-AZ data transfer cost |
-| `az-short-path` | One short lit hop beside two long metered routes marked in red | Read routing, replica selection, latency and egress cost |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Vector sources are in [`svg/`](svg/),
 committed so you can tweak one by hand without running Node.
@@ -71,7 +69,7 @@ produces byte-identical files. A rebuild should show no diff unless you changed 
 Two themes carry live text (`benchmarks` labels its series, `release-version` has a
 caption). Those depend on a font resolving at render time, so they reproduce identically on
 a given machine but can shift a pixel across machines with different font stacks. The other
-31 are geometry only and reproduce anywhere.
+29 are geometry only and reproduce anywhere.
 
 ## Captions
 

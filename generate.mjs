@@ -1181,32 +1181,35 @@ function keyspaceScan(r) {
   ].join('\n');
 }
 
-// Large key: an even field of ordinary keys, all the same size, and one key of
-// exactly the same shape scaled up until it dwarfs every one of them. Nothing
-// inside it, because the point is the footprint and not the contents.
+// Large key: an even field of ordinary keys, and one key of exactly the same
+// shape standing where a whole block of them used to be. The grid it displaces is
+// removed cell by cell so the field stays aligned around it, rather than leaving
+// ragged holes where a wide tile happened to overlap.
 function largeKey(r) {
   const pitchX = 140;
   const pitchY = 40;
   const tileH = 22;
-  const x0 = 150;
+  const tileMaxW = 110; // never wider than the pitch, or tiles cross columns
+  const x0 = 205;
   const y0 = 240;
   const cols = 12;
   const rows = 16;
-  // The one key that does not fit the grid, same rounded-tile shape, ~5x across
-  // and ~7x tall. Ordinary tiles stay visible either side of it so the jump in
-  // scale is a comparison rather than an assertion.
-  const BIG = { x: 690, y: 470, w: 540, h: 160 };
-  const PAD = 26;
+  // The block of ordinary keys the big one stands in place of.
+  const BLOCK = { c0: 3, c1: 7, r0: 5, r1: 10 };
+  const big = {
+    x: x0 + BLOCK.c0 * pitchX,
+    y: y0 + BLOCK.r0 * pitchY,
+    w: (BLOCK.c1 - BLOCK.c0) * pitchX + tileMaxW,
+    h: (BLOCK.r1 - BLOCK.r0) * pitchY + tileH,
+  };
 
   const tiles = [];
   for (let c = 0; c < cols; c++) {
     for (let i = 0; i < rows; i++) {
+      if (c >= BLOCK.c0 && c <= BLOCK.c1 && i >= BLOCK.r0 && i <= BLOCK.r1) continue;
       const x = x0 + c * pitchX;
       const y = y0 + i * pitchY;
-      const w = 70 + r() * 40;
-      const clashes =
-        x + w > BIG.x - PAD && x < BIG.x + BIG.w + PAD && y + tileH > BIG.y - PAD && y < BIG.y + BIG.h + PAD;
-      if (clashes) continue;
+      const w = 70 + r() * (tileMaxW - 70);
       tiles.push(
         `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${tileH}" rx="11" fill="${C.ice}" opacity="${n(0.1 + r() * 0.09)}"/>`
       );
@@ -1215,14 +1218,13 @@ function largeKey(r) {
 
   return [
     starfield(r, 50),
-    `  <ellipse cx="${n(BIG.x + BIG.w / 2)}" cy="${n(BIG.y + BIG.h / 2)}" rx="500" ry="420" fill="url(#h-coral)" opacity="0.18"/>`,
+    `  <ellipse cx="${n(big.x + big.w / 2)}" cy="${n(big.y + big.h / 2)}" rx="500" ry="420" fill="url(#h-coral)" opacity="0.18"/>`,
     `  <g>${tiles.join('')}</g>`,
-    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="${BIG.h / 2}" fill="${C.coral}" opacity="0.32"/>`,
-    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="${BIG.h / 2}" fill="none" stroke="${C.coral}" stroke-width="18" opacity="0.3" filter="url(#blur18)"/>`,
-    `  <rect x="${BIG.x}" y="${BIG.y}" width="${BIG.w}" height="${BIG.h}" rx="${BIG.h / 2}" fill="none" stroke="${C.coral}" stroke-width="4" opacity="0.95"/>`,
+    `  <rect x="${n(big.x)}" y="${n(big.y)}" width="${n(big.w)}" height="${n(big.h)}" rx="${n(big.h / 2)}" fill="${C.coral}" opacity="0.32"/>`,
+    `  <rect x="${n(big.x)}" y="${n(big.y)}" width="${n(big.w)}" height="${n(big.h)}" rx="${n(big.h / 2)}" fill="none" stroke="${C.coral}" stroke-width="18" opacity="0.3" filter="url(#blur18)"/>`,
+    `  <rect x="${n(big.x)}" y="${n(big.y)}" width="${n(big.w)}" height="${n(big.h)}" rx="${n(big.h / 2)}" fill="none" stroke="${C.coral}" stroke-width="4" opacity="0.95"/>`,
   ].join('\n');
 }
-
 // Key prefix groups: a scattered sample of keys on the left resolving into a
 // short list of prefix groups with counts on the right.
 function keyPrefixGroups(r) {
@@ -1364,7 +1366,10 @@ function bloomBitArray(r) {
       `<rect x="${n(bx(i))}" y="${top}" width="${CW}" height="${CH}" rx="4" fill="${C.cyanLt}" opacity="${n(0.3 + r() * 0.2)}"/>`
   );
 
-  // The fan: mark -> hash node -> the one cell that node sets.
+  // The fan: mark -> hash node -> the one cell that node sets. Routed as a bus
+  // with right angles only. Swept diagonals here read as decoration and fight the
+  // vertical drops underneath them.
+  const busY = 366;
   const spokes = [];
   const nodes = [];
   const drops = [];
@@ -1373,7 +1378,7 @@ function bloomBitArray(r) {
     // plain vertical.
     const hx = bc(i);
     spokes.push(
-      `<line x1="${mx}" y1="${my + 72}" x2="${n(hx)}" y2="${hy - 20}" stroke="${C.violet}" stroke-width="1.8" opacity="0.45"/>`
+      `<line x1="${n(hx)}" y1="${busY}" x2="${n(hx)}" y2="${hy - 20}" stroke="${C.violet}" stroke-width="1.8" opacity="0.45"/>`
     );
     nodes.push(
       `<circle cx="${n(hx)}" cy="${hy}" r="30" fill="url(#h-violet)" opacity="0.55"/>`,
@@ -1386,6 +1391,12 @@ function bloomBitArray(r) {
       `<line x1="${n(bc(i))}" y1="${hy + 18}" x2="${n(bc(i))}" y2="${top - 8}" stroke="${C.mint}" stroke-width="2.4" opacity="0.6"/>`
     );
   });
+
+  // The trunk down from the mark and the bus the hash nodes hang off.
+  const bus = [
+    `<line x1="${mx}" y1="${my + 72}" x2="${mx}" y2="${busY}" stroke="${C.violet}" stroke-width="1.8" opacity="0.45"/>`,
+    `<line x1="${n(bc(picks[0]))}" y1="${busY}" x2="${n(bc(picks[picks.length - 1]))}" y2="${busY}" stroke="${C.violet}" stroke-width="1.8" opacity="0.45"/>`,
+  ];
 
   const lit = picks.flatMap((i) => [
     `<ellipse cx="${n(bc(i))}" cy="${top + CH / 2}" rx="48" ry="${n(CH * 0.8)}" fill="url(#h-mint)" opacity="0.8"/>`,
@@ -1408,6 +1419,7 @@ function bloomBitArray(r) {
     `  <circle cx="${mx}" cy="${my}" r="240" fill="url(#h-violet)" opacity="0.4"/>`,
     `  <g>${slots.join('')}</g>`,
     `  <g>${already.join('')}</g>`,
+    `  <g>${bus.join('')}</g>`,
     `  <g>${spokes.join('')}</g>`,
     `  <g>${drops.join('')}</g>`,
     `  <g>${lit.join('')}</g>`,
@@ -1921,19 +1933,6 @@ function workloadFanout(r) {
 
   // Inbound: one workload arriving as many requests, funnelling into the split.
   // Straight dashed lanes rather than long curves, so it reads as traffic.
-  const inbound = [];
-  const iLanes = 21;
-  for (let i = 0; i < iLanes; i++) {
-    const y0 = hy + (i / (iLanes - 1) - 0.5) * 620 + (r() - 0.5) * 18;
-    const x0 = 20 + r() * 130;
-    inbound.push(
-      `<line x1="${n(x0)}" y1="${n(y0)}" x2="${n(hx - 178)}" y2="${n(hy + (y0 - hy) * 0.1)}" ` +
-        `stroke="${weighted(r, [[C.cyanLt, 6], [C.ice, 4]])}" stroke-width="${n(1.6 + r() * 2)}" ` +
-        `stroke-dasharray="${n(26 + r() * 96)} ${n(20 + r() * 44)}" stroke-linecap="round" ` +
-        `opacity="${n(0.16 + r() * 0.34)}"/>`
-    );
-  }
-
   const lanes = [
     { y: 240, color: C.cyanLt, key: 'cyan' },
     { y: 390, color: C.mint, key: 'mint' },
@@ -2026,7 +2025,6 @@ function workloadFanout(r) {
     starfield(r, 55),
     `  <circle cx="${hx}" cy="${hy}" r="360" fill="url(#h-violet)" opacity="0.3"/>`,
     `  <ellipse cx="${glyphX + 120}" cy="${hy}" rx="300" ry="430" fill="url(#h-cyan)" opacity="0.12"/>`,
-    `  <g>${inbound.join('')}</g>`,
     `  <g>${wires.join('')}</g>`,
     `  <g>${packets.join('')}</g>`,
     `  <g>${glyphs.join('')}</g>`,
@@ -2586,184 +2584,6 @@ function limitsGaugePinned(r) {
     `  <g>${mark(cx, cy, 224)}</g>`,
   ].join('\n');
 }
-// A client glyph: an app instance rather than a server, so it never gets confused
-// with the mark.
-function azClient(x, y, size = 88) {
-  const h = size / 2;
-  const pips = [];
-  for (const dx of [-1, 1]) {
-    for (const dy of [-1, 1]) {
-      pips.push(`<circle cx="${n(x + dx * 18)}" cy="${n(y + dy * 18)}" r="6.5" fill="${C.ice}" opacity="0.9"/>`);
-    }
-  }
-  return (
-    `<circle cx="${n(x)}" cy="${n(y)}" r="${n(size * 0.9)}" fill="url(#h-ice)" opacity="0.3"/>` +
-    `<rect x="${n(x - h)}" y="${n(y - h)}" width="${n(size)}" height="${n(size)}" rx="22" fill="${C.ink}" ` +
-    `fill-opacity="0.55" stroke="${C.ice}" stroke-width="3" opacity="0.92"/>` +
-    pips.join('')
-  );
-}
-
-
-function azZoneLocalReads(r) {
-  const zoneW = 260;
-  const gap = 90;
-  const left = 480;
-  const zTop = 236;
-  const zH = 669;
-  const clientY = 300;
-  const nodeY = 810;
-  const cxs = [0, 1, 2].map((i) => left + i * (zoneW + gap) + zoneW / 2);
-
-  const zones = cxs
-    .map(
-      (x) =>
-        `<rect x="${n(x - zoneW / 2)}" y="${zTop}" width="${zoneW}" height="${zH}" rx="34" ` +
-        `fill="${C.violet}" fill-opacity="0.07" stroke="${C.cyanLt}" stroke-width="2.2" ` +
-        `stroke-dasharray="16 18" opacity="0.42"/>`
-    )
-    .join('');
-
-  // The in-zone read: short, lit, and inside the boundary the whole way.
-  const local = [];
-  for (const x of cxs) {
-    const y0 = clientY + 46;
-    const y1 = nodeY - 82;
-    local.push(
-      `<line x1="${n(x)}" y1="${n(y0)}" x2="${n(x)}" y2="${n(y1)}" stroke="${C.mint}" stroke-width="14" ` +
-        `opacity="0.3" filter="url(#blur8)"/>`,
-      `<line x1="${n(x)}" y1="${n(y0)}" x2="${n(x)}" y2="${n(y1)}" stroke="${C.mint}" stroke-width="5.5" ` +
-        `stroke-linecap="round" opacity="0.95"/>`,
-      [0.28, 0.52, 0.76].map((t) => dot(x, y0 + t * (y1 - y0), 5.5, C.ice, 'ice', 0.9, 3)).join(''),
-      `<path d="M ${n(x - 17)} ${n(y1 - 22)} L ${n(x)} ${n(y1)} L ${n(x + 17)} ${n(y1 - 22)}" fill="none" ` +
-        `stroke="${C.mint}" stroke-width="5" stroke-linejoin="round" opacity="0.95"/>`
-    );
-  }
-
-  // The hops that would leave the zone: drawn, dashed, and struck out on the
-  // boundary they would have to cross.
-  const cross = [];
-  for (const s of [-1, 1]) {
-    const gx = cxs[1] + s * (zoneW / 2 + gap / 2);
-    const ax = cxs[1] + s * (zoneW + gap) - s * 96;
-    cross.push(
-      // Right angles only: out of the zone, straight down the gutter, then in to
-      // the far replica. Curves here read as decoration and cross each other.
-      `<path d="M ${n(cxs[1] + s * 48)} ${clientY} L ${n(gx)} ${clientY} L ${n(gx)} ${nodeY} ` +
-        `L ${n(ax)} ${nodeY}" fill="none" stroke="${C.cyanLt}" stroke-width="2.6" ` +
-        `stroke-linejoin="round" stroke-dasharray="13 15" opacity="0.35"/>`
-    );
-    const mx = cxs[1] + s * (zoneW / 2);
-    cross.push(
-      `<circle cx="${n(mx)}" cy="${n(clientY + 14)}" r="30" fill="url(#h-coral)" opacity="0.85"/>`,
-      `<path d="M ${n(mx - 12)} ${n(clientY + 2)} L ${n(mx + 12)} ${n(clientY + 26)} ` +
-        `M ${n(mx + 12)} ${n(clientY + 2)} L ${n(mx - 12)} ${n(clientY + 26)}" stroke="${C.coral}" ` +
-        `stroke-width="4.2" stroke-linecap="round" opacity="0.95"/>`
-    );
-  }
-
-  const nodes = cxs
-    .map(
-      (x) =>
-        `<circle cx="${n(x)}" cy="${nodeY}" r="150" fill="url(#h-cyan)" opacity="0.3"/>` +
-        `<circle cx="${n(x)}" cy="${nodeY}" r="106" fill="none" stroke="${C.mint}" stroke-width="2.4" ` +
-        `stroke-dasharray="10 12" opacity="0.5"/>` +
-        `<circle cx="${n(x)}" cy="${nodeY}" r="70" fill="url(#scrim)"/>` +
-        mark(x, nodeY, 150)
-    )
-    .join('');
-
-  return [
-    starfield(r, 55),
-    `  <g>${zones}</g>`,
-    `  <g>${cross.join('')}</g>`,
-    `  <g>${local.join('')}</g>`,
-    `  <g>${nodes}</g>`,
-    `  <g>${cxs.map((x) => azClient(x, clientY)).join('')}</g>`,
-  ].join('\n');
-}
-
-// One client, three replicas it could read from. It takes the hop that stays in
-// its own zone; the two that leave are long, metered, and not taken.
-function azShortPath(r) {
-  const cy = 540;
-  const clientX = 620;
-  const localX = 980;
-  const remoteX = 1330;
-  const remoteYs = [268, 812];
-
-  // Each long route is one straight run out to a far zone. Straight lines keep the
-  // three routes from crossing each other and make the length comparison honest.
-  const routes = [
-    [[clientX - 6, cy - 44], [remoteX - 92, remoteYs[0]]],
-    [[clientX - 6, cy + 44], [remoteX - 92, remoteYs[1]]],
-  ];
-
-  const long = [];
-  for (const p of routes) {
-    const [[ax, ay], [bx2, by2]] = p;
-    const lerp = (t) => [ax + (bx2 - ax) * t, ay + (by2 - ay) * t];
-    long.push(
-      `<line x1="${n(ax)}" y1="${n(ay)}" x2="${n(bx2)}" y2="${n(by2)}" fill="none" stroke="${C.cyanLt}" ` +
-        `stroke-width="2.8" stroke-dasharray="14 16" opacity="0.38"/>`
-    );
-    // Meter ticks along the route: distance that gets charged for.
-    const len = Math.hypot(bx2 - ax, by2 - ay) || 1;
-    const nx = -(by2 - ay) / len;
-    const ny = (bx2 - ax) / len;
-    for (const t of [0.2, 0.34, 0.48, 0.62, 0.76]) {
-      const [x, y] = lerp(t);
-      long.push(
-        `<line x1="${n(x - nx * 12)}" y1="${n(y - ny * 12)}" x2="${n(x + nx * 12)}" y2="${n(y + ny * 12)}" ` +
-          `stroke="${C.coral}" stroke-width="3" stroke-linecap="round" opacity="0.6"/>`
-      );
-    }
-    const [mx, my] = lerp(0.5);
-    long.push(
-      `<circle cx="${n(mx)}" cy="${n(my)}" r="32" fill="url(#h-coral)" opacity="0.85"/>`,
-      `<path d="M ${n(mx - 13)} ${n(my - 13)} L ${n(mx + 13)} ${n(my + 13)} M ${n(mx + 13)} ${n(my - 13)} ` +
-        `L ${n(mx - 13)} ${n(my + 13)}" stroke="${C.coral}" stroke-width="4.4" stroke-linecap="round" opacity="0.95"/>`
-    );
-  }
-
-  const shortX0 = clientX + 56;
-  const shortX1 = localX - 88;
-  const short = [
-    `<line x1="${n(shortX0)}" y1="${cy}" x2="${n(shortX1)}" y2="${cy}" stroke="${C.mint}" stroke-width="16" ` +
-      `opacity="0.32" filter="url(#blur8)"/>`,
-    `<line x1="${n(shortX0)}" y1="${cy}" x2="${n(shortX1)}" y2="${cy}" stroke="${C.mint}" stroke-width="6" ` +
-      `stroke-linecap="round" opacity="0.95"/>`,
-    [0.3, 0.6].map((t) => dot(shortX0 + t * (shortX1 - shortX0), cy, 6, C.ice, 'ice', 0.95, 3)).join(''),
-    `<path d="M ${n(shortX1 - 24)} ${cy - 18} L ${n(shortX1)} ${cy} L ${n(shortX1 - 24)} ${cy + 18}" fill="none" ` +
-      `stroke="${C.mint}" stroke-width="5" stroke-linejoin="round" opacity="0.95"/>`,
-    // A measure under the hop, because its length is the whole point.
-    `<path d="M ${n(shortX0)} ${cy + 86} L ${n(shortX0)} ${cy + 100} L ${n(shortX1)} ${cy + 100} ` +
-      `L ${n(shortX1)} ${cy + 86}" fill="none" stroke="${C.mint}" stroke-width="2.8" opacity="0.6"/>`,
-  ].join('');
-
-  const remotes = remoteYs
-    .map(
-      (y) =>
-        `<circle cx="${remoteX}" cy="${n(y)}" r="96" fill="none" stroke="${C.cyanLt}" stroke-width="2" ` +
-        `stroke-dasharray="12 14" opacity="0.3"/>` +
-        `<g opacity="0.5">${mark(remoteX, y, 128)}</g>`
-    )
-    .join('');
-
-  return [
-    starfield(r, 55),
-    `  <ellipse cx="${n((clientX + localX) / 2)}" cy="${cy}" rx="360" ry="230" fill="url(#h-mint)" opacity="0.26"/>`,
-    `  <g>${long.join('')}</g>`,
-    `  <g>${remotes}</g>`,
-    `  <g>${short}</g>`,
-    `  <circle cx="${localX}" cy="${cy}" r="190" fill="url(#h-cyan)" opacity="0.34"/>`,
-    `  <circle cx="${localX}" cy="${cy}" r="86" fill="url(#scrim)"/>`,
-    `  <g filter="url(#blur18)" opacity="0.45">${mark(localX, cy, 180)}</g>`,
-    `  <g>${mark(localX, cy, 180)}</g>`,
-    `  <g>${azClient(clientX, cy, 96)}</g>`,
-  ].join('\n');
-}
-
 // ------------------------------------------------------------- valkey-bundle
 //
 // One package that carries several capabilities you would otherwise install one
@@ -2960,8 +2780,8 @@ function bundleCrate(r) {
   ].join('\n');
 }
 
-// Delivery: one conduit arrives, and the four modules come out of it. The single
-// strap on the left is what you install; the fan on the right is what you get.
+// Delivery: one install, and the four modules it puts on the server. The port is
+// what you install into; the fan is what you get.
 function bundleOneInstall(r) {
   const px = 700;
   const cy = 540;
@@ -2976,33 +2796,7 @@ function bundleOneInstall(r) {
     y: 275 + i * 178.7,
   }));
 
-  // The single strap: one bound thing, tapering into the port.
-  const strapD = `M 120 ${cy - 100} L ${px} ${cy - 64} L ${px} ${cy + 64} L 120 ${cy + 100} Z`;
-  const halfAt = (x) => 100 - ((x - 120) / (px - 120)) * 36;
-
-  const flow = [];
-  for (let i = 0; i < 34; i++) {
-    const t = r();
-    const x = 130 + t * (px - 250);
-    const y = cy + (r() * 2 - 1) * (halfAt(x) - 8);
-    const len = 60 + r() * 190;
-    flow.push(
-      `<line x1="${n(x)}" y1="${n(y)}" x2="${n(Math.min(px - 20, x + len))}" y2="${n(y)}" ` +
-        `stroke="${weighted(r, [[C.cyanLt, 6], [C.ice, 3], [C.mint, 1]])}" stroke-width="${n(1.6 + r() * 3)}" ` +
-        `stroke-linecap="round" opacity="${n(0.18 + r() * 0.4)}"/>`
-    );
-  }
-
-  // Binding straps, so the arriving thing reads as one parcel rather than a beam.
-  const bindings = [300, 452, 596]
-    .map(
-      (x) =>
-        `<line x1="${n(x)}" y1="${n(cy - halfAt(x))}" x2="${n(x)}" y2="${n(cy + halfAt(x))}" ` +
-        `stroke="${C.ice}" stroke-width="11" stroke-linecap="round" opacity="0.3"/>`
-    )
-    .join('');
-
-  // One strap in, four branches out, each stopping at its module's edge.
+  // Four branches out of the port, each stopping at its module's edge.
   const sx = 812;
   const harness = mods
     .map((m) => {
@@ -3018,13 +2812,9 @@ function bundleOneInstall(r) {
 
   return [
     starfield(r, 55),
-    `  <clipPath id="strap"><path d="${strapD}"/></clipPath>`,
     // Ambient glow behind everything that follows.
     `  <circle cx="${px}" cy="${cy}" r="330" fill="url(#h-cyan)" opacity="0.18"/>`,
     ...mods.map((m) => `  <circle cx="${n(m.x)}" cy="${n(m.y)}" r="150" fill="url(#h-${m.key})" opacity="0.22"/>`),
-    `  <path d="${strapD}" fill="${C.cyan}" fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="10" opacity="0.3" filter="url(#blur8)"/>`,
-    `  <g clip-path="url(#strap)">${flow.join('')}${bindings}</g>`,
-    `  <path d="${strapD}" fill="none" stroke="${C.ice}" stroke-width="3.8" opacity="0.9"/>`,
     `  <g>${harness}</g>`,
     `  <circle cx="${px}" cy="${cy}" r="150" fill="url(#scrim)"/>`,
     `  <g filter="url(#blur18)" opacity="0.5">${mark(px, cy, 208)}</g>`,
@@ -3209,18 +2999,16 @@ const THEMES = [
   { name: 'search-field-index', seed: 32047, focal: [960, 600], zoom: 1.1, center: [960, 540], title: 'Valkey secondary indexing', desc: 'Four record cards each contributing one highlighted green field to a sorted index lane below, with a query caliper bracketing three matched entries above the white Valkey hexagon mark, representing secondary indexing on hashes and JSON.', art: searchFieldIndex },
   { name: 'client-ports', seed: 34037, focal: [960, 540], zoom: 1, center: [960, 540], title: 'Valkey client protocol', desc: 'Six differently drawn channels reaching in from distinct outer shapes, each meeting an identical port at the same radius, beyond which every spoke becomes the same run of pale segments arriving at the white Valkey hexagon mark, representing different client libraries meeting one protocol at one server.', art: clientPorts },
   { name: 'ai-agent-memory', seed: 35011, focal: [1120, 380], zoom: 1.29, center: [960, 540], title: 'Valkey AI agent memory', desc: 'A row of conversation turns with the most recent ones lit inside a bright window, older turns dimmed and parked in an archive below the white Valkey hexagon mark, and two of them arcing back up into the window, representing agent memory with hot recent context and older context recalled on demand.', art: aiAgentMemory },
-  { name: 'workload-fanout', seed: 35023, focal: [700, 520], zoom: 1.18, center: [960, 540], title: 'Valkey AI workload primitives', desc: 'A single bundled stream of requests arriving at the white Valkey hexagon mark and fanning out into five lanes, each ending in a differently shaped structure: a ring of slots, a chain of entries, a ranked stack, a grid of bits and a row of embedding magnitudes, representing an AI workload decomposing into the primitives Valkey already has.', art: workloadFanout },
+  { name: 'workload-fanout', seed: 35023, focal: [700, 520], zoom: 1.18, center: [960, 540], title: 'Valkey workload primitives', desc: 'The white Valkey hexagon mark fanning out into five lanes, each ending in a differently shaped structure: a ring of slots, a chain of entries, a ranked stack, a grid of bits and a row of embedding magnitudes, representing a workload decomposing into the primitives Valkey already has.', art: workloadFanout },
   { name: 'conn-storm-spike', seed: 36011, focal: [960, 620], zoom: 1.34, center: [960, 547], title: 'Valkey connection storms', desc: 'A timeline of connection attempts that is quiet, then spikes into a wall of simultaneous reconnects whose top rises in red above a dashed accept-capacity line, then falls quiet again, representing a connection storm.', art: connStormSpike },
   { name: 'bundle-crate', seed: 33101, focal: [960, 500], zoom: 1.2, center: [960, 540], title: 'Valkey bundle', desc: 'One bracketed package outline sealed with the white Valkey hexagon mark, holding four module diagrams inside it: a bit array, a nested document in brackets, a magnifier over a scatter of points, and a directory tree, representing the four modules valkey-bundle ships as one package.', art: bundleCrate },
-  { name: 'bundle-one-install', seed: 33207, focal: [760, 540], zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A single tapering conduit arriving at a port marked with the white Valkey hexagon, fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a directory tree, representing one install that delivers all four bundled modules.', art: bundleOneInstall },
+  { name: 'bundle-one-install', seed: 33207, focal: [860, 540], zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A port marked with the white Valkey hexagon fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a directory tree, representing one install that delivers all four bundled modules.', art: bundleOneInstall },
   { name: 'tooling-stack', seed: 33311, focal: [960, 620], zoom: 1.25, center: [960, 540], title: 'Valkey primitives and tools', desc: 'A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives.', art: toolingStack },
   { name: 'data-structures-grid', seed: 33419, focal: [960, 540], zoom: 1.2, center: [960, 540], title: 'Valkey data types', desc: 'Six Valkey value types laid out one per cell on an even three-by-two grid: a run of bytes, a linked list, unordered members inside a boundary, field and value pairs, members ranked by score, and a dense bitmap, representing the range of structures Valkey stores.', art: dataStructuresGrid },
   { name: 'k8s-spec-fanout', seed: 42011, focal: [1150, 520], zoom: 1.34, center: [960, 540], title: 'Valkey deployed from a chart', desc: 'A declared specification panel on the left fanning out along rails into a grid of nine identical instances, each drawn as the white Valkey hexagon mark, representing deploying Valkey on Kubernetes from a Helm chart.', art: k8sSpecFanout },
   { name: 'k8s-desired-count', seed: 42021, focal: [960, 400], zoom: 1.34, center: [960, 540], title: 'Valkey replicas reaching the declared count', desc: 'Six declared slots under a gold span, four filled with instances drawn as the white Valkey hexagon mark, one instance rising into place and one slot still empty, representing a declared replica count and the running instances converging on it.', art: k8sDesiredCount },
   { name: 'limits-tight-envelope', seed: 42031, focal: [960, 540], zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
   { name: 'limits-gauge-pinned', seed: 42041, focal: [960, 540], zoom: 1.34, center: [960, 540], title: 'Valkey pinned near its limit', desc: 'A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.', art: limitsGaugePinned },
-  { name: 'az-zone-local-reads', seed: 42051, focal: [960, 560], zoom: 1.34, center: [960, 570], title: 'Valkey zone-local reads', desc: 'Three dashed availability zones, each with a client reading down a lit green path to the replica beside it drawn as the white Valkey hexagon mark, and the paths that would leave a zone dashed and struck out in red at the boundary.', art: azZoneLocalReads },
-  { name: 'az-short-path', seed: 42061, focal: [900, 540], zoom: 1.26, center: [990, 540], title: 'Valkey in-zone read path', desc: 'A client taking one short lit green hop to the replica in its own zone, with two long dashed routes to replicas in other zones marked with red meter ticks and crosses, representing reading in-zone instead of across zones.', art: azShortPath },
 ];
 
 // -------------------------------------------------------------------- render
