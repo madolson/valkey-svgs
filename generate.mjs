@@ -2974,6 +2974,110 @@ function dataStructuresGrid(r) {
   ].join('\n');
 }
 
+// Key size distribution beside a set of servers: the panel on the left ranks key
+// sizes, a couple of them far larger than everything else, and the grid on the
+// right is the deployment they are spread across. Same composition as
+// `k8s-spec-fanout`, which is left alone; only the panel's contents differ.
+function keySizeDistribution(r) {
+  const sx = 496;
+  const sw = 296;
+  const sTop = 250;
+  const sH = 580;
+  const cols = [1012, 1188, 1364];
+  const rows = [300, 540, 780];
+  const tile = 140;
+  const railX0 = 924;
+  const railX1 = 1452;
+
+  // Ranked key sizes. The first two are the outliers: the drop from 216 to 96 is
+  // wide enough that they read as a different class of key, not the top of a ramp.
+  const SIZES = [216, 188, 96, 84, 76, 68, 60, 53, 46, 40, 35, 30, 26, 22, 19, 16];
+  const bars = [];
+  const inner = sx + 30;
+  let by = sTop + 92;
+  SIZES.forEach((len, i) => {
+    const outlier = i < 2;
+    bars.push(
+      `<rect x="${n(inner)}" y="${n(by)}" width="${n(len)}" height="14" rx="7" ` +
+        `fill="${outlier ? C.coral : C.cyanLt}" opacity="${outlier ? 0.92 : n(0.34 + (1 - i / SIZES.length) * 0.4)}"/>`
+    );
+    if (outlier) {
+      bars.push(
+        `<rect x="${n(inner)}" y="${n(by)}" width="${n(len)}" height="14" rx="7" fill="none" ` +
+          `stroke="${C.coral}" stroke-width="9" opacity="0.3" filter="url(#blur8)"/>`,
+        dot(inner + len + 18, by + 7, 4.5, C.coral, 'coral', 0.9, 3)
+      );
+    }
+    by += 30;
+  });
+
+  // A baseline the bars are measured from, so the run reads as a chart.
+  const axis =
+    `<line x1="${n(inner)}" y1="${sTop + 84}" x2="${n(inner)}" y2="${n(by - 8)}" stroke="${C.ice}" ` +
+    `stroke-width="2" opacity="0.4"/>`;
+
+  const panel =
+    `<rect x="${sx}" y="${sTop}" width="${sw}" height="${sH}" rx="22" fill="${C.ink}" fill-opacity="0.5" ` +
+      `stroke="${C.ice}" stroke-width="3" opacity="0.9"/>` +
+    `<line x1="${sx + 24}" y1="${sTop + 70}" x2="${sx + sw - 24}" y2="${sTop + 70}" stroke="${C.ice}" ` +
+      `stroke-width="1.8" opacity="0.45"/>` +
+    `<g opacity="0.92">${mark(sx + 56, sTop + 38, 38)}</g>`;
+
+  // One curve per row of servers, all of them leaving the same distribution.
+  const fanPaths = rows
+    .map((y) => {
+      const x0 = sx + sw + 10;
+      return `<path d="M ${n(x0)} 540 C ${n(x0 + 130)} 540 ${railX0 - 130} ${n(y)} ${railX0} ${n(y)}"/>`;
+    })
+    .join('');
+
+  const rails = rows
+    .map(
+      (y) =>
+        `<line x1="${railX0}" y1="${n(y)}" x2="${railX1}" y2="${n(y)}" stroke="${C.cyanLt}" ` +
+        `stroke-width="2" opacity="0.32"/>`
+    )
+    .join('');
+
+  const packets = rows
+    .map((y) =>
+      [0.1, 0.4, 0.7]
+        .map((t) => dot(railX0 + t * (railX1 - railX0), y, 4.5, C.mint, 'mint', 0.75, 3))
+        .join('')
+    )
+    .join('');
+
+  const glows = [];
+  const pods = [];
+  for (const y of rows) {
+    for (const x of cols) {
+      glows.push(`<circle cx="${x}" cy="${y}" r="104" fill="url(#h-cyan)" opacity="0.2"/>`);
+      pods.push(
+        `<rect x="${n(x - tile / 2)}" y="${n(y - tile / 2)}" width="${tile}" height="${tile}" rx="26" ` +
+          `fill="${C.cyan}" fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="2.4" opacity="0.9"/>`,
+        `<circle cx="${n(x)}" cy="${n(y)}" r="54" fill="url(#scrim)"/>`,
+        mark(x, y, 72),
+        dot(x + tile / 2 - 24, y - tile / 2 + 24, 5, C.mint, 'mint', 0.9, 3)
+      );
+    }
+  }
+
+  return [
+    starfield(r, 55),
+    `  <circle cx="${n(sx + sw / 2)}" cy="540" r="340" fill="url(#h-coral)" opacity="0.26"/>`,
+    `  <circle cx="1188" cy="540" r="470" fill="url(#h-cyan)" opacity="0.14"/>`,
+    `  <g stroke="${C.cyanLt}" stroke-width="13" fill="none" opacity="0.16" filter="url(#blur8)">${fanPaths}</g>`,
+    `  <g stroke="${C.cyanLt}" stroke-width="2.4" fill="none" opacity="0.55">${fanPaths}</g>`,
+    `  <g>${rails}</g>`,
+    `  <g>${packets}</g>`,
+    `  <g>${glows.join('')}</g>`,
+    `  <g>${pods.join('')}</g>`,
+    `  <g>${panel}</g>`,
+    `  <g>${axis}</g>`,
+    `  <g>${bars.join('')}</g>`,
+  ].join('\n');
+}
+
 const THEMES = [
   { name: 'community', seed: 1041, focal: [960, 540], zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, focal: [1530, 505], zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -3006,6 +3110,7 @@ const THEMES = [
   { name: 'k8s-desired-count', seed: 42021, focal: [960, 400], zoom: 1.34, center: [960, 540], title: 'Valkey replicas reaching the declared count', desc: 'Six declared slots under a gold span, four filled with instances drawn as the white Valkey hexagon mark, one instance rising into place and one slot still empty, representing a declared replica count and the running instances converging on it.', art: k8sDesiredCount },
   { name: 'limits-tight-envelope', seed: 42031, focal: [960, 540], zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
   { name: 'limits-gauge-pinned', seed: 42041, focal: [960, 540], zoom: 1.34, center: [960, 540], title: 'Valkey pinned near its limit', desc: 'A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.', art: limitsGaugePinned },
+  { name: 'key-size-distribution', seed: 43011, focal: [1150, 520], zoom: 1.34, center: [960, 540], title: 'Valkey key size distribution', desc: 'A panel on the left ranking key sizes as horizontal bars, the top two far longer than the rest and drawn in red, fanning out along rails into a three by three grid of servers each drawn as the white Valkey hexagon mark, representing a few very large keys spread across a deployment.', art: keySizeDistribution },
 ];
 
 // -------------------------------------------------------------------- render

@@ -1,6 +1,6 @@
 {
   "generatedBy": "generate.mjs",
-  "count": 31,
+  "count": 32,
   "themes": [
     {
       "name": "community",
@@ -310,6 +310,16 @@
       "useFor": "Running right up to a limit, headroom, saturation",
       "image": "images/limits-gauge-pinned.webp",
       "svg": "svg/limits-gauge-pinned.svg",
+      "captioned": false
+    },
+    {
+      "name": "key-size-distribution",
+      "title": "Valkey key size distribution",
+      "desc": "A panel on the left ranking key sizes as horizontal bars, the top two far longer than the rest and drawn in red, fanning out along rails into a three by three grid of servers each drawn as the white Valkey hexagon mark, representing a few very large keys spread across a deployment.",
+      "motif": "Ranked key-size bars with two big outliers, fanning into a grid of servers",
+      "useFor": "Key size skew, heavy hitters, hot keys across a fleet",
+      "image": "images/key-size-distribution.webp",
+      "svg": "svg/key-size-distribution.svg",
       "captioned": false
     }
   ]
