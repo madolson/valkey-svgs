@@ -3654,6 +3654,532 @@ function toolingRecombine(r) {
   ].join('\n');
 }
 
+// One declared spec on the left, the running set it produces on the right.
+// Nothing to the right of the fan is authored: every pod is a copy of the panel.
+function k8sSpecFanout(r) {
+  const sx = 496;
+  const sw = 296;
+  const sTop = 250;
+  const sH = 580;
+  const cols = [1012, 1188, 1364];
+  const rows = [300, 540, 780];
+  const tile = 140;
+  const railX0 = 924;
+  const railX1 = 1452;
+
+  // The declared values, suggested as indented rows rather than written out. One
+  // row is picked out in gold: the replica count, which the right-hand side is a
+  // picture of.
+  const spec = [];
+  let ly = sTop + 96;
+  let i = 0;
+  while (ly < sTop + sH - 34) {
+    const indent = weighted(r, [[0, 3], [1, 5], [2, 3]]) * 24;
+    const w = 52 + r() * (sw - 116 - indent);
+    const key = i === 3;
+    spec.push(
+      `<rect x="${n(sx + 30 + indent)}" y="${n(ly)}" width="${n(w)}" height="9" rx="4.5" ` +
+        `fill="${key ? C.gold : weighted(r, [[C.ice, 7], [C.cyanLt, 4]])}" ` +
+        `opacity="${key ? 0.92 : n(0.24 + r() * 0.32)}"/>`
+    );
+    ly += 33;
+    i++;
+  }
+
+  const panel =
+    `<rect x="${sx}" y="${sTop}" width="${sw}" height="${sH}" rx="22" fill="${C.ink}" fill-opacity="0.5" ` +
+      `stroke="${C.ice}" stroke-width="3" opacity="0.9"/>` +
+    `<line x1="${sx + 24}" y1="${sTop + 70}" x2="${sx + sw - 24}" y2="${sTop + 70}" stroke="${C.ice}" ` +
+      `stroke-width="1.8" opacity="0.45"/>` +
+    `<g opacity="0.92">${mark(sx + 56, sTop + 38, 38)}</g>`;
+
+  // One curve per row of instances, all of them leaving the same spec.
+  const fanPaths = rows
+    .map((y) => {
+      const x0 = sx + sw + 10;
+      return `<path d="M ${n(x0)} 540 C ${n(x0 + 130)} 540 ${railX0 - 130} ${n(y)} ${railX0} ${n(y)}"/>`;
+    })
+    .join('');
+
+  const rails = rows
+    .map(
+      (y) =>
+        `<line x1="${railX0}" y1="${n(y)}" x2="${railX1}" y2="${n(y)}" stroke="${C.cyanLt}" ` +
+        `stroke-width="2" opacity="0.32"/>`
+    )
+    .join('');
+
+  const packets = rows
+    .map((y) =>
+      [0.1, 0.4, 0.7]
+        .map((t) => dot(railX0 + t * (railX1 - railX0), y, 4.5, C.mint, 'mint', 0.75, 3))
+        .join('')
+    )
+    .join('');
+
+  const glows = [];
+  const pods = [];
+  for (const y of rows) {
+    for (const x of cols) {
+      glows.push(`<circle cx="${x}" cy="${y}" r="104" fill="url(#h-cyan)" opacity="0.2"/>`);
+      pods.push(
+        `<rect x="${n(x - tile / 2)}" y="${n(y - tile / 2)}" width="${tile}" height="${tile}" rx="26" ` +
+          `fill="${C.cyan}" fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="2.4" opacity="0.9"/>`,
+        `<circle cx="${n(x)}" cy="${n(y)}" r="54" fill="url(#scrim)"/>`,
+        mark(x, y, 72),
+        dot(x + tile / 2 - 24, y - tile / 2 + 24, 5, C.mint, 'mint', 0.9, 3)
+      );
+    }
+  }
+
+  return [
+    starfield(r, 55),
+    `  <circle cx="${n(sx + sw / 2)}" cy="540" r="340" fill="url(#h-violet)" opacity="0.32"/>`,
+    `  <circle cx="1188" cy="540" r="470" fill="url(#h-cyan)" opacity="0.14"/>`,
+    `  <g stroke="${C.cyanLt}" stroke-width="13" fill="none" opacity="0.16" filter="url(#blur8)">${fanPaths}</g>`,
+    `  <g stroke="${C.cyanLt}" stroke-width="2.4" fill="none" opacity="0.55">${fanPaths}</g>`,
+    `  <g>${rails}</g>`,
+    `  <g>${packets}</g>`,
+    `  <g>${glows.join('')}</g>`,
+    `  <g>${pods.join('')}</g>`,
+    `  <g>${panel}</g>`,
+    `  <g>${spec.join('')}</g>`,
+  ].join('\n');
+}
+
+// The declared replica count and the instances converging on it: six slots
+// bracketed in gold because that is what was asked for, four of them filled, one
+// instance still on its way up and one slot still empty.
+function k8sDesiredCount(r) {
+  const xs = [560, 720, 880, 1040, 1200, 1360];
+  const slotY = 312;
+  const padY = 828;
+  const box = 122;
+  const top = 226;
+  const FILLED = 4;
+  const RISING = 4;
+
+  const bx0 = xs[0] - box / 2 - 16;
+  const bx1 = xs[xs.length - 1] + box / 2 + 16;
+
+  // The declared count: a span with one gold pip per instance asked for.
+  const bracket =
+    `<path d="M ${n(bx0)} ${n(top + 28)} L ${n(bx0)} ${n(top)} L ${n(bx1)} ${n(top)} L ${n(bx1)} ${n(top + 28)}" ` +
+      `fill="none" stroke="${C.gold}" stroke-width="3.4" stroke-linecap="round" opacity="0.9"/>` +
+    xs.map((x) => `<circle cx="${n(x)}" cy="${n(top)}" r="7" fill="${C.gold}" opacity="0.95"/>`).join('');
+
+  const trackTop = slotY + box / 2 + 18;
+  const slots = [];
+  const tracks = [];
+  const pads = [];
+
+  xs.forEach((x, i) => {
+    const filled = i < FILLED;
+    const rising = i === RISING;
+
+    pads.push(
+      `<rect x="${n(x - 44)}" y="${n(padY)}" width="88" height="12" rx="6" ` +
+        `fill="${filled || rising ? C.mint : C.cyanLt}" opacity="${filled || rising ? 0.8 : 0.3}"/>`
+    );
+
+    if (filled) {
+      tracks.push(
+        `<line x1="${n(x)}" y1="${n(padY - 6)}" x2="${n(x)}" y2="${n(trackTop)}" stroke="${C.mint}" ` +
+          `stroke-width="3.2" opacity="0.75"/>`,
+        [0.3, 0.56, 0.82]
+          .map((t) => dot(x, padY - 6 - t * (padY - 6 - trackTop), 4.5, C.mint, 'mint', 0.7, 3))
+          .join('')
+      );
+    } else if (rising) {
+      const py = 600;
+      tracks.push(
+        `<line x1="${n(x)}" y1="${n(padY - 6)}" x2="${n(x)}" y2="${n(py + 54)}" stroke="${C.mint}" ` +
+          `stroke-width="3.2" opacity="0.75"/>`,
+        `<line x1="${n(x)}" y1="${n(py - 54)}" x2="${n(x)}" y2="${n(trackTop)}" stroke="${C.mint}" ` +
+          `stroke-width="2.4" stroke-dasharray="8 12" opacity="0.45"/>`,
+        `<circle cx="${n(x)}" cy="${n(py)}" r="82" fill="url(#h-mint)" opacity="0.45"/>`,
+        `<rect x="${n(x - 46)}" y="${n(py - 46)}" width="92" height="92" rx="20" fill="${C.mint}" ` +
+          `fill-opacity="0.16" stroke="${C.mint}" stroke-width="2.4" opacity="0.85"/>`,
+        `<g opacity="0.8">${mark(x, py, 52)}</g>`
+      );
+    } else {
+      tracks.push(
+        `<line x1="${n(x)}" y1="${n(padY - 6)}" x2="${n(x)}" y2="${n(trackTop)}" stroke="${C.cyanLt}" ` +
+          `stroke-width="2.2" stroke-dasharray="8 14" opacity="0.3"/>`
+      );
+    }
+
+    if (filled) {
+      slots.push(
+        `<circle cx="${n(x)}" cy="${n(slotY)}" r="92" fill="url(#h-cyan)" opacity="0.24"/>`,
+        `<rect x="${n(x - box / 2)}" y="${n(slotY - box / 2)}" width="${box}" height="${box}" rx="24" ` +
+          `fill="${C.cyan}" fill-opacity="0.2" stroke="${C.cyanLt}" stroke-width="2.6" opacity="0.92"/>`,
+        `<circle cx="${n(x)}" cy="${n(slotY)}" r="50" fill="url(#scrim)"/>`,
+        mark(x, slotY, 66),
+        dot(x + box / 2 - 22, slotY - box / 2 + 22, 5, C.mint, 'mint', 0.9, 3)
+      );
+    } else {
+      // Declared but not yet running: the slot is drawn, the instance is a ghost.
+      slots.push(
+        `<rect x="${n(x - box / 2)}" y="${n(slotY - box / 2)}" width="${box}" height="${box}" rx="24" ` +
+          `fill="none" stroke="${C.ice}" stroke-width="2.2" stroke-dasharray="10 12" opacity="0.5"/>`,
+        `<g opacity="0.22">${mark(x, slotY, 66, C.cyanLt)}</g>`
+      );
+    }
+  });
+
+  return [
+    starfield(r, 55),
+    `  <circle cx="960" cy="${slotY}" r="560" fill="url(#h-cyan)" opacity="0.13"/>`,
+    `  <line x1="${n(bx0)}" y1="${n(padY + 6)}" x2="${n(bx1)}" y2="${n(padY + 6)}" stroke="${C.ice}" ` +
+      `stroke-width="2" opacity="0.35"/>`,
+    `  <g>${tracks.join('')}</g>`,
+    `  <g>${pads.join('')}</g>`,
+    `  <g>${slots.join('')}</g>`,
+    `  <g>${bracket}</g>`,
+  ].join('\n');
+}
+
+// ------------------------------------------------- a very small resource envelope
+//
+// `limits-tight-envelope` is the space itself: a whole server inside a boundary
+// several steps smaller than the room it usually gets, packed to all four walls.
+// `limits-gauge-pinned` is the reading off the same situation: filled to the last
+// few percent of the scale, with a sliver left before the stop.
+
+function limitsTightEnvelope(r) {
+  const cx = 960;
+  const cy = 540;
+  const bw = 580;
+  const bh = 420;
+  const x0 = cx - bw / 2;
+  const x1 = cx + bw / 2;
+  const y0 = cy - bh / 2;
+  const y1 = cy + bh / 2;
+
+  // The room a server usually gets, stepping down to the envelope it has here.
+  const ghosts = [[980, 820], [780, 620]]
+    .map(
+      ([w, h], i) =>
+        `<rect x="${n(cx - w / 2)}" y="${n(cy - h / 2)}" width="${w}" height="${h}" rx="${28 - i * 6}" ` +
+        `fill="none" stroke="${C.ice}" stroke-width="2.2" stroke-dasharray="14 20" opacity="${n(0.5 - i * 0.06)}"/>`
+    )
+    .join('');
+
+  // The workload, filling the box out to both walls with almost nothing spare.
+  const packed = [];
+  for (let y = y0 + 15; y <= y1 - 13; y += 20) {
+    let x = x0 + 11;
+    while (x < x1 - 16) {
+      const len = Math.min(36 + r() * 116, x1 - 11 - x);
+      packed.push(
+        `<rect x="${n(x)}" y="${n(y - 6)}" width="${n(len)}" height="12" rx="6" ` +
+          `fill="${weighted(r, [[C.cyanLt, 6], [C.mint, 3], [C.ice, 2]])}" opacity="${n(0.4 + r() * 0.45)}"/>`
+      );
+      x += len + 6 + r() * 9;
+    }
+  }
+
+  // Hard corners, so the boundary reads as a limit rather than as a container.
+  const corners = [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]
+    .map(
+      ([x, y, dx, dy]) =>
+        `<path d="M ${n(x + dx * 54)} ${n(y)} L ${n(x)} ${n(y)} L ${n(x)} ${n(y + dy * 54)}" fill="none" ` +
+        `stroke="${C.ice}" stroke-width="8" stroke-linecap="round" opacity="0.95"/>`
+    )
+    .join('');
+
+  // The workload pushing outward on every wall.
+  const push = [];
+  for (const t of [-0.56, 0, 0.56]) {
+    const px = cx + t * (bw / 2 - 66);
+    const py = cy + t * (bh / 2 - 56);
+    const chev = (a, b, c, d, e, f) =>
+      `<path d="M ${n(a)} ${n(b)} L ${n(c)} ${n(d)} L ${n(e)} ${n(f)}" fill="none" stroke="${C.gold}" ` +
+      `stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>`;
+    push.push(
+      chev(px - 20, y0 + 21, px, y0 + 3, px + 20, y0 + 21),
+      chev(px - 20, y1 - 21, px, y1 - 3, px + 20, y1 - 21),
+      chev(x0 + 21, py - 20, x0 + 3, py, x0 + 21, py + 20),
+      chev(x1 - 21, py - 20, x1 - 3, py, x1 - 21, py + 20)
+    );
+  }
+
+  return [
+    starfield(r, 50),
+    `  <circle cx="${cx}" cy="${cy}" r="420" fill="url(#h-cyan)" opacity="0.2"/>`,
+    `  <g>${ghosts}</g>`,
+    `  <rect x="${n(x0)}" y="${n(y0)}" width="${bw}" height="${bh}" rx="16" fill="none" stroke="${C.ice}" ` +
+      `stroke-width="15" opacity="0.28" filter="url(#blur8)"/>`,
+    `  <rect x="${n(x0)}" y="${n(y0)}" width="${bw}" height="${bh}" rx="16" fill="${C.ink}" fill-opacity="0.35"/>`,
+    `  <g>${packed.join('')}</g>`,
+    `  <rect x="${n(x0)}" y="${n(y0)}" width="${bw}" height="${bh}" rx="16" fill="none" stroke="${C.ice}" ` +
+      `stroke-width="4" opacity="0.95"/>`,
+    `  <g>${corners}</g>`,
+    `  <g>${push.join('')}</g>`,
+    `  <ellipse cx="${cx}" cy="${cy}" rx="200" ry="215" fill="url(#scrim)"/>`,
+    `  <g filter="url(#blur18)" opacity="0.45">${mark(cx, cy, 340)}</g>`,
+    `  <g>${mark(cx, cy, 340)}</g>`,
+  ].join('\n');
+}
+
+// Utilisation run right up to the stop: the scale is filled into its redline and
+// the pointer sits a sliver short of full.
+function limitsGaugePinned(r) {
+  const cx = 960;
+  const cy = 540;
+  const R = 330;
+  const WIDTH = 32;
+  const A0 = Math.PI * 0.75;
+  const SPAN = Math.PI * 1.5; // 270 degrees, gap at the bottom
+  const VALUE = 0.945;
+  const REDLINE = 0.86;
+  const at = (t) => A0 + t * SPAN;
+  const pol = (rad, t) => [cx + rad * Math.cos(at(t)), cy + rad * Math.sin(at(t))];
+
+  const ticks = [];
+  for (let i = 0; i <= 60; i++) {
+    const t = i / 60;
+    const major = i % 10 === 0;
+    const [ax, ay] = pol(R - WIDTH / 2 - 8, t);
+    const [bx, by] = pol(R - WIDTH / 2 - (major ? 46 : 24), t);
+    ticks.push(
+      `<line x1="${n(ax)}" y1="${n(ay)}" x2="${n(bx)}" y2="${n(by)}" ` +
+        `stroke="${t >= REDLINE ? C.coral : C.ice}" stroke-width="${major ? 3.4 : 1.8}" ` +
+        `opacity="${major ? 0.6 : 0.28}"/>`
+    );
+  }
+
+  const band = (t0, t1, color, w, rad, op) =>
+    `<path d="${arcPath(cx, cy, rad, at(t0), at(t1))}" fill="none" stroke="${color}" stroke-width="${w}" opacity="${op}"/>`;
+
+  const filled = [
+    band(0, 0.52, C.cyan, WIDTH, R, 0.85),
+    band(0.5, 0.8, C.mint, WIDTH, R, 0.9),
+    band(0.78, VALUE, C.gold, WIDTH, R, 0.95),
+  ].join('');
+
+  const [stop0x, stop0y] = pol(R - WIDTH / 2 - 30, 1);
+  const [stop1x, stop1y] = pol(R + WIDTH / 2 + 52, 1);
+  const [pt0x, pt0y] = pol(R - WIDTH / 2 - 68, VALUE);
+  const [pt1x, pt1y] = pol(R + WIDTH / 2 + 26, VALUE);
+
+  // Sparks in the redline, so the top of the scale reads as running hot.
+  const sparks = [];
+  for (let i = 0; i < 26; i++) {
+    const t = REDLINE + r() * (1 - REDLINE);
+    const [x, y] = pol(R + WIDTH / 2 + 14 + r() * 46, t);
+    sparks.push(
+      `<circle cx="${n(x)}" cy="${n(y)}" r="${n(1.2 + r() * 2.6)}" ` +
+        `fill="${weighted(r, [[C.coral, 5], [C.gold, 4], [C.ice, 2]])}" opacity="${n(0.3 + r() * 0.55)}"/>`
+    );
+  }
+
+  return [
+    starfield(r, 55),
+    `  <circle cx="${cx}" cy="${cy}" r="370" fill="url(#h-violet)" opacity="0.26"/>`,
+    `  ${band(0, 1, C.ice, WIDTH, R, 0.12)}`,
+    `  <g>${ticks.join('')}</g>`,
+    `  <g opacity="0.5" filter="url(#blur18)">${filled}</g>`,
+    `  <g>${filled}</g>`,
+    `  ${band(REDLINE, 1, C.coral, 10, R + WIDTH / 2 + 20, 0.85)}`,
+    `  <g>${sparks.join('')}</g>`,
+    `  <line x1="${n(stop0x)}" y1="${n(stop0y)}" x2="${n(stop1x)}" y2="${n(stop1y)}" stroke="${C.coral}" ` +
+      `stroke-width="13" stroke-linecap="round" opacity="0.92"/>`,
+    `  <line x1="${n(pt0x)}" y1="${n(pt0y)}" x2="${n(pt1x)}" y2="${n(pt1y)}" stroke="${C.ice}" ` +
+      `stroke-width="17" stroke-linecap="round" opacity="0.35" filter="url(#blur8)"/>`,
+    `  <line x1="${n(pt0x)}" y1="${n(pt0y)}" x2="${n(pt1x)}" y2="${n(pt1y)}" stroke="${C.ice}" ` +
+      `stroke-width="8" stroke-linecap="round" opacity="0.95"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="230" fill="url(#h-gold)" opacity="0.45"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="126" fill="url(#scrim)"/>`,
+    `  <g filter="url(#blur18)" opacity="0.5">${mark(cx, cy, 224)}</g>`,
+    `  <g>${mark(cx, cy, 224)}</g>`,
+  ].join('\n');
+}
+// A client glyph: an app instance rather than a server, so it never gets confused
+// with the mark.
+function azClient(x, y, size = 88) {
+  const h = size / 2;
+  const pips = [];
+  for (const dx of [-1, 1]) {
+    for (const dy of [-1, 1]) {
+      pips.push(`<circle cx="${n(x + dx * 18)}" cy="${n(y + dy * 18)}" r="6.5" fill="${C.ice}" opacity="0.9"/>`);
+    }
+  }
+  return (
+    `<circle cx="${n(x)}" cy="${n(y)}" r="${n(size * 0.9)}" fill="url(#h-ice)" opacity="0.3"/>` +
+    `<rect x="${n(x - h)}" y="${n(y - h)}" width="${n(size)}" height="${n(size)}" rx="22" fill="${C.ink}" ` +
+    `fill-opacity="0.55" stroke="${C.ice}" stroke-width="3" opacity="0.92"/>` +
+    pips.join('')
+  );
+}
+
+
+function azZoneLocalReads(r) {
+  const zoneW = 260;
+  const gap = 90;
+  const left = 480;
+  const zTop = 236;
+  const zH = 669;
+  const clientY = 300;
+  const nodeY = 810;
+  const cxs = [0, 1, 2].map((i) => left + i * (zoneW + gap) + zoneW / 2);
+
+  const zones = cxs
+    .map(
+      (x) =>
+        `<rect x="${n(x - zoneW / 2)}" y="${zTop}" width="${zoneW}" height="${zH}" rx="34" ` +
+        `fill="${C.violet}" fill-opacity="0.07" stroke="${C.cyanLt}" stroke-width="2.2" ` +
+        `stroke-dasharray="16 18" opacity="0.42"/>`
+    )
+    .join('');
+
+  // The in-zone read: short, lit, and inside the boundary the whole way.
+  const local = [];
+  for (const x of cxs) {
+    const y0 = clientY + 46;
+    const y1 = nodeY - 82;
+    local.push(
+      `<line x1="${n(x)}" y1="${n(y0)}" x2="${n(x)}" y2="${n(y1)}" stroke="${C.mint}" stroke-width="14" ` +
+        `opacity="0.3" filter="url(#blur8)"/>`,
+      `<line x1="${n(x)}" y1="${n(y0)}" x2="${n(x)}" y2="${n(y1)}" stroke="${C.mint}" stroke-width="5.5" ` +
+        `stroke-linecap="round" opacity="0.95"/>`,
+      [0.28, 0.52, 0.76].map((t) => dot(x, y0 + t * (y1 - y0), 5.5, C.ice, 'ice', 0.9, 3)).join(''),
+      `<path d="M ${n(x - 17)} ${n(y1 - 22)} L ${n(x)} ${n(y1)} L ${n(x + 17)} ${n(y1 - 22)}" fill="none" ` +
+        `stroke="${C.mint}" stroke-width="5" stroke-linejoin="round" opacity="0.95"/>`
+    );
+  }
+
+  // The hops that would leave the zone: drawn, dashed, and struck out on the
+  // boundary they would have to cross.
+  const cross = [];
+  for (const s of [-1, 1]) {
+    const gx = cxs[1] + s * (zoneW / 2 + gap / 2);
+    const ax = cxs[1] + s * (zoneW + gap) - s * 96;
+    cross.push(
+      `<path d="M ${n(cxs[1] + s * 48)} ${clientY} C ${n(gx)} ${clientY} ${n(gx)} ${n(clientY + 120)} ` +
+        `${n(gx)} ${n(clientY + 220)} L ${n(gx)} ${n(nodeY - 190)} C ${n(gx)} ${n(nodeY - 60)} ` +
+        `${n((gx + ax) / 2)} ${nodeY} ${n(ax)} ${nodeY}" fill="none" stroke="${C.cyanLt}" stroke-width="2.6" ` +
+        `stroke-dasharray="13 15" opacity="0.35"/>`
+    );
+    const mx = cxs[1] + s * (zoneW / 2);
+    cross.push(
+      `<circle cx="${n(mx)}" cy="${n(clientY + 14)}" r="30" fill="url(#h-coral)" opacity="0.85"/>`,
+      `<path d="M ${n(mx - 12)} ${n(clientY + 2)} L ${n(mx + 12)} ${n(clientY + 26)} ` +
+        `M ${n(mx + 12)} ${n(clientY + 2)} L ${n(mx - 12)} ${n(clientY + 26)}" stroke="${C.coral}" ` +
+        `stroke-width="4.2" stroke-linecap="round" opacity="0.95"/>`
+    );
+  }
+
+  const nodes = cxs
+    .map(
+      (x) =>
+        `<circle cx="${n(x)}" cy="${nodeY}" r="150" fill="url(#h-cyan)" opacity="0.3"/>` +
+        `<circle cx="${n(x)}" cy="${nodeY}" r="106" fill="none" stroke="${C.mint}" stroke-width="2.4" ` +
+        `stroke-dasharray="10 12" opacity="0.5"/>` +
+        `<circle cx="${n(x)}" cy="${nodeY}" r="70" fill="url(#scrim)"/>` +
+        mark(x, nodeY, 150)
+    )
+    .join('');
+
+  return [
+    starfield(r, 55),
+    `  <g>${zones}</g>`,
+    `  <g>${cross.join('')}</g>`,
+    `  <g>${local.join('')}</g>`,
+    `  <g>${nodes}</g>`,
+    `  <g>${cxs.map((x) => azClient(x, clientY)).join('')}</g>`,
+  ].join('\n');
+}
+
+// One client, three replicas it could read from. It takes the hop that stays in
+// its own zone; the two that leave are long, metered, and not taken.
+function azShortPath(r) {
+  const cy = 540;
+  const clientX = 620;
+  const localX = 980;
+  const remoteX = 1330;
+  const remoteYs = [268, 812];
+
+  const cube = (p, t) => {
+    const u = 1 - t;
+    const b = [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t];
+    return [0, 1].map((k) => p.reduce((s, q, i) => s + b[i] * q[k], 0));
+  };
+
+  // Each long route sweeps well clear of the local replica, so it reads as the
+  // expensive way round rather than as a second short hop.
+  const routes = [
+    [[618, cy - 48], [598, 262], [800, 178], [remoteX - 92, remoteYs[0]]],
+    [[618, cy + 48], [598, 818], [800, 902], [remoteX - 92, remoteYs[1]]],
+  ];
+
+  const long = [];
+  for (const p of routes) {
+    const d =
+      `M ${n(p[0][0])} ${n(p[0][1])} C ${n(p[1][0])} ${n(p[1][1])} ${n(p[2][0])} ${n(p[2][1])} ` +
+      `${n(p[3][0])} ${n(p[3][1])}`;
+    long.push(
+      `<path d="${d}" fill="none" stroke="${C.cyanLt}" stroke-width="2.8" stroke-dasharray="14 16" opacity="0.38"/>`
+    );
+    // Meter ticks along the route: distance that gets charged for.
+    for (const t of [0.2, 0.34, 0.48, 0.62, 0.76]) {
+      const [x, y] = cube(p, t);
+      const [x2, y2] = cube(p, t + 0.012);
+      const len = Math.hypot(x2 - x, y2 - y) || 1;
+      const nx = -(y2 - y) / len;
+      const ny = (x2 - x) / len;
+      long.push(
+        `<line x1="${n(x - nx * 12)}" y1="${n(y - ny * 12)}" x2="${n(x + nx * 12)}" y2="${n(y + ny * 12)}" ` +
+          `stroke="${C.coral}" stroke-width="3" stroke-linecap="round" opacity="0.6"/>`
+      );
+    }
+    const [mx, my] = cube(p, 0.5);
+    long.push(
+      `<circle cx="${n(mx)}" cy="${n(my)}" r="32" fill="url(#h-coral)" opacity="0.85"/>`,
+      `<path d="M ${n(mx - 13)} ${n(my - 13)} L ${n(mx + 13)} ${n(my + 13)} M ${n(mx + 13)} ${n(my - 13)} ` +
+        `L ${n(mx - 13)} ${n(my + 13)}" stroke="${C.coral}" stroke-width="4.4" stroke-linecap="round" opacity="0.95"/>`
+    );
+  }
+
+  const shortX0 = clientX + 56;
+  const shortX1 = localX - 88;
+  const short = [
+    `<line x1="${n(shortX0)}" y1="${cy}" x2="${n(shortX1)}" y2="${cy}" stroke="${C.mint}" stroke-width="16" ` +
+      `opacity="0.32" filter="url(#blur8)"/>`,
+    `<line x1="${n(shortX0)}" y1="${cy}" x2="${n(shortX1)}" y2="${cy}" stroke="${C.mint}" stroke-width="6" ` +
+      `stroke-linecap="round" opacity="0.95"/>`,
+    [0.3, 0.6].map((t) => dot(shortX0 + t * (shortX1 - shortX0), cy, 6, C.ice, 'ice', 0.95, 3)).join(''),
+    `<path d="M ${n(shortX1 - 24)} ${cy - 18} L ${n(shortX1)} ${cy} L ${n(shortX1 - 24)} ${cy + 18}" fill="none" ` +
+      `stroke="${C.mint}" stroke-width="5" stroke-linejoin="round" opacity="0.95"/>`,
+    // A measure under the hop, because its length is the whole point.
+    `<path d="M ${n(shortX0)} ${cy + 86} L ${n(shortX0)} ${cy + 100} L ${n(shortX1)} ${cy + 100} ` +
+      `L ${n(shortX1)} ${cy + 86}" fill="none" stroke="${C.mint}" stroke-width="2.8" opacity="0.6"/>`,
+  ].join('');
+
+  const remotes = remoteYs
+    .map(
+      (y) =>
+        `<circle cx="${remoteX}" cy="${n(y)}" r="96" fill="none" stroke="${C.cyanLt}" stroke-width="2" ` +
+        `stroke-dasharray="12 14" opacity="0.3"/>` +
+        `<g opacity="0.5">${mark(remoteX, y, 128)}</g>`
+    )
+    .join('');
+
+  return [
+    starfield(r, 55),
+    `  <ellipse cx="${n((clientX + localX) / 2)}" cy="${cy}" rx="360" ry="230" fill="url(#h-mint)" opacity="0.26"/>`,
+    `  <g>${long.join('')}</g>`,
+    `  <g>${remotes}</g>`,
+    `  <g>${short}</g>`,
+    `  <circle cx="${localX}" cy="${cy}" r="190" fill="url(#h-cyan)" opacity="0.34"/>`,
+    `  <circle cx="${localX}" cy="${cy}" r="86" fill="url(#scrim)"/>`,
+    `  <g filter="url(#blur18)" opacity="0.45">${mark(localX, cy, 180)}</g>`,
+    `  <g>${mark(localX, cy, 180)}</g>`,
+    `  <g>${azClient(clientX, cy, 96)}</g>`,
+  ].join('\n');
+}
+
 const THEMES = [
   { name: 'community', seed: 1041, focal: [960, 540], zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, focal: [1530, 505], zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -3696,6 +4222,12 @@ const THEMES = [
   { name: 'bundle-one-install', seed: 33207, focal: [760, 540], zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A single tapering conduit arriving at a port marked with the white Valkey hexagon, fanning out into five differently shaped modules, representing one install that delivers several distinct capabilities.', art: bundleOneInstall },
   { name: 'tooling-stack', seed: 33311, focal: [960, 620], zoom: 1.25, center: [960, 540], title: 'Valkey primitives and tools', desc: 'A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives.', art: toolingStack },
   { name: 'tooling-recombine', seed: 33419, focal: [700, 540], zoom: 1.25, center: [910, 540], title: 'Valkey primitives recombined', desc: 'One highlighted primitive unit on the left wired to three assemblies of copies of itself on the right, a chain, a cycle and a branching tree, representing the same server primitive reused to build different tools.', art: toolingRecombine },
+  { name: 'k8s-spec-fanout', seed: 42011, focal: [1150, 520], zoom: 1.34, center: [960, 540], title: 'Valkey deployed from a chart', desc: 'A declared specification panel on the left fanning out along rails into a grid of nine identical instances, each drawn as the white Valkey hexagon mark, representing deploying Valkey on Kubernetes from a Helm chart.', art: k8sSpecFanout },
+  { name: 'k8s-desired-count', seed: 42021, focal: [960, 400], zoom: 1.34, center: [960, 540], title: 'Valkey replicas reaching the declared count', desc: 'Six declared slots under a gold span, four filled with instances drawn as the white Valkey hexagon mark, one instance rising into place and one slot still empty, representing a declared replica count and the running instances converging on it.', art: k8sDesiredCount },
+  { name: 'limits-tight-envelope', seed: 42031, focal: [960, 540], zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
+  { name: 'limits-gauge-pinned', seed: 42041, focal: [960, 540], zoom: 1.34, center: [960, 540], title: 'Valkey pinned near its limit', desc: 'A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.', art: limitsGaugePinned },
+  { name: 'az-zone-local-reads', seed: 42051, focal: [960, 560], zoom: 1.34, center: [960, 570], title: 'Valkey zone-local reads', desc: 'Three dashed availability zones, each with a client reading down a lit green path to the replica beside it drawn as the white Valkey hexagon mark, and the paths that would leave a zone dashed and struck out in red at the boundary.', art: azZoneLocalReads },
+  { name: 'az-short-path', seed: 42061, focal: [900, 540], zoom: 1.26, center: [990, 540], title: 'Valkey in-zone read path', desc: 'A client taking one short lit green hop to the replica in its own zone, with two long dashed routes to replicas in other zones marked with red meter ticks and crosses, representing reading in-zone instead of across zones.', art: azShortPath },
 ];
 
 // -------------------------------------------------------------------- render
