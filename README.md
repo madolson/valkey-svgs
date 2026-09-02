@@ -48,6 +48,7 @@ can't drift, and regenerating is a no-op diff.
 | `data-structures-grid` | Six value types, one per cell on an even 3x2 grid: byte run, list, set, hash, sorted set, bitmap | Type overviews, command surveys, what Valkey stores |
 | `k8s-spec-fanout` | A declared spec panel fanning out along rails into a grid of identical instances | Helm charts, operators, declarative deployment |
 | `key-size-distribution` | Ranked key-size bars with two big outliers, fanning into a grid of servers | Key size skew, heavy hitters, hot keys across a fleet |
+| `key-size-distribution-flat` | The same panel and shards on one solid purple field | Same, where the banner should read as flat graphic design |
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |

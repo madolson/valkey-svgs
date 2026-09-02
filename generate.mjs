@@ -3329,8 +3329,8 @@ function dataStructuresGrid(r) {
 // of one shard. Connectors are elbows rather than curves, because a swept curve
 // over this distance reads as decoration.
 function keySizeDistribution(r) {
-  const sx = 450;
-  const sw = 430;
+  const sx = 435;
+  const sw = 420;
   const sTop = 230;
   const sH = 620;
 
@@ -3342,24 +3342,23 @@ function keySizeDistribution(r) {
   const labelX = sx + sw - 28;
 
   const rows = [320, 540, 760];
-  const cols = [1073, 1225, 1377];
+  const cols = [1111, 1245, 1379];
   const tile = 134;
-  const shardX0 = 980;
-  const shardX1 = 1470;
+  const shardX0 = 1005; // 150px of air between the panel and the shards
+  const shardX1 = 1485;
   const shardH = 186;
-  const trunkX = 930;
 
   // Ranked keys with their sizes printed. The top two are a different class of
   // object, not the top of a ramp: tens of megabytes against a few.
   const SIZES = [
-    ['42 MB', 218],
-    ['36 MB', 192],
-    ['3.1 MB', 58],
-    ['2.7 MB', 50],
-    ['2.0 MB', 43],
-    ['1.6 MB', 37],
-    ['1.2 MB', 30],
-    ['860 KB', 23],
+    ['42 MB', 210],
+    ['36 MB', 185],
+    ['3.1 MB', 56],
+    ['2.7 MB', 48],
+    ['2.0 MB', 41],
+    ['1.6 MB', 36],
+    ['1.2 MB', 29],
+    ['860 KB', 22],
   ];
 
   const bars = [];
@@ -3390,18 +3389,18 @@ function keySizeDistribution(r) {
       `font-weight="700" letter-spacing="0.5">Valkey Admin</text>` +
     `<line x1="${n(axisX)}" y1="${sTop + 126}" x2="${n(axisX)}" y2="816" stroke="${C.ice}" stroke-width="2" opacity="0.4"/>`;
 
-  // One elbow per shard: out of the panel, down a trunk, into the enclosure.
-  const harness =
-    `<path d="M ${n(sx + sw)} 540 L ${trunkX} 540" fill="none" stroke="${C.cyanLt}" stroke-width="2.6" opacity="0.5"/>` +
-    `<path d="M ${trunkX} ${rows[0]} L ${trunkX} ${rows[rows.length - 1]}" fill="none" stroke="${C.cyanLt}" ` +
-      `stroke-width="2.6" opacity="0.5"/>` +
-    rows
-      .map(
-        (y) =>
-          `<path d="M ${trunkX} ${n(y)} L ${shardX0} ${n(y)}" fill="none" stroke="${C.cyanLt}" ` +
-          `stroke-width="2.6" opacity="0.5"/>`
-      )
-      .join('');
+  // One curve per shard, leaving the panel at the middle and arriving level with
+  // its enclosure. Both control points sit near the middle of the run, so the
+  // bend is a rounded corner rather than a swoop across the frame.
+  const harness = rows
+    .map((y) => {
+      const x0 = sx + sw + 10;
+      return (
+        `<path d="M ${n(x0)} 540 C ${n(x0 + 58)} 540 ${n(shardX0 - 58)} ${n(y)} ${shardX0} ${n(y)}" ` +
+        `fill="none" stroke="${C.cyanLt}" stroke-width="2.6" opacity="0.5"/>`
+      );
+    })
+    .join('');
 
   // A shard is the enclosure: three servers sharing one slot range.
   const shards = rows
@@ -3472,7 +3471,8 @@ const THEMES = [
   { name: 'k8s-desired-count', seed: 42021, focal: [960, 400], zoom: 1.34, center: [960, 540], title: 'Valkey replicas reaching the declared count', desc: 'Six declared slots under a gold span, four filled with instances drawn as the white Valkey hexagon mark, one instance rising into place and one slot still empty, representing a declared replica count and the running instances converging on it.', art: k8sDesiredCount },
   { name: 'limits-tight-envelope', seed: 42031, focal: [960, 540], zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
   { name: 'limits-gauge-pinned', seed: 42041, focal: [960, 540], zoom: 1.34, center: [960, 540], title: 'Valkey pinned near its limit', desc: 'A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.', art: limitsGaugePinned },
-  { name: 'key-size-distribution', seed: 43011, focal: [960, 540], zoom: 1.3, center: [960, 540], flat: true, title: 'Valkey key size distribution', desc: 'A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.', art: keySizeDistribution },
+  { name: 'key-size-distribution', seed: 43011, focal: [960, 540], zoom: 1.26, center: [960, 540], flat: true, title: 'Valkey key size distribution', desc: 'A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.', art: keySizeDistribution },
+  { name: 'key-size-distribution-flat', seed: 43021, focal: [960, 540], zoom: 1.26, center: [960, 540], solid: true, title: 'Valkey key size distribution', desc: 'On a flat purple field, a Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.', art: keySizeDistribution },
 ];
 
 // -------------------------------------------------------------------- render

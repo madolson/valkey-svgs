@@ -1,6 +1,6 @@
 {
   "generatedBy": "generate.mjs",
-  "count": 38,
+  "count": 39,
   "themes": [
     {
       "name": "community",
@@ -380,6 +380,16 @@
       "useFor": "Key size skew, heavy hitters, hot keys across a fleet",
       "image": "images/key-size-distribution.webp",
       "svg": "svg/key-size-distribution.svg",
+      "captioned": false
+    },
+    {
+      "name": "key-size-distribution-flat",
+      "title": "Valkey key size distribution",
+      "desc": "On a flat purple field, a Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.",
+      "motif": "The same panel and shards on one solid purple field",
+      "useFor": "Same, where the banner should read as flat graphic design",
+      "image": "images/key-size-distribution-flat.webp",
+      "svg": "svg/key-size-distribution-flat.svg",
       "captioned": false
     }
   ]
