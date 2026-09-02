@@ -355,7 +355,7 @@
     {
       "name": "key-size-distribution",
       "title": "Valkey key size distribution",
-      "desc": "A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two measured in gigabytes and drawn in red, fanning out into three shards of three servers each drawn as the white Valkey hexagon mark, representing a few very large objects spread across a deployment.",
+      "desc": "A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.",
       "motif": "Ranked key-size bars with two big outliers, fanning into a grid of servers",
       "useFor": "Key size skew, heavy hitters, hot keys across a fleet",
       "image": "images/key-size-distribution.webp",

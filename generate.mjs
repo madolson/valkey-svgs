@@ -3139,51 +3139,57 @@ function dataStructuresGrid(r) {
 
 // Key size distribution in Valkey Admin, beside the shards it is measured across:
 // the panel ranks keys by size with the size printed next to each bar, two of them
-// far larger than the rest, and each row on the right is one shard of the
-// deployment those keys live in. Same composition family as `k8s-spec-fanout`,
-// which is left alone.
+// far larger than the rest, and each enclosure on the right holds the three servers
+// of one shard. Connectors are elbows rather than curves, because a swept curve
+// over this distance reads as decoration.
 function keySizeDistribution(r) {
-  const sx = 465;
-  const sw = 440;
-  const sTop = 250;
-  const sH = 580;
-  const axisX = sx + 40; // the chart baseline, and what the panel mark lines up on
+  const sx = 450;
+  const sw = 430;
+  const sTop = 230;
+  const sH = 620;
+
+  // The header (mark plus title) is centred in the panel, and the chart baseline
+  // runs down from the middle of the mark, so both readings hold at once.
+  const HEADER_W = 352;
+  const headX = sx + (sw - HEADER_W) / 2;
+  const axisX = headX + 24;
   const labelX = sx + sw - 28;
 
-  const rows = [310, 540, 770];
-  const cols = [1090, 1250, 1410];
-  const tile = 130;
-  const shardX0 = 1000;
-  const shardX1 = 1500;
-  const shardH = 176;
+  const rows = [320, 540, 760];
+  const cols = [1073, 1225, 1377];
+  const tile = 134;
+  const shardX0 = 980;
+  const shardX1 = 1470;
+  const shardH = 186;
+  const trunkX = 930;
 
   // Ranked keys with their sizes printed. The top two are a different class of
-  // object, not the top of a ramp: gigabytes against hundreds of megabytes.
+  // object, not the top of a ramp: tens of megabytes against a few.
   const SIZES = [
-    ['4.2 GB', 232],
-    ['3.6 GB', 204],
-    ['312 MB', 62],
-    ['268 MB', 54],
-    ['205 MB', 46],
-    ['164 MB', 39],
-    ['120 MB', 31],
-    ['86 MB', 24],
+    ['42 MB', 218],
+    ['36 MB', 192],
+    ['3.1 MB', 58],
+    ['2.7 MB', 50],
+    ['2.0 MB', 43],
+    ['1.6 MB', 37],
+    ['1.2 MB', 30],
+    ['860 KB', 23],
   ];
 
   const bars = [];
   SIZES.forEach(([size, len], i) => {
-    const y = 400 + i * 54;
+    const y = 386 + i * 58;
     const outlier = i < 2;
     if (outlier) {
       bars.push(
-        `<rect x="${axisX}" y="${n(y - 11)}" width="${n(len)}" height="22" rx="11" fill="none" ` +
+        `<rect x="${n(axisX)}" y="${n(y - 12)}" width="${n(len)}" height="24" rx="12" fill="none" ` +
           `stroke="${C.coral}" stroke-width="12" opacity="0.32" filter="url(#blur8)"/>`
       );
     }
     bars.push(
-      `<rect x="${axisX}" y="${n(y - 11)}" width="${n(len)}" height="22" rx="11" ` +
+      `<rect x="${n(axisX)}" y="${n(y - 12)}" width="${n(len)}" height="24" rx="12" ` +
         `fill="${outlier ? C.coral : C.cyanLt}" opacity="${outlier ? 0.95 : n(0.7 - i * 0.05)}"/>`,
-      `<text x="${labelX}" y="${n(y + 13)}" fill="${outlier ? C.coral : C.ice}" text-anchor="end" ` +
+      `<text x="${n(labelX)}" y="${n(y + 14)}" fill="${outlier ? C.coral : C.ice}" text-anchor="end" ` +
         `font-family="${FONT}" font-size="38" font-weight="600" opacity="${outlier ? 0.95 : 0.6}">${esc(size)}</text>`
     );
   });
@@ -3191,23 +3197,27 @@ function keySizeDistribution(r) {
   const panel =
     `<rect x="${sx}" y="${sTop}" width="${sw}" height="${sH}" rx="22" fill="${C.ink}" fill-opacity="0.5" ` +
       `stroke="${C.ice}" stroke-width="3" opacity="0.9"/>` +
-    `<line x1="${n(sx + 28)}" y1="${sTop + 94}" x2="${n(sx + sw - 28)}" y2="${sTop + 94}" stroke="${C.ice}" ` +
+    `<line x1="${n(sx + 28)}" y1="${sTop + 96}" x2="${n(sx + sw - 28)}" y2="${sTop + 96}" stroke="${C.ice}" ` +
       `stroke-width="2" opacity="0.45"/>` +
-    // The product name, and the mark sitting on the chart's baseline.
-    `<g opacity="0.95">${mark(axisX, sTop + 46, 48)}</g>` +
-    `<text x="${n(axisX + 42)}" y="${sTop + 60}" fill="#FFFFFF" font-family="${FONT}" font-size="44" ` +
+    `<g opacity="0.95">${mark(axisX, sTop + 52, 48)}</g>` +
+    `<text x="${n(headX + 62)}" y="${sTop + 68}" fill="#FFFFFF" font-family="${FONT}" font-size="44" ` +
       `font-weight="700" letter-spacing="0.5">Valkey Admin</text>` +
-    `<line x1="${axisX}" y1="${sTop + 122}" x2="${axisX}" y2="800" stroke="${C.ice}" stroke-width="2" opacity="0.4"/>`;
+    `<line x1="${n(axisX)}" y1="${sTop + 126}" x2="${n(axisX)}" y2="816" stroke="${C.ice}" stroke-width="2" opacity="0.4"/>`;
 
-  // One curve per shard, all of them leaving the same distribution.
-  const fanPaths = rows
-    .map((y) => {
-      const x0 = sx + sw + 10;
-      return `<path d="M ${n(x0)} 540 C ${n(x0 + 120)} 540 ${n(shardX0 - 120)} ${n(y)} ${shardX0} ${n(y)}"/>`;
-    })
-    .join('');
+  // One elbow per shard: out of the panel, down a trunk, into the enclosure.
+  const harness =
+    `<path d="M ${n(sx + sw)} 540 L ${trunkX} 540" fill="none" stroke="${C.cyanLt}" stroke-width="2.6" opacity="0.5"/>` +
+    `<path d="M ${trunkX} ${rows[0]} L ${trunkX} ${rows[rows.length - 1]}" fill="none" stroke="${C.cyanLt}" ` +
+      `stroke-width="2.6" opacity="0.5"/>` +
+    rows
+      .map(
+        (y) =>
+          `<path d="M ${trunkX} ${n(y)} L ${shardX0} ${n(y)}" fill="none" stroke="${C.cyanLt}" ` +
+          `stroke-width="2.6" opacity="0.5"/>`
+      )
+      .join('');
 
-  // A shard is the row: one enclosure holding three servers that share a slot range.
+  // A shard is the enclosure: three servers sharing one slot range.
   const shards = rows
     .map(
       (y) =>
@@ -3222,7 +3232,7 @@ function keySizeDistribution(r) {
       pods.push(
         `<rect x="${n(x - tile / 2)}" y="${n(y - tile / 2)}" width="${tile}" height="${tile}" rx="26" ` +
           `fill="${C.cyan}" fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="2.4" opacity="0.9"/>`,
-        mark(x, y, 72)
+        mark(x, y, 74)
       );
     }
   }
@@ -3230,10 +3240,8 @@ function keySizeDistribution(r) {
   return [
     // No background wash and no speckle: the only thing lit is the pair of outsized
     // keys, which is the one thing the image is pointing at.
-    `  <g stroke="${C.cyanLt}" stroke-width="2.4" fill="none" opacity="0.5">${fanPaths}</g>`,
+    `  <g>${harness}</g>`,
     `  <g>${shards}</g>`,
-    `  <text x="${n((shardX0 + shardX1) / 2)}" y="200" fill="${C.ice}" text-anchor="middle" ` +
-      `font-family="${FONT}" font-size="38" font-weight="600" letter-spacing="6" opacity="0.65">SHARDS</text>`,
     `  <g>${pods.join('')}</g>`,
     `  <g>${panel}</g>`,
     `  <g>${bars.join('')}</g>`,
@@ -3276,7 +3284,7 @@ const THEMES = [
   { name: 'k8s-desired-count', seed: 42021, focal: [960, 400], zoom: 1.34, center: [960, 540], title: 'Valkey replicas reaching the declared count', desc: 'Six declared slots under a gold span, four filled with instances drawn as the white Valkey hexagon mark, one instance rising into place and one slot still empty, representing a declared replica count and the running instances converging on it.', art: k8sDesiredCount },
   { name: 'limits-tight-envelope', seed: 42031, focal: [960, 540], zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
   { name: 'limits-gauge-pinned', seed: 42041, focal: [960, 540], zoom: 1.34, center: [960, 540], title: 'Valkey pinned near its limit', desc: 'A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.', art: limitsGaugePinned },
-  { name: 'key-size-distribution', seed: 43011, focal: [960, 540], zoom: 1.2, center: [960, 540], flat: true, title: 'Valkey key size distribution', desc: 'A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two measured in gigabytes and drawn in red, fanning out into three shards of three servers each drawn as the white Valkey hexagon mark, representing a few very large objects spread across a deployment.', art: keySizeDistribution },
+  { name: 'key-size-distribution', seed: 43011, focal: [960, 540], zoom: 1.3, center: [960, 540], flat: true, title: 'Valkey key size distribution', desc: 'A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.', art: keySizeDistribution },
 ];
 
 // -------------------------------------------------------------------- render
