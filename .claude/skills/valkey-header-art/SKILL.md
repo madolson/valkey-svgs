@@ -55,6 +55,7 @@ Register it in `THEMES`:
   center: [960, 540],    // offset that crop for asymmetric compositions
   title: 'Short title',  // becomes <title>
   desc: 'One sentence.', // becomes <desc>; write it as alt text, it is the a11y surface
+  flat: true,            // optional: drop the focal glow, leaving an even background
   art: myTheme,
 }
 ```
@@ -68,11 +69,27 @@ gradients and `blur*` filters. A theme only draws its own motif.
    Valkey website. Do not introduce a colour.
 2. **Seeded randomness only.** `Math.random()`, `Date.now()`, and `new Date()` are banned;
    they make rebuilds churn.
-3. **No text**, with two deliberate exceptions (`benchmarks`, `release-version`). Text goes
-   illegible once cropped and it needs translating. If a caption is genuinely required, keep
-   it 44px or larger and inside the safe area.
+3. **Text is a last resort, and there is exactly one font.** Text goes illegible once cropped
+   and it needs translating, so most themes carry their idea with shape alone. When a label is
+   genuinely required — a product name, a unit, a scale — use the `FONT` constant and nothing
+   else, at 700 weight for a title and 600 for a label, 38px or larger, inside the safe area.
+   Never introduce a second family, and never mix sizes for labels of the same kind.
 4. **Reuse the helpers**: `mark`, `dot`, `weighted`, `arcPath`, `slotRing`, `starfield`.
    Adding a sixth way to draw a glowing dot is how the set stops looking like one system.
+5. **No flourish unless the flourish is the idea.** Draw the elements that carry the one
+   sentence, and stop. Scattered dots, sparks, rays, dashed rings, extra outlines and
+   secondary glows do not add richness; they add noise that the 200px crop turns into dirt.
+   For every element ask what it says. If the answer is "it fills the space", delete it.
+   Prefer fewer, larger, cleaner shapes: four thick lanes read at banner size, forty do not.
+6. **Keep the background flat.** The shared sky gradient is the background. Do not add ambient
+   glow washes to it. A `url(#h-*)` blob is a highlight, so use one only where the composition
+   is deliberately pointing at something, and then only on that thing. Set `flat: true` on a
+   theme to drop the focal glow as well, which is the right default for a motif that should
+   read as drawn on an even surface rather than lit from one side.
+7. **One line weight per glyph.** Within a drawn object, strokes that are meant to read as the
+   same kind of line must be the same width, and repeated features (a keyhole, a cell, a tick)
+   must be the same size everywhere they appear. Mixed weights inside one glyph is the most
+   common reason a banner looks amateurish rather than wrong.
 
 ### Helpers
 
