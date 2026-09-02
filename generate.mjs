@@ -3415,16 +3415,31 @@ function keySizeDistribution(r) {
     )
     .join('');
 
+  // Filled first tile, hollow other two: primary and replicas, a convention that
+  // reads without a legend and costs no extra shapes. Two of the three primaries
+  // carry the coral of the outlier bars, which is how the chart says where those
+  // keys actually live: the colour does the routing, so the fan stays as it is.
+  const HOT = [0, 2];
   const pods = [];
-  for (const y of rows) {
-    for (const x of cols) {
+  rows.forEach((y, row) => {
+    cols.forEach((x, col) => {
+      const primary = col === 0;
+      const hot = primary && HOT.includes(row);
+      const stroke = hot ? C.coral : C.cyanLt;
+      if (hot) {
+        pods.push(
+          `<rect x="${n(x - tile / 2)}" y="${n(y - tile / 2)}" width="${tile}" height="${tile}" rx="26" ` +
+            `fill="none" stroke="${C.coral}" stroke-width="12" opacity="0.32" filter="url(#blur8)"/>`
+        );
+      }
       pods.push(
         `<rect x="${n(x - tile / 2)}" y="${n(y - tile / 2)}" width="${tile}" height="${tile}" rx="26" ` +
-          `fill="${C.cyan}" fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="2.4" opacity="0.9"/>`,
+          `fill="${hot ? C.coral : C.cyan}" fill-opacity="${primary ? (hot ? 0.42 : 0.4) : 0}" ` +
+          `stroke="${stroke}" stroke-width="2.6" opacity="0.9"/>`,
         mark(x, y, 72)
       );
-    }
-  }
+    });
+  });
 
   return [
     // No background wash and no speckle: the only thing lit is the pair of outsized
