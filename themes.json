@@ -75,7 +75,7 @@
     {
       "name": "atomic-slot-migration-quiet",
       "title": "Valkey atomic slot migration",
-      "desc": "Two shard slot rings each centred on the white Valkey hexagon mark, the left one showing four contiguous slots vacated in dashed purple and the right one the same four arrived in solid green, a quiet stream of slot segments running between them, and a large magnifier over the middle of that stream resolving the band into separate slots, representing watching one contiguous range migrate atomically.",
+      "desc": "Two shard slot rings each centred on the white Valkey hexagon mark, the left one showing four contiguous slots vacated in dashed purple and the right one the same four arrived in solid green, a quiet stream of slot segments running between them, a green chevron driving that stream into the destination, and a large magnifier over the middle of the stream resolving the band into separate slots, representing watching one contiguous range migrate atomically.",
       "motif": "The same two rings and lens, with the lens given the frame",
       "useFor": "Slot migration when the point is watching it happen",
       "image": "images/atomic-slot-migration-quiet.webp",
