@@ -18,6 +18,7 @@ can't drift, and regenerating is a no-op diff.
 | `memory-efficiency` | Cell grid, pitted on the left, compacted dense on the right | Memory footprint, encodings, defragmentation |
 | `clustering` | Slot ring around a meshed core, shards joining from outside | Cluster mode, replication, scaling out |
 | `atomic-slot-migration` | Two shard rings, a chevron driving slots between them, magnifier on the stream | Slot migration and rebalancing |
+| `atomic-slot-migration-quiet` | The same two rings and lens, with the lens given the frame | Slot migration when the point is watching it happen |
 | `slot-migration-lens` | A big lens over the migration stream, instances and stream quiet | Observability for migration, inspecting data in transit |
 | `release` | Valkey chevrons driving into a golden burst | Release and general announcements |
 | `release-version` | The same burst with a caption you set | A specific release. See [Captions](#captions) |

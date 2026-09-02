@@ -1274,6 +1274,107 @@ function slotMigrationRings(r) {
   ].join('\n');
 }
 
+// Atomic slot migration, with the lens given the frame. Same composition as
+// `atomic-slot-migration`, which is left alone: two shards, a stream of slot
+// segments between them, a magnifier on the stream. What changes is the
+// hierarchy, not the drawing.
+//
+// Idea: one contiguous range of slots leaves one shard and lands on another, and
+// you can watch it move.
+// Focal: the magnifier. It is the largest object, the brightest, and the only
+// thing carrying a halo. The rings and the stream sit under it as context.
+function slotMigrationQuiet(r) {
+  const cy = 528;
+  const src = 490;
+  const dst = 1430;
+  const R = 196;
+  const SEG = 21;
+  const FROM = [15, 0, 1, 2]; // contiguous, and facing the target
+  const TO = [7, 8, 9, 10]; // the same four, arrived, facing the source
+
+  const x0 = src + R + 16;
+  const xEnd = dst - R - 16;
+
+  // Three staggered lanes of slot segments in flight. In-flight data is cyan:
+  // mint is reserved for what has arrived, which is the ring's job, and ice for
+  // the lens. The opacity ramp toward the target is the only direction cue the
+  // stream carries, so the ring stays the one device that states direction.
+  const blocks = [];
+  for (const ly of [cy - 34, cy, cy + 34]) {
+    let x = x0 + r() * 46;
+    while (x < xEnd) {
+      const len = 42 + r() * 36;
+      if (x + len > xEnd) break;
+      blocks.push({
+        x,
+        y: ly,
+        len,
+        color: weighted(r, [[C.cyan, 6], [C.cyanLt, 4]]),
+        op: 0.42 + ((x - x0) / (xEnd - x0)) * 0.3,
+      });
+      x += len + 9 + r() * 15;
+    }
+  }
+  const drawBlocks = (boost = 0) =>
+    blocks
+      .map(
+        (b) =>
+          `<rect x="${n(b.x)}" y="${n(b.y - SEG / 2)}" width="${n(b.len)}" height="${SEG}" rx="${SEG / 2}" ` +
+          `fill="${b.color}" opacity="${n(Math.min(1, b.op + boost))}"/>`
+      )
+      .join('');
+
+  // The lens: half again the radius it had, and the magnification raised so the
+  // band resolves into separate slots inside the glass. That resolution is the
+  // point of the lens, and it is what the chevron used to compete with.
+  // The ring vocabulary, drawn deterministically: neutral slots are cyan at
+  // context weight, and the moved range is violet and dashed where it left,
+  // mint and solid where it landed, both at full opacity. Dimming the whole ring
+  // was the first attempt and it buried the one thing the rings are there to say.
+  const ring = (cx, run, color, dashed) => {
+    const out = [];
+    for (let i = 0; i < SLOTS; i++) {
+      const d = arcPath(cx, cy, R, i * SLOT_STEP + 0.05, (i + 1) * SLOT_STEP - 0.05);
+      const moved = run.includes(i);
+      out.push(
+        `<path d="${d}" fill="none" stroke="${moved ? color : C.cyan}" stroke-width="${SEG}" ` +
+          `opacity="${moved ? 0.95 : 0.34}"${moved && dashed ? ' stroke-dasharray="5 7"' : ''}/>`
+      );
+    }
+    return out.join('');
+  };
+
+  const lx = 960;
+  const ly = cy;
+  const lr = 186; // leaves the stream visible either side of the glass
+  const hand = 0.75;
+  const h0 = [lx + Math.cos(hand) * (lr + 4), ly + Math.sin(hand) * (lr + 4)];
+  const h1 = [lx + Math.cos(hand) * (lr + 128), ly + Math.sin(hand) * (lr + 128)];
+
+  return [
+    `  <clipPath id="lensQuiet"><circle cx="${lx}" cy="${ly}" r="${lr}"/></clipPath>`,
+    // Context: the stream, then the two rings at 0.62 so neither competes with
+    // the glass. The vacated run is hollow, the arrived run solid, which is what
+    // tells you which way the range went.
+    `  <g>${drawBlocks()}</g>`,
+    `  <g>${ring(src, FROM, C.violet, true)}</g>`,
+    `  <g>${ring(dst, TO, C.mint, false)}</g>`,
+    `  <g>${mark(src, cy, 112)}</g>`,
+    `  <g>${mark(dst, cy, 112)}</g>`,
+    // The focal element, and the only halo in the frame.
+    `  <g clip-path="url(#lensQuiet)">` +
+      `<circle cx="${lx}" cy="${ly}" r="${lr}" fill="${C.ink}" opacity="0.62"/>` +
+      `<g transform="translate(${lx} ${ly}) scale(2) translate(${-lx} ${-ly})">${drawBlocks(0.35)}</g>` +
+      `</g>`,
+    `  <line x1="${n(h0[0])}" y1="${n(h0[1])}" x2="${n(h1[0])}" y2="${n(h1[1])}" stroke="${C.ice}" ` +
+      `stroke-width="26" stroke-linecap="round" opacity="0.3" filter="url(#blur8)"/>`,
+    `  <line x1="${n(h0[0])}" y1="${n(h0[1])}" x2="${n(h1[0])}" y2="${n(h1[1])}" stroke="${C.ice}" ` +
+      `stroke-width="20" stroke-linecap="round" opacity="0.95"/>`,
+    `  <circle cx="${lx}" cy="${ly}" r="${lr}" fill="none" stroke="${C.ice}" stroke-width="22" opacity="0.3" filter="url(#blur8)"/>`,
+    `  <circle cx="${lx}" cy="${ly}" r="${lr}" fill="none" stroke="${C.ice}" stroke-width="13" opacity="0.95"/>`,
+  ].join('\n');
+}
+
 // Keyspace scan: a cursor holding one bounded window of a large keyspace, with
 // the keys behind it already visited and the rest still ahead. The hop track
 // Slot migration under a lens: the same two-instance migration as
@@ -3327,6 +3428,7 @@ const THEMES = [
   { name: 'release', seed: 5527, focal: [1420, 460], zoom: 1.2, center: [1130, 540], title: 'Valkey release', desc: 'Valkey chevrons driving into a golden burst centred on the white Valkey hexagon mark, representing a new Valkey release.', art: release },
   { name: 'release-version', seed: 5528, focal: [960, 430], zoom: 1.3, center: [960, 520], title: 'Valkey release with a caption', text: '9.0', desc: 'A golden burst centred on the white Valkey hexagon mark above a large caption, representing a specific Valkey release.', art: releaseVersion },
   { name: 'atomic-slot-migration', seed: 14041, focal: [960, 470], zoom: 1.1, center: [960, 522], title: 'Valkey atomic slot migration', desc: 'Two shard slot rings, each centred on the white Valkey hexagon mark, with a chevron arrow driving a stream of slot segments from one to the other and a magnifier inspecting them mid-flight, representing atomic slot migration.', art: slotMigrationRings },
+  { name: 'atomic-slot-migration-quiet', seed: 46011, focal: [960, 528], zoom: 1.24, center: [960, 528], flat: true, title: 'Valkey atomic slot migration', desc: 'Two shard slot rings each centred on the white Valkey hexagon mark, the left one showing four contiguous slots vacated in dashed purple and the right one the same four arrived in solid green, a quiet stream of slot segments running between them, and a large magnifier over the middle of that stream resolving the band into separate slots, representing watching one contiguous range migrate atomically.', art: slotMigrationQuiet },
   { name: 'slot-migration-lens', seed: 45011, focal: [960, 520], zoom: 1.26, center: [960, 540], solid: true, title: 'Valkey slot migration under inspection', desc: 'Two Valkey instances drawn as quiet rings around the white hexagon mark with a thin stream running between them, and a large teal magnifying glass over the middle of that stream showing the objects in transit as bars of different lengths and colours, on a flat purple field, representing observability for slot migration.', art: slotMigrationLens },
   { name: 'security', seed: 6631, focal: [960, 520], zoom: 1.35, center: [960, 565], title: 'Valkey security', desc: 'An abstract shield woven from a lattice with the white Valkey hexagon mark at its centre, representing security and access control.', art: security },
   { name: 'security-acl', seed: 17071, focal: [1010, 540], zoom: 1.14, center: [960, 540], title: 'Valkey access control', desc: 'Streams of commands arriving at a lit gate centred on the white Valkey hexagon mark, most admitted in green and some turned away in red, representing access control and authentication.', art: securityGate },
