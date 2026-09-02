@@ -3329,10 +3329,10 @@ function dataStructuresGrid(r) {
 // of one shard. Connectors are elbows rather than curves, because a swept curve
 // over this distance reads as decoration.
 function keySizeDistribution(r) {
-  const sx = 435;
+  const sx = 440;
   const sw = 420;
-  const sTop = 230;
-  const sH = 620;
+  const sTop = 210;
+  const sH = 660;
 
   // The header (mark plus title) is centred in the panel, and the chart baseline
   // runs down from the middle of the mark, so both readings hold at once.
@@ -3341,12 +3341,16 @@ function keySizeDistribution(r) {
   const axisX = headX + 24;
   const labelX = sx + sw - 28;
 
-  const rows = [320, 540, 760];
-  const cols = [1111, 1245, 1379];
-  const tile = 134;
-  const shardX0 = 1005; // 150px of air between the panel and the shards
-  const shardX1 = 1485;
-  const shardH = 186;
+  // The narrow crop keeps only the middle 70% of the width, so the whole
+  // composition has about 1050px to live in at this zoom. Tiles are therefore
+  // 120 with a 24px gap and 26px of enclosure padding: at 134 they filled the
+  // budget exactly and ended up edge to edge.
+  const rows = [310, 540, 770];
+  const cols = [1106, 1250, 1394];
+  const tile = 120;
+  const shardX0 = 1020; // 160px of air between the panel and the shards
+  const shardX1 = 1480;
+  const shardH = 200;
 
   // Ranked keys with their sizes printed. The top two are a different class of
   // object, not the top of a ramp: tens of megabytes against a few.
@@ -3363,7 +3367,7 @@ function keySizeDistribution(r) {
 
   const bars = [];
   SIZES.forEach(([size, len], i) => {
-    const y = 386 + i * 58;
+    const y = 372 + i * 62;
     const outlier = i < 2;
     if (outlier) {
       bars.push(
@@ -3417,7 +3421,7 @@ function keySizeDistribution(r) {
       pods.push(
         `<rect x="${n(x - tile / 2)}" y="${n(y - tile / 2)}" width="${tile}" height="${tile}" rx="26" ` +
           `fill="${C.cyan}" fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="2.4" opacity="0.9"/>`,
-        mark(x, y, 74)
+        mark(x, y, 72)
       );
     }
   }
