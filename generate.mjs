@@ -29,6 +29,10 @@ const SVG_DIR = join(HERE, 'svg');
 const OUT_DIR = join(HERE, 'images');
 const OG_DIR = join(HERE, 'images', 'og');
 const LOGO = join(HERE, 'assets', 'Valkey-logo.svg');
+// The official horizontal lockup, mark plus wordmark, copied from
+// valkey-io.github.io/static/img/valkey-horizontal.svg. Used for the corner stamp
+// so the wordmark is the real one and not a font approximation.
+const LOCKUP_FILE = join(HERE, 'assets', 'valkey-horizontal.svg');
 
 const W = 1920;
 const H = 1080;
@@ -107,6 +111,35 @@ const MARK = (() => {
   const [, , vw, vh] = box[1].trim().split(/\s+/).map(Number);
   return { d: d[1], vw, vh };
 })();
+
+// The official lockup, read the same way the mark is. `cls-2` is the hexagon and
+// carries fill-rule evenodd; `cls-1` is the wordmark. Both are recoloured to one
+// fill here, because these banners sit on dark ground and the brand's two-tone
+// version is drawn for light.
+const LOCKUP = (() => {
+  const svg = readFileSync(LOCKUP_FILE, 'utf8');
+  const box = /viewBox="([-\d.\s]+)"/.exec(svg);
+  if (!box) throw new Error(`No viewBox in ${LOCKUP_FILE}`);
+  const [, , vw, vh] = box[1].trim().split(/\s+/).map(Number);
+  const paths = [...svg.matchAll(/<path[^>]*class="(cls-[12])"[^>]*\sd="([^"]+)"/g)].map((m) => ({
+    d: m[2],
+    evenodd: m[1] === 'cls-2',
+  }));
+  if (paths.length < 2) throw new Error(`Expected the lockup's paths in ${LOCKUP_FILE}`);
+  return { paths, vw, vh };
+})();
+
+// The lockup, top-left cornered at (x, y) and scaled to the given height.
+function lockup(x, y, height, fill = '#FFFFFF') {
+  const s = height / LOCKUP.vh;
+  return (
+    `<g transform="translate(${n(x)} ${n(y)}) scale(${s.toFixed(5)})">` +
+    LOCKUP.paths
+      .map((p) => `<path d="${p.d}" fill="${fill}"${p.evenodd ? ' fill-rule="evenodd"' : ''}/>`)
+      .join('') +
+    `</g>`
+  );
+}
 
 // The mark, centred on (cx, cy) at the given height. `fill-rule` is what hollows
 // out the hexagon, so it has to be carried over from the source logo.
@@ -218,17 +251,7 @@ function frame(theme) {
 function stamp(theme) {
   const { vx, vy, vw, vh } = frameBox(theme);
   const px = vh / H; // one output pixel, in framed units
-  const h = 72 * px;
-  const cx = vx + 0.052 * vw + h / 2;
-  const cy = vy + 0.085 * vh + h / 2;
-  // The wordmark sits to the right of the mark, cap height matched to it, so the
-  // pair reads as one lockup rather than as a logo with a caption.
-  const wordX = cx + (h * MARK.vw) / MARK.vh / 2 + 16 * px;
-  return (
-    `  <g opacity="0.92">${mark(cx, cy, h)}` +
-    `<text x="${n(wordX)}" y="${n(cy + 17 * px)}" fill="#FFFFFF" font-family="${FONT}" ` +
-    `font-size="${n(48 * px)}" font-weight="600" letter-spacing="${n(0.6 * px)}">Valkey</text></g>`
-  );
+  return `  <g opacity="0.92">${lockup(vx + 0.042 * vw, vy + 0.055 * vh, 52 * px)}</g>`;
 }
 
 // `solid` is the strongest of the three background settings: one brand purple,
