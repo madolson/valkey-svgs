@@ -1,6 +1,6 @@
 {
   "generatedBy": "generate.mjs",
-  "count": 36,
+  "count": 37,
   "themes": [
     {
       "name": "community",
@@ -70,6 +70,16 @@
       "useFor": "Slot migration and rebalancing",
       "image": "images/atomic-slot-migration.webp",
       "svg": "svg/atomic-slot-migration.svg",
+      "captioned": false
+    },
+    {
+      "name": "slot-migration-lens",
+      "title": "Valkey slot migration under inspection",
+      "desc": "Two Valkey instances drawn as quiet rings around the white hexagon mark with a thin stream running between them, and a large teal magnifying glass over the middle of that stream showing the objects in transit as bars of different lengths and colours, on a flat purple field, representing observability for slot migration.",
+      "motif": "A big lens over the migration stream, instances and stream quiet",
+      "useFor": "Observability for migration, inspecting data in transit",
+      "image": "images/slot-migration-lens.webp",
+      "svg": "svg/slot-migration-lens.svg",
       "captioned": false
     },
     {

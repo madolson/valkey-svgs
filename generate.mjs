@@ -204,15 +204,24 @@ function frame(theme) {
   return `${n(vx)} ${n(vy)} ${n(vw)} ${n(vh)}`;
 }
 
+// `solid` is the strongest of the three background settings: one brand purple,
+// no gradient, no vignette, no grain, so the background recedes entirely and the
+// motif reads as graphic design rather than as a scene. `flat` is the middle
+// setting, keeping the sky gradient but dropping the focal glow.
 function wrap(theme, art) {
+  const bg = theme.solid
+    ? `  <rect width="${W}" height="${H}" fill="${C.deep}"/>`
+    : `  <rect width="${W}" height="${H}" fill="url(#sky)"/>${theme.flat ? '' : `\n  <rect width="${W}" height="${H}" fill="url(#focus)"/>`}`;
+  const finish = theme.solid
+    ? ''
+    : `\n  <rect width="${W}" height="${H}" fill="url(#vignette)"/>` +
+      `\n  <rect width="${W}" height="${H}" filter="url(#grain)" opacity="0.055" style="mix-blend-mode:overlay"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${frame(theme)}">
   <title>${theme.title}</title>
   <desc>${theme.desc}</desc>
 ${defs(theme.focal)}
-  <rect width="${W}" height="${H}" fill="url(#sky)"/>${theme.flat ? '' : `\n  <rect width="${W}" height="${H}" fill="url(#focus)"/>`}
-${art}
-  <rect width="${W}" height="${H}" fill="url(#vignette)"/>
-  <rect width="${W}" height="${H}" filter="url(#grain)" opacity="0.055" style="mix-blend-mode:overlay"/>
+${bg}
+${art}${finish}
 </svg>
 `;
 }
@@ -1267,6 +1276,68 @@ function slotMigrationRings(r) {
 
 // Keyspace scan: a cursor holding one bounded window of a large keyspace, with
 // the keys behind it already visited and the rest still ahead. The hop track
+// Slot migration under a lens: the same two-instance migration as
+// `atomic-slot-migration`, recomposed so the lens is unambiguously the subject.
+// The instances and the stream are context, drawn quiet; the only place anything
+// is bright or varied is inside the glass, where the migrating objects differ in
+// length and colour. Solid background, because a starfield and a spotlight are
+// two more textures competing with the thing you are meant to look at.
+function slotMigrationLens() {
+  const cx = 960;
+  const cy = 520;
+  const R = 268; // the glass
+  const src = 516;
+  const dst = 1404;
+  const ringR = 92;
+
+  // The two instances: a plain ring and the mark, at context weight.
+  const instance = (x) =>
+    `<circle cx="${x}" cy="${cy}" r="${ringR}" fill="none" stroke="${C.ice}" stroke-width="3" opacity="0.4"/>` +
+    `<g opacity="0.9">${mark(x, cy, 86)}</g>`;
+
+  // The stream between them, and one small arrowhead so the direction is not
+  // ambiguous. It runs behind the glass rather than around it.
+  const stream =
+    `<line x1="${src + ringR + 16}" y1="${cy}" x2="${dst - ringR - 34}" y2="${cy}" stroke="${C.cyanLt}" ` +
+      `stroke-width="3" opacity="0.4"/>` +
+    `<path d="M ${dst - ringR - 54} ${cy - 16} L ${dst - ringR - 18} ${cy} L ${dst - ringR - 54} ${cy + 16}" ` +
+      `fill="none" stroke="${C.cyanLt}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>`;
+
+  // What the glass is for: the objects in transit are not alike. Left-aligned on a
+  // common edge so the differing lengths read as differing sizes.
+  const left = 775;
+  const rowsIn = [
+    [-152, 300, C.cyanLt],
+    [-76, 400, C.mint],
+    [0, 250, C.gold],
+    [76, 380, C.ice],
+    [152, 330, C.coral],
+  ];
+  const contents = rowsIn
+    .map(
+      ([dy, len, color]) =>
+        `<rect x="${left}" y="${n(cy + dy - 22)}" width="${len}" height="44" rx="22" fill="${color}" opacity="0.95"/>`
+    )
+    .join('');
+
+  // The handle points away from the stream, so it does not read as part of it.
+  const hx = cx - R * 0.72;
+  const hy = cy + R * 0.72;
+
+  return [
+    `  <clipPath id="lensGlass"><circle cx="${cx}" cy="${cy}" r="${n(R - 14)}"/></clipPath>`,
+    `  <g>${instance(src)}${instance(dst)}</g>`,
+    `  <g>${stream}</g>`,
+    `  <line x1="${n(hx)}" y1="${n(hy)}" x2="${n(hx - 148)}" y2="${n(hy + 148)}" stroke="${C.mint}" ` +
+      `stroke-width="34" stroke-linecap="round" opacity="0.95"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${n(R - 14)}" fill="${C.ink}" fill-opacity="0.42"/>`,
+    `  <g clip-path="url(#lensGlass)">${contents}</g>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${C.mint}" stroke-width="18" opacity="0.95"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${n(R - 24)}" fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.5"/>`,
+  ].join('\n');
+}
+
+
 // below it steps in uneven bites, because COUNT is a hint and not a batch size.
 function keyspaceScan(r) {
   const cx = 960; // where the cursor is
@@ -3256,6 +3327,7 @@ const THEMES = [
   { name: 'release', seed: 5527, focal: [1420, 460], zoom: 1.2, center: [1130, 540], title: 'Valkey release', desc: 'Valkey chevrons driving into a golden burst centred on the white Valkey hexagon mark, representing a new Valkey release.', art: release },
   { name: 'release-version', seed: 5528, focal: [960, 430], zoom: 1.3, center: [960, 520], title: 'Valkey release with a caption', text: '9.0', desc: 'A golden burst centred on the white Valkey hexagon mark above a large caption, representing a specific Valkey release.', art: releaseVersion },
   { name: 'atomic-slot-migration', seed: 14041, focal: [960, 470], zoom: 1.1, center: [960, 522], title: 'Valkey atomic slot migration', desc: 'Two shard slot rings, each centred on the white Valkey hexagon mark, with a chevron arrow driving a stream of slot segments from one to the other and a magnifier inspecting them mid-flight, representing atomic slot migration.', art: slotMigrationRings },
+  { name: 'slot-migration-lens', seed: 45011, focal: [960, 520], zoom: 1.26, center: [960, 540], solid: true, title: 'Valkey slot migration under inspection', desc: 'Two Valkey instances drawn as quiet rings around the white hexagon mark with a thin stream running between them, and a large teal magnifying glass over the middle of that stream showing the objects in transit as bars of different lengths and colours, on a flat purple field, representing observability for slot migration.', art: slotMigrationLens },
   { name: 'security', seed: 6631, focal: [960, 520], zoom: 1.35, center: [960, 565], title: 'Valkey security', desc: 'An abstract shield woven from a lattice with the white Valkey hexagon mark at its centre, representing security and access control.', art: security },
   { name: 'security-acl', seed: 17071, focal: [1010, 540], zoom: 1.14, center: [960, 540], title: 'Valkey access control', desc: 'Streams of commands arriving at a lit gate centred on the white Valkey hexagon mark, most admitted in green and some turned away in red, representing access control and authentication.', art: securityGate },
   { name: 'security-shield-clean', seed: 44011, focal: [960, 540], zoom: 1.38, center: [960, 545], flat: true, title: 'Valkey security', desc: 'A shield woven from a single even lattice with the white Valkey hexagon mark at its centre and nothing else inside it, representing security and hardening.', art: securityShieldClean },
