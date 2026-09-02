@@ -1,6 +1,6 @@
 ---
 name: valkey-header-art
-description: Add or edit a themed Valkey banner in this repo's generate.mjs. Use when asked to create artwork for a new topic (a feature, release, or blog subject), to restyle an existing theme, or when a banner looks wrong, clipped, smudged, or off-brand. Covers the drawing conventions, the safe-area rules, framing with zoom/center, and how to verify the result.
+description: Add or edit a themed Valkey banner in this repo's generate.mjs. Use whenever asked to create artwork, a header, a hero, or a featured image for a Valkey topic (a feature, release, talk, or blog subject), to restyle or fix an existing theme, to review a candidate banner, or when a banner looks wrong, clipped, smudged, busy, ambiguous, or off-brand. Covers the drawing conventions, the one-idea and one-focal-element rules, colour roles, the safe-area rules, framing with zoom/center, how to request review, and how to verify the result.
 ---
 
 # Adding Valkey header art
@@ -14,13 +14,24 @@ Read the existing themes first. Pick the one closest to what you have been asked
 follow its shape. `clustering` and `atomic-slot-migration` are a good pair to compare,
 because they use the same slot-ring vocabulary for different ideas.
 
-Then answer one question: **what single idea does this image carry?** Every theme here says
-exactly one thing. `memory-efficiency` says "same data, less space". `atomic-slot-migration`
-says "one contiguous range moves as an indivisible unit". If you cannot say it in a sentence,
-the image will read as generic tech decoration and it is not worth adding.
+Then answer two questions and write both answers as a comment at the top of the theme:
+
+1. **What single idea does this image carry?** Every theme here says exactly one thing.
+   `memory-efficiency` says "same data, less space". `atomic-slot-migration` says "one
+   contiguous range moves as an indivisible unit". If you cannot say it in a sentence, the
+   image will read as generic tech decoration and it is not worth adding.
+2. **What is the focal element?** Name the one object a viewer should look at first. It is
+   the thing that carries the sentence. Everything else exists to support it and will be
+   drawn quieter (see rule 8).
 
 Check it is not a duplicate. If the idea is a variation on an existing theme, restyle that
 theme instead of adding a near-copy.
+
+**Reuse metaphors, not just helpers.** The set already has a vocabulary: a slot ring is a
+node's keyspace, vacated and arrived segments are data leaving and landing, a lens is
+inspection, lanes are data in flight. A new theme that reuses these means a reader who has
+seen two banners can read the third. Invent a new metaphor only when none of the existing
+ones carries the idea.
 
 **Work out several metaphors before you write any code.** For "one key is much larger than
 the rest" the candidates are at least: an oversized block displacing a uniform grid, a length
@@ -28,17 +39,25 @@ comparison where one bar runs off the frame, and a dense mass surrounded by spar
 They are not equally good, and which one wins is not obvious until rendered. Write the
 shortlist down, then build the two or three that survive.
 
+**When both ends are Valkey, the ends must differ in state.** Migration, replication,
+failover, and upgrade all put the mark on both sides. The marks are identical by definition,
+so if the rings around them are also identical the image reads as a mirror and the direction
+is lost. Make source and destination differ visibly: one ring vacating and the other filling,
+one at lower opacity, one smaller. `slotRing` already supports this; use it.
+
 **Deliver options, not one answer.** Unless told otherwise, register 2-3 distinct candidates
 for a new subject and render all of them for review. Each has to be a different idea, not the
-same idea at three zoom levels. Delete the losers once one is picked.
+same idea at three zoom levels. Delete the losers' code once one is picked, but record why
+they lost (see "Rejected candidates").
 
 ## How a theme is built
 
 ```js
 function myTheme(r) {
+  // Idea: <one sentence>.
+  // Focal: <the one element that carries it>.
   // r() is a seeded PRNG in [0, 1). Never call Math.random(): it breaks reproducibility.
   return [
-    starfield(r, 55),
     `  <g>...</g>`,
   ].join('\n');
 }
@@ -50,46 +69,81 @@ Register it in `THEMES`:
 {
   name: 'my-theme',      // also the output filename
   seed: 24007,           // any unused integer; changing it reshuffles the randomness
-  focal: [960, 540],     // where the background glow sits
+  focal: [960, 540],     // where the background glow sits, if flat is false
   zoom: 1.2,             // crop in on the 1920x1080 grid so the motif fills the frame
   center: [960, 540],    // offset that crop for asymmetric compositions
   title: 'Short title',  // becomes <title>
   desc: 'One sentence.', // becomes <desc>; write it as alt text, it is the a11y surface
-  flat: true,            // optional: drop the focal glow, leaving an even background
+  flat: true,            // the default. Set false only when the glow points at the focal element
   art: myTheme,
 }
 ```
 
-`wrap()` supplies the gradient, focal glow, vignette, grain, and the reusable `h-*` halo
-gradients and `blur*` filters. A theme only draws its own motif.
+`wrap()` supplies the gradient, optional focal glow, vignette, grain, and the reusable `h-*`
+halo gradients and `blur*` filters. A theme only draws its own motif.
+
+Note that the skeleton above does **not** start with `starfield`. See rule 6.
 
 ### Rules
 
 1. **Palette only.** Use the `C` object. Everything in it is from `sass/_colors.scss` in the
    Valkey website. Do not introduce a colour.
-2. **Seeded randomness only.** `Math.random()`, `Date.now()`, and `new Date()` are banned;
+2. **Colours have roles.** Within the palette, each accent means the same thing in every
+   theme, so a reader can carry what they learned from one banner to the next and a reviewer
+   can flag a wrong colour as an error rather than a taste question. Use the halo keys as the
+   role names:
+   - `mint` — new, arrived, healthy, the destination state
+   - `violet` — old, vacated, retired, the source state
+   - `cyan` — data at rest, neutral content, the default for lanes and cells
+   - `ice` — inspection and instrumentation: lenses, probes, measurement
+   - `coral` — the anomaly, the one thing that is different, an error or a hot key
+   - `gold` — a highlight the composition deliberately points at, used once if at all
+   A theme that needs a colour to mean something other than this is telling you the metaphor
+   is wrong, not that the table is.
+3. **Seeded randomness only.** `Math.random()`, `Date.now()`, and `new Date()` are banned;
    they make rebuilds churn.
-3. **Text is a last resort, and there is exactly one font.** Text goes illegible once cropped
+4. **Text is a last resort, and there is exactly one font.** Text goes illegible once cropped
    and it needs translating, so most themes carry their idea with shape alone. When a label is
    genuinely required — a product name, a unit, a scale — use the `FONT` constant and nothing
    else, at 700 weight for a title and 600 for a label, 38px or larger, inside the safe area.
    Never introduce a second family, and never mix sizes for labels of the same kind.
-4. **Reuse the helpers**: `mark`, `dot`, `weighted`, `arcPath`, `slotRing`, `starfield`.
+5. **Reuse the helpers**: `mark`, `dot`, `weighted`, `arcPath`, `slotRing`, `starfield`.
    Adding a sixth way to draw a glowing dot is how the set stops looking like one system.
-5. **No flourish unless the flourish is the idea.** Draw the elements that carry the one
+6. **No flourish unless the flourish is the idea.** Draw the elements that carry the one
    sentence, and stop. Scattered dots, sparks, rays, dashed rings, extra outlines and
    secondary glows do not add richness; they add noise that the 200px crop turns into dirt.
    For every element ask what it says. If the answer is "it fills the space", delete it.
    Prefer fewer, larger, cleaner shapes: four thick lanes read at banner size, forty do not.
-6. **Keep the background flat.** The shared sky gradient is the background. Do not add ambient
-   glow washes to it. A `url(#h-*)` blob is a highlight, so use one only where the composition
-   is deliberately pointing at something, and then only on that thing. Set `flat: true` on a
-   theme to drop the focal glow as well, which is the right default for a motif that should
-   read as drawn on an even surface rather than lit from one side.
-7. **One line weight per glyph.** Within a drawn object, strokes that are meant to read as the
-   same kind of line must be the same width, and repeated features (a keyhole, a cell, a tick)
-   must be the same size everywhere they appear. Mixed weights inside one glyph is the most
-   common reason a banner looks amateurish rather than wrong.
+   **This includes the starfield.** It is a texture, and a purple gradient with scattered
+   stars is the single most recognisable signature of generated hero art. Call `starfield`
+   only when depth or scale is part of the idea (a fleet, a galaxy of keys, distance between
+   regions). The default background is the gradient alone.
+7. **Keep the background flat.** The shared sky gradient is the background. Do not add ambient
+   glow washes to it. `flat: true` is the default; set it false only when a focal glow behind
+   the focal element is doing work, and then place `focal` on that element. A `url(#h-*)` blob
+   is a highlight, so use one only where the composition is deliberately pointing at
+   something, and then only on that thing.
+8. **One focal element, and a measurable hierarchy under it.** The focal element named in the
+   theme comment is the largest object in the frame and the only one at full opacity with a
+   halo. Every supporting element is drawn at no more than 0.6 opacity or at most half the
+   focal stroke width, and carries no halo of its own. If two objects compete for the eye at
+   the narrow crop, the viewer will not know which one holds the sentence. When you cannot
+   decide which element is focal, the theme has two ideas; split it.
+9. **One device for direction.** Motion or flow gets exactly one visual device: vacated and
+   arrived segments on a ring, or lanes, or an arrowhead. Not two, never three. If the ring
+   already shows data leaving one node and landing on another, adding streaks and a chevron
+   says the same thing twice more and buries the focal element under redundancy. Pick the
+   device that also carries state (usually the ring) and let the rest stay still.
+10. **One line weight per glyph.** Within a drawn object, strokes that are meant to read as
+    the same kind of line must be the same width, and repeated features (a keyhole, a cell, a
+    tick) must be the same size everywhere they appear. Mixed weights inside one glyph is the
+    most common reason a banner looks amateurish rather than wrong.
+11. **Nothing that carries meaning is small.** In the narrow crop, no meaningful element is
+    thinner than about 6px or smaller than about 3% of the framed width, and a field of marks
+    meant to be read as content sits at 0.4 opacity or higher. Below those thresholds the
+    element becomes texture and whatever it was carrying is lost. Two data points from this
+    repo: a label had to be 38px to survive, and an X badge that looked fine at `r="24"` in
+    code was invisible at banner size until it went to `r="54"`.
 
 ### Helpers
 
@@ -98,12 +152,15 @@ gradients and `blur*` filters. A theme only draws its own motif.
   is carried over from the source; do not drop it. On a bright glow, put a `url(#scrim)`
   circle behind it first or the white washes out.
 - `dot(x, y, rad, color, key, opacity, halo)` — glowing dot. `key` names the halo gradient
-  (`cyan`, `ice`, `mint`, `coral`, `violet`, `gold`). Lower `halo` from its 4.5 default for
-  tightly packed runs, or the blooms compound into haze.
+  (`cyan`, `ice`, `mint`, `coral`, `violet`, `gold`); pick it by role (rule 2), not by which
+  one looks nice. Lower `halo` from its 4.5 default for tightly packed runs, or the blooms
+  compound into haze.
 - `weighted(r, [[value, weight], ...])` — weighted pick.
 - `arcPath(cx, cy, rad, a0, a1)` — arc. **Assumes `a1 > a0`.** If your angles wrap past 0,
   add `2 * Math.PI` to `a1` or the arc silently takes the long way round.
-- `slotRing(r, cx, cy, rad, {vacated, arrived, width})` — cluster slot ring.
+- `slotRing(r, cx, cy, rad, {vacated, arrived, width})` — cluster slot ring. Vacated segments
+  are `violet`, arrived are `mint`, the rest is `cyan`; do not override the roles.
+- `starfield(r, n)` — background stars. Opt-in only (rule 6).
 
 ## The three failure modes
 
@@ -157,10 +214,11 @@ the safe edge; make the composition narrower and taller instead.
 
 Order matters. A big `url(#h-*)` halo circle placed *after* the motif in the returned array
 veils the whole thing, and fine detail reads as smudged. Ambient glow goes **behind** the
-motif, right after `starfield`. If a header looks hazy or dirty, check the layer order first;
-it is almost never the WebP compression.
+motif, first in the array (after `starfield` if you are using one). If a header looks hazy or
+dirty, check the layer order first; it is almost never the WebP compression.
 
-Related: many overlapping per-dot halos also produce haze. Lower the `halo` argument.
+Related: many overlapping per-dot halos also produce haze. Lower the `halo` argument, or ask
+whether those dots needed halos at all (rule 8 says only the focal element does).
 
 ### 3. Zooming something out of frame
 
@@ -170,13 +228,13 @@ behind it (burst rays originating inside the mark's radius, for example, become 
 
 ## Workflow
 
-```sh
+```bash
 node generate.mjs my-theme
 ```
 
 Then inspect **both crops**, not the full image:
 
-```sh
+```bash
 python3 - <<'EOF'
 from PIL import Image
 def cover(im, bw, bh):
@@ -194,12 +252,23 @@ EOF
 Look at the images. Do not assume the code did what you intended — every fix in this repo's
 history came from looking at a render, not from reasoning about the markup.
 
+### The blind read
+
+Before asking anyone for design feedback, test whether the image works at all. Show the
+narrow crop, with no title and no explanation, to someone who does not know the topic — a
+colleague, a different chat, anyone — and ask for a one-sentence caption. Compare it with the
+sentence in your theme comment.
+
+If they match, the metaphor works and the rest is polish. If they do not, the metaphor
+failed. Redraw; do not explain. A banner that needs the post title to be understood is
+decoration, and every hour spent polishing it is wasted.
+
 ### Contrast on the purple background
 
 The gradient is not black, so low-opacity accents vanish into it. A field of dots meant to be
 *read* as content needs opacity around 0.4 or higher; below that it reads as starfield and the
 motif loses whatever the dots were carrying. Small glyphs need to be much bigger than they
-look in code: an X badge at `r="24"` was invisible at banner size and had to go to `r="54"`.
+look in code (rule 11).
 
 ### Checking it in the real site, not a mock-up
 
@@ -207,7 +276,7 @@ A hand-written HTML page with the right pixel sizes is useful for a first look, 
 what ships, and it will not catch a wrong `featured_image` path or a template that ignores it.
 To see a banner the way the site renders it:
 
-```sh
+```bash
 git clone --depth 30 https://github.com/valkey-io/valkey-io.github.io.git
 cd valkey-io.github.io
 cp /path/to/valkey-svgs/images/my-theme.webp static/assets/media/featured/
@@ -241,12 +310,47 @@ only your own themes while iterating, and run the full rebuild when you have sto
 
 Then prove you changed nothing else:
 
-```sh
+```bash
 node generate.mjs && git diff --stat
 ```
 
 Only your theme's `svg/` and `images/` files should appear. If other themes moved, you
 consumed PRNG draws that belonged to them, or edited a shared helper.
+
+## Requesting review
+
+Open-ended requests ("any feedback?") get deferred, because they ask the reviewer to generate
+a critique from nothing. Narrow requests get answered. When posting candidates for review,
+whether to a designer, a maintainer, or a channel, use this shape every time:
+
+1. Post the **narrow crop and the wide crop side by side** for each candidate, labelled A, B,
+   C. Not the full 1920x1080; nobody will ever see that.
+2. State the **one-sentence idea** once, above the images. Do not say which candidate you
+   prefer.
+3. Ask exactly these three questions:
+   - Which one, and why? (not "do you like them")
+   - What would you cut from it?
+   - Does anything look off-brand or off-palette?
+4. If you have a specific worry — an element you suspect is redundant, a background you think
+   is generic — name it. Reacting to a stated concern is far easier than producing one.
+
+Because you are offering 2-3 candidates, the reviewer is choosing, not judging, and a choice
+is a much smaller ask. Take the answer to "what would you cut" seriously even when you
+disagree; it is the cheapest signal you will get that rule 6 or rule 9 was broken.
+
+## Rejected candidates
+
+Deleting the losers' code is right; deleting the reason they lost is not. Keep a `## Rejected`
+section in the README (or a `REJECTED.md`) with one line per candidate:
+
+```
+atomic-slot-migration / B (two rings, lanes, chevron) — three flow devices, lens lost the frame
+memory-efficiency / A (stacked bars) — read as a chart, not as "same data, less space"
+```
+
+Over a dozen themes this becomes the taste document that no single review thread ever
+produces. Read it before shortlisting metaphors for a new theme; several of your candidates
+will already be on it.
 
 ## Editing generate.mjs safely
 
@@ -265,13 +369,20 @@ for name in ['themeA', 'themeB']:
 
 ## Definition of done
 
-- [ ] The image says one thing, and you can state it in a sentence.
+- [ ] The image says one thing, and the sentence is in the theme comment.
+- [ ] The focal element is named in the theme comment and is visibly dominant in the narrow crop.
 - [ ] You shortlisted other metaphors before settling, and 2-3 candidates are on offer.
-- [ ] Palette is `C` only; no new colours.
+- [ ] Palette is `C` only; every accent is used in its role (rule 2).
+- [ ] No starfield and `flat: true`, unless you can say what the depth or glow is for.
+- [ ] Direction, if any, uses one device.
+- [ ] If both ends are Valkey, they differ in state.
+- [ ] Nothing meaningful is under 6px, under 3% of framed width, or under 0.4 opacity.
 - [ ] `desc` reads as usable alt text.
 - [ ] Motif fills 75-80% of the framed height; left and right margins look balanced.
 - [ ] Both crops inspected visually; nothing that matters is clipped.
-- [ ] Ambient glow is behind the motif.
+- [ ] Ambient glow, if any, is behind the motif.
+- [ ] A blind read of the narrow crop produced a matching caption.
+- [ ] Review was requested with side-by-side crops and the three questions.
 - [ ] `node generate.mjs` twice in a row produces no diff.
 - [ ] `git diff --stat` touches only your theme.
-- [ ] README table has a row for it.
+- [ ] README table has a row for it, and losing candidates are in Rejected.
