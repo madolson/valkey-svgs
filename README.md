@@ -22,13 +22,17 @@ can't drift, and regenerating is a no-op diff.
 | `release-version` | The same burst with a caption you set | A specific release. See [Captions](#captions) |
 | `security` | Shield woven from the lattice it protects | Security in general, CVEs, hardening |
 | `security-acl` | Commands at a gate, most admitted, some turned away | ACLs, authentication, TLS |
+| `security-shield-clean` | The woven shield with the speckle removed, lattice only | Security in general, CVEs, hardening |
+| `security-shield-plated` | The shield built from even courses of armour plating | Hardening in layers, defence posture |
+| `security-shield-nested` | Three shields of one shape nested inside each other | Defence in depth, layered controls |
+| `security-acl-simple` | Four lanes at one centred gate, three through and one refused | ACLs, authentication, TLS |
 | `benchmarks` | Throughput bars climbing under flat P50/P99 latency | Benchmark results, observability, metrics |
 | `data-structures` | Hash buckets chaining out beside a skip list | Internals: hash tables, skip lists, new types, modules |
 | `how-to` | Step track with the current step lit | Tutorials, guides, getting started |
 | `keyspace-scan` | Cursor holding one lit window of a key field, uneven hop track below | `SCAN`, cursors, iterating a keyspace without blocking |
 | `large-key` | A field of identical key tiles with one scaled up until it dwarfs them | Large keys, hot keys, uneven key sizes |
 | `key-prefix-groups` | Sampled keys funnelling into prefix rows with count bars | Key naming, prefixes, keyspace browsing and clients |
-| `event-gather-ring` | Arrivals thickening against a lit venue ring | Events where the gathering is the point |
+| `blackhole` | A dark sphere with its accretion disk lensed into a ring around it | Talks, keynotes, anything that wants one striking abstract image |
 | `bloom-bit-array` | Hash nodes fanning out of the mark, lighting a handful of cells in a bit array | Bloom filters, valkey-bloom, probabilistic data structures |
 | `search-vector-nearest` | Query at the centre of an indexed field, its nearest matches lit inside a search radius | Vector similarity search, KNN queries, embeddings |
 | `search-field-index` | Records giving up one field each to a sorted index, a query bracketing the matched run | Secondary indexing on hashes and JSON, FT.CREATE, filters |

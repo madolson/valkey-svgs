@@ -69,8 +69,10 @@ function rng(seed) {
 const n = (v) => Math.round(v * 10) / 10;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-// Any header carrying text depends on this font resolving at render time, which
-// makes those two themes reproducible per-machine rather than everywhere.
+// The one typeface for the whole set. Every theme that draws text uses this and
+// nothing else, so labels look like they came from the same system; weights are
+// 700 for a title and 600 for a label. Text depends on the font resolving at
+// render time, which makes those themes reproducible per-machine, not everywhere.
 const FONT = 'Helvetica Neue, Helvetica, Arial, sans-serif';
 
 const esc = (s) =>
@@ -207,8 +209,7 @@ function wrap(theme, art) {
   <title>${theme.title}</title>
   <desc>${theme.desc}</desc>
 ${defs(theme.focal)}
-  <rect width="${W}" height="${H}" fill="url(#sky)"/>
-  <rect width="${W}" height="${H}" fill="url(#focus)"/>
+  <rect width="${W}" height="${H}" fill="url(#sky)"/>${theme.flat ? '' : `\n  <rect width="${W}" height="${H}" fill="url(#focus)"/>`}
 ${art}
   <rect width="${W}" height="${H}" fill="url(#vignette)"/>
   <rect width="${W}" height="${H}" filter="url(#grain)" opacity="0.055" style="mix-blend-mode:overlay"/>
@@ -782,6 +783,162 @@ function securityGate(r) {
   ].join('\n');
 }
 
+// A heraldic shield centred on (cx, cy): flat top, straight sides, curved point.
+// Shared by the shield themes so they are one silhouette under four treatments.
+function shieldPath(cx, cy, w, h, shoulder = 0.56) {
+  const hw = w / 2;
+  const top = cy - h / 2;
+  const sy = top + h * shoulder;
+  const bottom = top + h;
+  return (
+    `M ${n(cx - hw)} ${n(top)} L ${n(cx + hw)} ${n(top)} L ${n(cx + hw)} ${n(sy)} ` +
+    `C ${n(cx + hw)} ${n(sy + h * 0.24)} ${n(cx + hw * 0.47)} ${n(bottom - h * 0.075)} ${n(cx)} ${n(bottom)} ` +
+    `C ${n(cx - hw * 0.47)} ${n(bottom - h * 0.075)} ${n(cx - hw)} ${n(sy + h * 0.24)} ${n(cx - hw)} ${n(sy)} Z`
+  );
+}
+
+// Security, woven: the same shield as `security` with the speckle taken out, so
+// the only thing inside it is the lattice it is made of.
+function securityShieldClean() {
+  const cx = 960;
+  const cy = 545;
+  const path = shieldPath(cx, cy, 570, 580);
+
+  const lattice = [];
+  for (let k = -30; k <= 30; k++) {
+    const off = cx + k * 46;
+    lattice.push(
+      `<line x1="${n(off - 300)}" y1="245" x2="${n(off + 300)}" y2="845" stroke="${C.cyanLt}" stroke-width="2"/>`,
+      `<line x1="${n(off + 300)}" y1="245" x2="${n(off - 300)}" y2="845" stroke="${C.cyanLt}" stroke-width="2"/>`
+    );
+  }
+  const weave = lattice.join('');
+
+  return [
+    `  <clipPath id="shieldClean"><path d="${path}"/></clipPath>`,
+    `  <linearGradient id="shieldCleanFill" x1="0" y1="0" x2="0" y2="1">` +
+      `<stop offset="0" stop-color="${C.cyan}" stop-opacity="0.3"/>` +
+      `<stop offset="1" stop-color="${C.violet}" stop-opacity="0.12"/></linearGradient>`,
+    `  <g clip-path="url(#shieldClean)">` +
+      `<path d="${path}" fill="url(#shieldCleanFill)"/>` +
+      `<g opacity="0.5">${weave}</g></g>`,
+    `  <path d="${path}" fill="none" stroke="${C.cyanLt}" stroke-width="16" opacity="0.35" filter="url(#blur18)"/>`,
+    `  <path d="${path}" fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.92"/>`,
+    `  <g>${mark(cx, cy - 10, 300)}</g>`,
+  ].join('\n');
+}
+
+// Security, plated: the shield as courses of armour rather than a weave. Layers
+// are the idea, so the plates are even and the seams between them are the detail.
+function securityShieldPlated() {
+  const cx = 960;
+  const cy = 545;
+  const w = 570;
+  const h = 580;
+  const path = shieldPath(cx, cy, w, h);
+  const top = cy - h / 2;
+
+  const courses = 5;
+  const plates = [];
+  const ch = h / courses;
+  const pw = w / 3.5;
+  for (let row = 0; row < courses; row++) {
+    const y = top + row * ch;
+    // Every other course is offset by half a plate, so the seams break like
+    // brickwork and the shield reads as overlapping armour.
+    const x0 = cx - w / 2 - (row % 2 ? pw / 2 : 0) - pw / 2;
+    for (let col = 0; col < 6; col++) {
+      plates.push(
+        `<rect x="${n(x0 + col * pw)}" y="${n(y)}" width="${n(pw - 9)}" height="${n(ch - 9)}" rx="12" ` +
+          `fill="${C.cyan}" fill-opacity="${n(0.32 - row * 0.045)}" stroke="${C.cyanLt}" stroke-width="2.6" ` +
+          `opacity="${n(0.85 - row * 0.09)}"/>`
+      );
+    }
+  }
+
+  return [
+    `  <clipPath id="shieldPlated"><path d="${path}"/></clipPath>`,
+    `  <g clip-path="url(#shieldPlated)">${plates.join('')}</g>`,
+    `  <path d="${path}" fill="none" stroke="${C.cyanLt}" stroke-width="16" opacity="0.35" filter="url(#blur18)"/>`,
+    `  <path d="${path}" fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.92"/>`,
+    `  <g>${mark(cx, cy - 10, 290)}</g>`,
+  ].join('\n');
+}
+
+// Security, in depth: three shields of one silhouette nested inside each other,
+// the innermost holding the mark. Defence in layers, and nothing else drawn.
+function securityShieldNested() {
+  const cx = 960;
+  const cy = 548;
+  const layers = [
+    { w: 624, h: 624, color: C.violet, width: 5, op: 0.65 },
+    { w: 500, h: 500, color: C.cyanLt, width: 5, op: 0.85 },
+    { w: 376, h: 376, color: C.ice, width: 5.5, op: 0.95 },
+  ];
+  const inner = shieldPath(cx, cy, layers[2].w, layers[2].h);
+
+  return [
+    `  <linearGradient id="shieldNestedFill" x1="0" y1="0" x2="0" y2="1">` +
+      `<stop offset="0" stop-color="${C.cyan}" stop-opacity="0.26"/>` +
+      `<stop offset="1" stop-color="${C.violet}" stop-opacity="0.1"/></linearGradient>`,
+    `  <path d="${inner}" fill="url(#shieldNestedFill)"/>`,
+    ...layers.map(
+      (l) =>
+        `  <path d="${shieldPath(cx, cy, l.w, l.h)}" fill="none" stroke="${l.color}" ` +
+        `stroke-width="${l.width}" opacity="${l.op}"/>`
+    ),
+    `  <path d="${inner}" fill="none" stroke="${C.ice}" stroke-width="14" opacity="0.3" filter="url(#blur18)"/>`,
+    `  <g>${mark(cx, cy - 34, 196)}</g>`,
+  ].join('\n');
+}
+
+// Access control, said in as few marks as possible: four lanes at one gate, three
+// admitted and one refused. Symmetric about the gate, which is the centre of the
+// frame, because the gate is the whole subject.
+function securityAclSimple() {
+  const gate = 960;
+  const cy = 540;
+  const lanes = [
+    { y: 268, pass: true },
+    { y: 352, pass: false },
+    { y: cy, pass: true },
+    { y: 728, pass: true },
+    { y: 812, pass: true },
+  ];
+
+  const traffic = lanes
+    .map(({ y, pass }) => {
+      const stop = pass ? gate - 12 : 826;
+      const out = [
+        `<line x1="170" y1="${y}" x2="${n(stop)}" y2="${y}" stroke="${C.cyanLt}" stroke-width="7" ` +
+          `stroke-linecap="round" opacity="0.6"/>`,
+      ];
+      if (pass) {
+        out.push(
+          `<line x1="${gate + 12}" y1="${y}" x2="1750" y2="${y}" stroke="${C.mint}" stroke-width="7" ` +
+            `stroke-linecap="round" opacity="0.92"/>`
+        );
+      } else {
+        const bx = 884;
+        out.push(
+          `<path d="M ${bx - 28} ${y - 28} L ${bx + 28} ${y + 28} M ${bx + 28} ${y - 28} L ${bx - 28} ${y + 28}" ` +
+            `stroke="${C.coral}" stroke-width="9" stroke-linecap="round" opacity="0.95"/>`
+        );
+      }
+      return out.join('');
+    })
+    .join('');
+
+  return [
+    `  <line x1="${gate}" y1="222" x2="${gate}" y2="858" stroke="${C.ice}" stroke-width="20" ` +
+      `opacity="0.28" filter="url(#blur18)"/>`,
+    `  <line x1="${gate}" y1="222" x2="${gate}" y2="858" stroke="${C.ice}" stroke-width="8" ` +
+      `stroke-linecap="round" opacity="0.9"/>`,
+    `  <g>${traffic}</g>`,
+    `  <g>${mark(gate, cy, 320)}</g>`,
+  ].join('\n');
+}
+
 // Benchmarks: throughput bars climbing, latency percentiles holding flat above
 // them. The two motifs are stacked rather than overlaid so neither muddies the
 // other: bars own everything below y=560, the series sit above it.
@@ -1277,49 +1434,48 @@ function keyPrefixGroups(r) {
   ].join('\n');
 }
 
-// Event, as a gathering: arrivals from every direction closing on one lit venue
-// centred on the mark, densest right up against it.
-function eventGatherRing(r) {
+// A black hole, drawn the way Interstellar drew Gargantua: a dark sphere, the
+// accretion disk lensed into a ring that wraps over and under it, and the flat
+// near edge of that disk crossing in front. The one thing it says is gravity.
+function blackhole(r) {
   const cx = 960;
   const cy = 540;
-  const R = 158;
+  const R = 210; // the event horizon
+  const ringR = 300; // the lensed disk wrapping the sphere
+  const diskRx = 720;
+  const diskRy = 86;
 
-  const arrivals = [];
-  for (let i = 0; i < 96; i++) {
-    // Bias the radius inward so the crowd thickens toward the venue.
-    const rad = R + 46 + Math.pow(r(), 1.7) * 320;
-    const a = r() * Math.PI * 2;
-    const x = cx + rad * Math.cos(a);
-    const y = cy + rad * Math.sin(a);
-    if (y < 210 || y > 870) continue;
-    // The dot leads and the trail sits behind it, further out, so the crowd
-    // reads as arriving rather than as rays leaving.
-    const trail = 26 + r() * 54;
-    const tx = x + Math.cos(a) * trail;
-    const ty = y + Math.sin(a) * trail;
-    arrivals.push(
-      `<line x1="${n(tx)}" y1="${n(ty)}" x2="${n(x)}" y2="${n(y)}" stroke="${C.cyanLt}" stroke-width="2" stroke-linecap="round" opacity="${n(0.2 + r() * 0.3)}"/>`,
-      dot(x, y, 4 + r() * 3, weighted(r, [[C.cyanLt, 6], [C.mint, 3], [C.ice, 2]]), weighted(r, [['cyan', 6], ['mint', 3], ['ice', 2]]), 0.55 + r() * 0.35, 3)
-    );
-  }
+  // Stars behind it, and nothing in front: the only light in the frame comes off
+  // the disk, so the disk is the only thing that gets a glow.
+  const stars = starfield(r, 90);
 
-  const rings = [];
-  for (const [rad, op] of [[R + 118, 0.13], [R + 236, 0.09], [R + 354, 0.06]]) {
-    rings.push(
-      `<circle cx="${cx}" cy="${cy}" r="${n(rad)}" fill="none" stroke="${C.ice}" stroke-width="1.6" opacity="${op}"/>`
-    );
-  }
+  const disk = (extra = '') =>
+    `<ellipse cx="${cx}" cy="${cy}" rx="${diskRx}" ry="${diskRy}" fill="url(#diskFill)"${extra}/>`;
 
   return [
-    starfield(r, 50),
-    `  <circle cx="${cx}" cy="${cy}" r="470" fill="url(#h-cyan)" opacity="0.2"/>`,
-    `  <g>${rings.join('')}</g>`,
-    `  <g>${arrivals.join('')}</g>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="${C.ink}" opacity="0.4"/>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${C.ice}" stroke-width="16" opacity="0.3" filter="url(#blur18)"/>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${C.ice}" stroke-width="3.6" opacity="0.92"/>`,
-    `  <circle cx="${cx}" cy="${cy}" r="120" fill="url(#scrim)"/>`,
-    `  <g>${mark(cx, cy, 176)}</g>`,
+    `  <radialGradient id="diskFill">` +
+      `<stop offset="0.24" stop-color="${C.ice}" stop-opacity="0.95"/>` +
+      `<stop offset="0.42" stop-color="${C.gold}" stop-opacity="0.85"/>` +
+      `<stop offset="0.72" stop-color="${C.gold}" stop-opacity="0.35"/>` +
+      `<stop offset="1" stop-color="${C.coral}" stop-opacity="0"/></radialGradient>`,
+    `  <radialGradient id="ringFill">` +
+      `<stop offset="0.86" stop-color="${C.gold}" stop-opacity="0"/>` +
+      `<stop offset="0.94" stop-color="${C.gold}" stop-opacity="0.9"/>` +
+      `<stop offset="1" stop-color="${C.gold}" stop-opacity="0"/></radialGradient>`,
+    `  <clipPath id="diskFront"><rect x="0" y="${cy}" width="${W}" height="${H - cy}"/></clipPath>`,
+    stars,
+    // The far side of the disk, lensed up over the top of the sphere.
+    `  <g filter="url(#blur18)">${disk()}</g>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${n(ringR * 1.16)}" fill="url(#ringFill)" opacity="0.55" filter="url(#blur8)"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${ringR}" fill="none" stroke="${C.gold}" stroke-width="34" opacity="0.4" filter="url(#blur18)"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${ringR}" fill="none" stroke="${C.ice}" stroke-width="2.6" opacity="0.32"/>`,
+    // The sphere itself, which swallows the middle of everything behind it.
+    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="#03040F"/>`,
+    // The photon ring hugging the horizon, then the near edge of the disk in front.
+    `  <circle cx="${cx}" cy="${cy}" r="${n(R + 7)}" fill="none" stroke="${C.gold}" stroke-width="18" opacity="0.35" filter="url(#blur8)"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${n(R + 7)}" fill="none" stroke="${C.ice}" stroke-width="3.4" opacity="0.9"/>`,
+    `  <g clip-path="url(#diskFront)"><g filter="url(#blur8)">${disk()}</g>${disk(' opacity="0.9"')}</g>`,
+    `  <g>${mark(cx, cy, 150)}</g>`,
   ].join('\n');
 }
 
@@ -1414,9 +1570,8 @@ function bloomBitArray(r) {
 
   return [
     starfield(r, 50),
-    // Ambient glow behind the motif, never over it.
-    `  <ellipse cx="${mx}" cy="${top + CH / 2}" rx="720" ry="270" fill="url(#h-cyan)" opacity="0.17"/>`,
-    `  <circle cx="${mx}" cy="${my}" r="240" fill="url(#h-violet)" opacity="0.4"/>`,
+    // No background wash and no halo on the mark: the only lit things are the hash
+    // nodes and the cells they set, which is what the image is about.
     `  <g>${slots.join('')}</g>`,
     `  <g>${already.join('')}</g>`,
     `  <g>${bus.join('')}</g>`,
@@ -1426,8 +1581,6 @@ function bloomBitArray(r) {
     `  <g>${nodes.join('')}</g>`,
     `  <line x1="${n(x0 - 14)}" y1="${axisY}" x2="${n(bx(CELLS - 1) + CW + 14)}" y2="${axisY}" stroke="${C.ice}" stroke-width="3" opacity="0.72"/>`,
     `  <g>${ticks.join('')}</g>`,
-    `  <circle cx="${mx}" cy="${my}" r="118" fill="url(#scrim)"/>`,
-    `  <g filter="url(#blur18)" opacity="0.45">${mark(mx, my, 150)}</g>`,
     `  <g>${mark(mx, my, 150)}</g>`,
   ].join('\n');
 }
@@ -2600,7 +2753,14 @@ function limitsGaugePinned(r) {
 // how many PRNG draws happened before it.
 const GLYPH_HALF_W = { bloom: 172, json: 156, search: 121, ldap: 82 };
 
+// Each glyph is drawn around its own origin, but its ink is not symmetric about
+// that origin: bloom hangs the hash ticks above the cell run. These offsets pull
+// the drawn bounds back onto (cx, cy) so four glyphs on a grid look centred, and
+// so a line aimed at (cx, cy) arrives at the middle of the glyph.
+const GLYPH_SHIFT = { bloom: 25, json: 0, search: 0, ldap: 0 };
+
 function moduleGlyph(kind, cx, cy, s, color, key) {
+  cy += (GLYPH_SHIFT[kind] ?? 0) * s;
   const X = (v) => n(cx + v * s);
   const Y = (v) => n(cy + v * s);
   const w = (v) => n(v * s);
@@ -2691,23 +2851,27 @@ function moduleGlyph(kind, cx, cy, s, color, key) {
   // valkey-ldap: a padlock. The module is authentication against a directory, so
   // the glyph has to read as auth. A tree of nodes reads as a data structure and
   // sits oddly beside the other three, which are all storage shapes.
-  const bodyW = 150;
-  const bodyH = 120;
-  const bodyTop = -30;
-  const shackleR = 48;
-  const shackleCy = bodyTop + 6;
+  //
+  // Every line in it is one weight, and the keyhole is a circle plus a slot of that
+  // same weight: mixed stroke widths and a filled tapered slot were what made this
+  // read as a cartoon rather than as a drawing.
+  const LINE = 6;
+  const bodyW = 152;
+  const bodyH = 116;
+  const bodyTop = -36; // shackle above + body below, so the glyph is centred on cy
+  const shackleR = 44;
+  const keyCy = bodyTop + 40;
   return [
-    // Shackle: a half arc rising out of the body.
-    `<path d="M ${X(-shackleR)} ${Y(shackleCy)} A ${w(shackleR)} ${w(shackleR)} 0 0 1 ${X(shackleR)} ${Y(shackleCy)}" ` +
-      `fill="none" stroke="${color}" stroke-width="${w(11)}" opacity="0.9"/>`,
-    `<rect x="${X(-bodyW / 2)}" y="${Y(bodyTop)}" width="${w(bodyW)}" height="${w(bodyH)}" rx="${w(22)}" ` +
-      `fill="${color}" fill-opacity="0.2" stroke="${color}" stroke-width="${w(3.2)}" opacity="0.9"/>`,
-    // Keyhole: a bored circle with a tapered slot under it.
-    `<circle cx="${X(0)}" cy="${Y(bodyTop + 42)}" r="${w(15)}" fill="none" stroke="${color}" ` +
-      `stroke-width="${w(3.2)}" opacity="0.95"/>`,
-    `<path d="M ${X(-7)} ${Y(bodyTop + 86)} L ${X(-3)} ${Y(bodyTop + 54)} L ${X(3)} ${Y(bodyTop + 54)} ` +
-      `L ${X(7)} ${Y(bodyTop + 86)} Z" fill="${color}" opacity="0.9"/>`,
-    glow(0, bodyTop + 42, 7, 0.9, 3.2),
+    // Shackle: a half arc rising out of the top edge of the body.
+    `<path d="M ${X(-shackleR)} ${Y(bodyTop)} A ${w(shackleR)} ${w(shackleR)} 0 0 1 ${X(shackleR)} ${Y(bodyTop)}" ` +
+      `fill="none" stroke="${color}" stroke-width="${w(LINE)}" opacity="0.9"/>`,
+    `<rect x="${X(-bodyW / 2)}" y="${Y(bodyTop)}" width="${w(bodyW)}" height="${w(bodyH)}" rx="${w(20)}" ` +
+      `fill="${color}" fill-opacity="0.18" stroke="${color}" stroke-width="${w(LINE)}" opacity="0.9"/>`,
+    // Keyhole: a bored circle and a straight slot, both the same weight.
+    `<circle cx="${X(0)}" cy="${Y(keyCy)}" r="${w(14)}" fill="none" stroke="${color}" ` +
+      `stroke-width="${w(LINE)}" opacity="0.95"/>`,
+    `<line x1="${X(0)}" y1="${Y(keyCy + 14)}" x2="${X(0)}" y2="${Y(keyCy + 50)}" stroke="${color}" ` +
+      `stroke-width="${w(LINE)}" stroke-linecap="round" opacity="0.95"/>`,
   ].join('');
 }
 
@@ -2732,11 +2896,13 @@ function bundleCrate(r) {
   const cx = (x0 + x1) / 2;
 
   const s = 1.02;
+  // One slot per quadrant of the crate, each at the exact centre of its quadrant:
+  // the quadrants are (x0..960, 960..x1) x (lid..mid, mid..y1).
   const slots = [
-    [731, 471],
-    [1189, 471],
-    [731, 731],
-    [1189, 731],
+    [(x0 + 960) / 2, (lid + mid) / 2],
+    [(960 + x1) / 2, (lid + mid) / 2],
+    [(x0 + 960) / 2, (mid + y1) / 2],
+    [(960 + x1) / 2, (mid + y1) / 2],
   ];
   const modules = BUNDLE_MODULES.map((m, i) => moduleGlyph(m.kind, slots[i][0], slots[i][1], s, m.color, m.key)).join('');
 
@@ -2758,9 +2924,9 @@ function bundleCrate(r) {
 
   return [
     starfield(r, 55),
-    // Ambient glow behind the contents, never over them.
-    `  <ellipse cx="${cx}" cy="560" rx="520" ry="360" fill="url(#h-cyan)" opacity="0.22"/>`,
-    ...slots.map((p, i) => `  <circle cx="${p[0]}" cy="${p[1]}" r="150" fill="url(#h-${BUNDLE_MODULES[i].key})" opacity="0.18"/>`),
+    // The only lit things are the four modules: nothing washes the background, and
+    // nothing haloes the mark, so the four glyphs are what the eye goes to.
+    ...slots.map((p, i) => `  <circle cx="${n(p[0])}" cy="${n(p[1])}" r="150" fill="url(#h-${BUNDLE_MODULES[i].key})" opacity="0.22"/>`),
     `  <rect x="${x0}" y="${y0}" width="${n(x1 - x0)}" height="${n(y1 - y0)}" rx="26" fill="${C.ink}" fill-opacity="0.3"/>`,
     `  <g>${modules}</g>`,
     `  <rect x="${x0}" y="${y0}" width="${n(x1 - x0)}" height="${n(y1 - y0)}" rx="26" fill="none" stroke="${C.ice}" stroke-width="14" opacity="0.28" filter="url(#blur8)"/>`,
@@ -2769,10 +2935,7 @@ function bundleCrate(r) {
     `  <line x1="960" y1="${lid}" x2="960" y2="${y1}" stroke="${C.ice}" stroke-width="2" stroke-dasharray="14 12" opacity="0.22"/>`,
     `  <line x1="${x0}" y1="${n(mid)}" x2="${x1}" y2="${n(mid)}" stroke="${C.ice}" stroke-width="2" stroke-dasharray="14 12" opacity="0.22"/>`,
     `  <g>${brackets}</g>`,
-    // The seal: one mark on one lid.
-    `  <circle cx="${cx}" cy="${y0}" r="118" fill="url(#h-ice)" opacity="0.55"/>`,
-    `  <circle cx="${cx}" cy="${y0}" r="82" fill="url(#scrim)"/>`,
-    `  <g filter="url(#blur8)" opacity="0.5">${mark(cx, y0, 112)}</g>`,
+    // The seal: one mark on one lid, unlit.
     `  <g>${mark(cx, y0, 112)}</g>`,
   ].join('\n');
 }
@@ -2974,106 +3137,105 @@ function dataStructuresGrid(r) {
   ].join('\n');
 }
 
-// Key size distribution beside a set of servers: the panel on the left ranks key
-// sizes, a couple of them far larger than everything else, and the grid on the
-// right is the deployment they are spread across. Same composition as
-// `k8s-spec-fanout`, which is left alone; only the panel's contents differ.
+// Key size distribution in Valkey Admin, beside the shards it is measured across:
+// the panel ranks keys by size with the size printed next to each bar, two of them
+// far larger than the rest, and each row on the right is one shard of the
+// deployment those keys live in. Same composition family as `k8s-spec-fanout`,
+// which is left alone.
 function keySizeDistribution(r) {
-  const sx = 496;
-  const sw = 296;
+  const sx = 465;
+  const sw = 440;
   const sTop = 250;
   const sH = 580;
-  const cols = [1012, 1188, 1364];
-  const rows = [300, 540, 780];
-  const tile = 140;
-  const railX0 = 924;
-  const railX1 = 1452;
+  const axisX = sx + 40; // the chart baseline, and what the panel mark lines up on
+  const labelX = sx + sw - 28;
 
-  // Ranked key sizes. The first two are the outliers: the drop from 216 to 96 is
-  // wide enough that they read as a different class of key, not the top of a ramp.
-  const SIZES = [216, 188, 96, 84, 76, 68, 60, 53, 46, 40, 35, 30, 26, 22, 19, 16];
+  const rows = [310, 540, 770];
+  const cols = [1090, 1250, 1410];
+  const tile = 130;
+  const shardX0 = 1000;
+  const shardX1 = 1500;
+  const shardH = 176;
+
+  // Ranked keys with their sizes printed. The top two are a different class of
+  // object, not the top of a ramp: gigabytes against hundreds of megabytes.
+  const SIZES = [
+    ['4.2 GB', 232],
+    ['3.6 GB', 204],
+    ['312 MB', 62],
+    ['268 MB', 54],
+    ['205 MB', 46],
+    ['164 MB', 39],
+    ['120 MB', 31],
+    ['86 MB', 24],
+  ];
+
   const bars = [];
-  const inner = sx + 30;
-  let by = sTop + 92;
-  SIZES.forEach((len, i) => {
+  SIZES.forEach(([size, len], i) => {
+    const y = 400 + i * 54;
     const outlier = i < 2;
-    bars.push(
-      `<rect x="${n(inner)}" y="${n(by)}" width="${n(len)}" height="14" rx="7" ` +
-        `fill="${outlier ? C.coral : C.cyanLt}" opacity="${outlier ? 0.92 : n(0.34 + (1 - i / SIZES.length) * 0.4)}"/>`
-    );
     if (outlier) {
       bars.push(
-        `<rect x="${n(inner)}" y="${n(by)}" width="${n(len)}" height="14" rx="7" fill="none" ` +
-          `stroke="${C.coral}" stroke-width="9" opacity="0.3" filter="url(#blur8)"/>`,
-        dot(inner + len + 18, by + 7, 4.5, C.coral, 'coral', 0.9, 3)
+        `<rect x="${axisX}" y="${n(y - 11)}" width="${n(len)}" height="22" rx="11" fill="none" ` +
+          `stroke="${C.coral}" stroke-width="12" opacity="0.32" filter="url(#blur8)"/>`
       );
     }
-    by += 30;
+    bars.push(
+      `<rect x="${axisX}" y="${n(y - 11)}" width="${n(len)}" height="22" rx="11" ` +
+        `fill="${outlier ? C.coral : C.cyanLt}" opacity="${outlier ? 0.95 : n(0.7 - i * 0.05)}"/>`,
+      `<text x="${labelX}" y="${n(y + 13)}" fill="${outlier ? C.coral : C.ice}" text-anchor="end" ` +
+        `font-family="${FONT}" font-size="38" font-weight="600" opacity="${outlier ? 0.95 : 0.6}">${esc(size)}</text>`
+    );
   });
-
-  // A baseline the bars are measured from, so the run reads as a chart.
-  const axis =
-    `<line x1="${n(inner)}" y1="${sTop + 84}" x2="${n(inner)}" y2="${n(by - 8)}" stroke="${C.ice}" ` +
-    `stroke-width="2" opacity="0.4"/>`;
 
   const panel =
     `<rect x="${sx}" y="${sTop}" width="${sw}" height="${sH}" rx="22" fill="${C.ink}" fill-opacity="0.5" ` +
       `stroke="${C.ice}" stroke-width="3" opacity="0.9"/>` +
-    `<line x1="${sx + 24}" y1="${sTop + 70}" x2="${sx + sw - 24}" y2="${sTop + 70}" stroke="${C.ice}" ` +
-      `stroke-width="1.8" opacity="0.45"/>` +
-    `<g opacity="0.92">${mark(sx + 56, sTop + 38, 38)}</g>`;
+    `<line x1="${n(sx + 28)}" y1="${sTop + 94}" x2="${n(sx + sw - 28)}" y2="${sTop + 94}" stroke="${C.ice}" ` +
+      `stroke-width="2" opacity="0.45"/>` +
+    // The product name, and the mark sitting on the chart's baseline.
+    `<g opacity="0.95">${mark(axisX, sTop + 46, 48)}</g>` +
+    `<text x="${n(axisX + 42)}" y="${sTop + 60}" fill="#FFFFFF" font-family="${FONT}" font-size="44" ` +
+      `font-weight="700" letter-spacing="0.5">Valkey Admin</text>` +
+    `<line x1="${axisX}" y1="${sTop + 122}" x2="${axisX}" y2="800" stroke="${C.ice}" stroke-width="2" opacity="0.4"/>`;
 
-  // One curve per row of servers, all of them leaving the same distribution.
+  // One curve per shard, all of them leaving the same distribution.
   const fanPaths = rows
     .map((y) => {
       const x0 = sx + sw + 10;
-      return `<path d="M ${n(x0)} 540 C ${n(x0 + 130)} 540 ${railX0 - 130} ${n(y)} ${railX0} ${n(y)}"/>`;
+      return `<path d="M ${n(x0)} 540 C ${n(x0 + 120)} 540 ${n(shardX0 - 120)} ${n(y)} ${shardX0} ${n(y)}"/>`;
     })
     .join('');
 
-  const rails = rows
+  // A shard is the row: one enclosure holding three servers that share a slot range.
+  const shards = rows
     .map(
       (y) =>
-        `<line x1="${railX0}" y1="${n(y)}" x2="${railX1}" y2="${n(y)}" stroke="${C.cyanLt}" ` +
-        `stroke-width="2" opacity="0.32"/>`
+        `<rect x="${shardX0}" y="${n(y - shardH / 2)}" width="${n(shardX1 - shardX0)}" height="${shardH}" rx="26" ` +
+        `fill="${C.ink}" fill-opacity="0.22" stroke="${C.ice}" stroke-width="2.4" opacity="0.4"/>`
     )
     .join('');
 
-  const packets = rows
-    .map((y) =>
-      [0.1, 0.4, 0.7]
-        .map((t) => dot(railX0 + t * (railX1 - railX0), y, 4.5, C.mint, 'mint', 0.75, 3))
-        .join('')
-    )
-    .join('');
-
-  const glows = [];
   const pods = [];
   for (const y of rows) {
     for (const x of cols) {
-      glows.push(`<circle cx="${x}" cy="${y}" r="104" fill="url(#h-cyan)" opacity="0.2"/>`);
       pods.push(
         `<rect x="${n(x - tile / 2)}" y="${n(y - tile / 2)}" width="${tile}" height="${tile}" rx="26" ` +
           `fill="${C.cyan}" fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="2.4" opacity="0.9"/>`,
-        `<circle cx="${n(x)}" cy="${n(y)}" r="54" fill="url(#scrim)"/>`,
-        mark(x, y, 72),
-        dot(x + tile / 2 - 24, y - tile / 2 + 24, 5, C.mint, 'mint', 0.9, 3)
+        mark(x, y, 72)
       );
     }
   }
 
   return [
-    starfield(r, 55),
-    `  <circle cx="${n(sx + sw / 2)}" cy="540" r="340" fill="url(#h-coral)" opacity="0.26"/>`,
-    `  <circle cx="1188" cy="540" r="470" fill="url(#h-cyan)" opacity="0.14"/>`,
-    `  <g stroke="${C.cyanLt}" stroke-width="13" fill="none" opacity="0.16" filter="url(#blur8)">${fanPaths}</g>`,
-    `  <g stroke="${C.cyanLt}" stroke-width="2.4" fill="none" opacity="0.55">${fanPaths}</g>`,
-    `  <g>${rails}</g>`,
-    `  <g>${packets}</g>`,
-    `  <g>${glows.join('')}</g>`,
+    // No background wash and no speckle: the only thing lit is the pair of outsized
+    // keys, which is the one thing the image is pointing at.
+    `  <g stroke="${C.cyanLt}" stroke-width="2.4" fill="none" opacity="0.5">${fanPaths}</g>`,
+    `  <g>${shards}</g>`,
+    `  <text x="${n((shardX0 + shardX1) / 2)}" y="200" fill="${C.ice}" text-anchor="middle" ` +
+      `font-family="${FONT}" font-size="38" font-weight="600" letter-spacing="6" opacity="0.65">SHARDS</text>`,
     `  <g>${pods.join('')}</g>`,
     `  <g>${panel}</g>`,
-    `  <g>${axis}</g>`,
     `  <g>${bars.join('')}</g>`,
   ].join('\n');
 }
@@ -3088,21 +3250,25 @@ const THEMES = [
   { name: 'atomic-slot-migration', seed: 14041, focal: [960, 470], zoom: 1.1, center: [960, 522], title: 'Valkey atomic slot migration', desc: 'Two shard slot rings, each centred on the white Valkey hexagon mark, with a chevron arrow driving a stream of slot segments from one to the other and a magnifier inspecting them mid-flight, representing atomic slot migration.', art: slotMigrationRings },
   { name: 'security', seed: 6631, focal: [960, 520], zoom: 1.35, center: [960, 565], title: 'Valkey security', desc: 'An abstract shield woven from a lattice with the white Valkey hexagon mark at its centre, representing security and access control.', art: security },
   { name: 'security-acl', seed: 17071, focal: [1010, 540], zoom: 1.14, center: [960, 540], title: 'Valkey access control', desc: 'Streams of commands arriving at a lit gate centred on the white Valkey hexagon mark, most admitted in green and some turned away in red, representing access control and authentication.', art: securityGate },
+  { name: 'security-shield-clean', seed: 44011, focal: [960, 540], zoom: 1.38, center: [960, 545], flat: true, title: 'Valkey security', desc: 'A shield woven from a single even lattice with the white Valkey hexagon mark at its centre and nothing else inside it, representing security and hardening.', art: securityShieldClean },
+  { name: 'security-shield-plated', seed: 44021, focal: [960, 540], zoom: 1.38, center: [960, 545], flat: true, title: 'Valkey security, layered', desc: 'A shield built from five even courses of armour plating with the white Valkey hexagon mark at its centre, representing hardening applied in layers.', art: securityShieldPlated },
+  { name: 'security-shield-nested', seed: 44031, focal: [960, 540], zoom: 1.32, center: [960, 548], flat: true, title: 'Valkey defence in depth', desc: 'Three shields of the same shape nested inside one another, the innermost holding the white Valkey hexagon mark, representing defence in depth.', art: securityShieldNested },
+  { name: 'security-acl-simple', seed: 44041, focal: [960, 540], zoom: 1.35, center: [960, 540], flat: true, title: 'Valkey access control', desc: 'Four lanes of traffic arriving at one lit gate centred on the white Valkey hexagon mark, three of them continuing through in green and one stopped by a red cross, representing access control.', art: securityAclSimple },
   { name: 'benchmarks', seed: 7741, focal: [960, 560], zoom: 1.12, center: [900, 568], title: 'Valkey benchmarks', desc: 'A bar chart of throughput climbing left to right, beneath two flat latency series labelled P99 in green and P50 in red, representing benchmarking and observability.', art: observability },
   { name: 'data-structures', seed: 8849, focal: [820, 540], zoom: 1.22, center: [960, 540], title: 'Valkey data structures', desc: 'Abstract hash table buckets chaining outward beside a skip list of express lanes, representing Valkey data structures and internals.', art: dataStructures },
   { name: 'how-to', seed: 9953, focal: [1180, 540], zoom: 1.22, center: [960, 540], title: 'Valkey how-to', desc: 'An abstract track of numbered steps with the current step lit, representing a step-by-step guide.', art: howTo },
   { name: 'keyspace-scan', seed: 19087, focal: [960, 540], zoom: 1.26, center: [960, 540], title: 'Valkey keyspace scan', desc: 'A wide field of keys with one bounded window lit in green, the keys behind it dimmed and the keys ahead of it unlit, above a track of uneven cursor steps, representing scanning a keyspace a window at a time instead of reading it all at once.', art: keyspaceScan },
   { name: 'large-key', seed: 21193, focal: [960, 548], zoom: 1.4, center: [960, 548], title: 'Valkey large key', desc: 'An even field of small identical key tiles with one key of the same shape scaled up until it dwarfs them all, outlined in red, representing a single key far larger than everything else in the keyspace.', art: largeKey },
   { name: 'key-prefix-groups', seed: 23299, focal: [1000, 540], zoom: 1.3, center: [960, 542], title: 'Valkey key prefix groups', desc: 'A scattered cloud of sampled keys on the left funnelling into a short list of prefix rows with count bars on the right, representing a sample of key names grouped into browsable prefixes.', art: keyPrefixGroups },
-  { name: 'event-gather-ring', seed: 38029, focal: [960, 540], zoom: 1.3, center: [960, 540], title: 'Valkey event', desc: 'Arrivals closing in from every direction on a lit venue ring centred on the white Valkey hexagon mark, thickest right against it, representing a community gathering.', art: eventGatherRing },
-  { name: 'bloom-bit-array', seed: 31013, focal: [960, 400], zoom: 1.4, center: [960, 475], title: 'Valkey Bloom filters', desc: 'The white Valkey hexagon mark above a long row of bit cells, with five hash nodes fanning out of it and the five cells they land on lit in green, representing one item hashed to a handful of positions in a Bloom filter.', art: bloomBitArray },
+  { name: 'blackhole', seed: 38029, focal: [960, 540], zoom: 1.35, center: [960, 540], flat: true, title: 'Valkey black hole', desc: 'A black sphere with a bright ring of light lensed around it and the flat near edge of its accretion disk crossing in front, the white Valkey hexagon mark at the centre, representing gravity pulling everything to one place.', art: blackhole },
+  { name: 'bloom-bit-array', seed: 31013, focal: [960, 400], zoom: 1.4, center: [960, 475], flat: true, title: 'Valkey Bloom filters', desc: 'The white Valkey hexagon mark above a long row of bit cells, with five hash nodes fanning out of it and the five cells they land on lit in green, representing one item hashed to a handful of positions in a Bloom filter.', art: bloomBitArray },
   { name: 'search-vector-nearest', seed: 32011, focal: [960, 540], zoom: 1.2, center: [960, 540], title: 'Valkey vector search', desc: 'A dark field of indexed vectors with the white Valkey hexagon mark at the centre as the query, spokes reaching out to six bright green nearest matches inside a dashed search radius, representing vector similarity search.', art: searchNearest },
   { name: 'search-field-index', seed: 32047, focal: [960, 600], zoom: 1.1, center: [960, 540], title: 'Valkey secondary indexing', desc: 'Four record cards each contributing one highlighted green field to a sorted index lane below, with a query caliper bracketing three matched entries above the white Valkey hexagon mark, representing secondary indexing on hashes and JSON.', art: searchFieldIndex },
   { name: 'client-ports', seed: 34037, focal: [960, 540], zoom: 1, center: [960, 540], title: 'Valkey client protocol', desc: 'Six differently drawn channels reaching in from distinct outer shapes, each meeting an identical port at the same radius, beyond which every spoke becomes the same run of pale segments arriving at the white Valkey hexagon mark, representing different client libraries meeting one protocol at one server.', art: clientPorts },
   { name: 'ai-agent-memory', seed: 35011, focal: [1120, 380], zoom: 1.29, center: [960, 540], title: 'Valkey AI agent memory', desc: 'A row of conversation turns with the most recent ones lit inside a bright window, older turns dimmed and parked in an archive below the white Valkey hexagon mark, and two of them arcing back up into the window, representing agent memory with hot recent context and older context recalled on demand.', art: aiAgentMemory },
   { name: 'workload-fanout', seed: 35023, focal: [700, 520], zoom: 1.18, center: [960, 540], title: 'Valkey workload primitives', desc: 'The white Valkey hexagon mark fanning out into five lanes, each ending in a differently shaped structure: a ring of slots, a chain of entries, a ranked stack, a grid of bits and a row of embedding magnitudes, representing a workload decomposing into the primitives Valkey already has.', art: workloadFanout },
   { name: 'conn-storm-spike', seed: 36011, focal: [960, 620], zoom: 1.34, center: [960, 547], title: 'Valkey connection storms', desc: 'A timeline of connection attempts that is quiet, then spikes into a wall of simultaneous reconnects whose top rises in red above a dashed accept-capacity line, then falls quiet again, representing a connection storm.', art: connStormSpike },
-  { name: 'bundle-crate', seed: 33101, focal: [960, 500], zoom: 1.2, center: [960, 540], title: 'Valkey bundle', desc: 'One bracketed package outline sealed with the white Valkey hexagon mark, holding four module diagrams inside it: a bit array, a nested document in brackets, a magnifier over a scatter of points, and a padlock, representing the four modules valkey-bundle ships as one package.', art: bundleCrate },
+  { name: 'bundle-crate', seed: 33101, focal: [960, 500], zoom: 1.2, center: [960, 540], flat: true, title: 'Valkey bundle', desc: 'One bracketed package outline sealed with the white Valkey hexagon mark, holding four module diagrams inside it: a bit array, a nested document in brackets, a magnifier over a scatter of points, and a padlock, representing the four modules valkey-bundle ships as one package.', art: bundleCrate },
   { name: 'bundle-one-install', seed: 33207, focal: [860, 540], zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A port marked with the white Valkey hexagon fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a padlock, representing one install that delivers all four bundled modules.', art: bundleOneInstall },
   { name: 'tooling-stack', seed: 33311, focal: [960, 620], zoom: 1.25, center: [960, 540], title: 'Valkey primitives and tools', desc: 'A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives.', art: toolingStack },
   { name: 'data-structures-grid', seed: 33419, focal: [960, 540], zoom: 1.2, center: [960, 540], title: 'Valkey data types', desc: 'Six Valkey value types laid out one per cell on an even three-by-two grid: a run of bytes, a linked list, unordered members inside a boundary, field and value pairs, members ranked by score, and a dense bitmap, representing the range of structures Valkey stores.', art: dataStructuresGrid },
@@ -3110,7 +3276,7 @@ const THEMES = [
   { name: 'k8s-desired-count', seed: 42021, focal: [960, 400], zoom: 1.34, center: [960, 540], title: 'Valkey replicas reaching the declared count', desc: 'Six declared slots under a gold span, four filled with instances drawn as the white Valkey hexagon mark, one instance rising into place and one slot still empty, representing a declared replica count and the running instances converging on it.', art: k8sDesiredCount },
   { name: 'limits-tight-envelope', seed: 42031, focal: [960, 540], zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
   { name: 'limits-gauge-pinned', seed: 42041, focal: [960, 540], zoom: 1.34, center: [960, 540], title: 'Valkey pinned near its limit', desc: 'A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.', art: limitsGaugePinned },
-  { name: 'key-size-distribution', seed: 43011, focal: [1150, 520], zoom: 1.34, center: [960, 540], title: 'Valkey key size distribution', desc: 'A panel on the left ranking key sizes as horizontal bars, the top two far longer than the rest and drawn in red, fanning out along rails into a three by three grid of servers each drawn as the white Valkey hexagon mark, representing a few very large keys spread across a deployment.', art: keySizeDistribution },
+  { name: 'key-size-distribution', seed: 43011, focal: [960, 540], zoom: 1.2, center: [960, 540], flat: true, title: 'Valkey key size distribution', desc: 'A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two measured in gigabytes and drawn in red, fanning out into three shards of three servers each drawn as the white Valkey hexagon mark, representing a few very large objects spread across a deployment.', art: keySizeDistribution },
 ];
 
 // -------------------------------------------------------------------- render

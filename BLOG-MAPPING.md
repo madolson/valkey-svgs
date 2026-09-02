@@ -56,7 +56,7 @@ every candidate for fleet operations, release candidates and AZ affinity was rej
 | `2025-04-09-introducing-bloom-filters` | Hashing sets a handful of bits in a shared array | `bloom-bit-array` |
 | `2025-06-13-introducing-valkey-search` | Nearest matches from an index, not a full scan | `search-vector-nearest` |
 | `2025-06-23-valkey-bundle-one-stop-shop-for-low-latency-modern-applications` | One package carrying several modules | `bundle-*` |
-| `2025-07-10-keyspace-save-the-date` | A dated event | `event-gather-ring` |
+| `2025-07-10-keyspace-save-the-date` | A dated event | `blackhole`, as the one striking abstract |
 | `2025-08-04-valkey-swift` | Client libraries | `client-ports` |
 | `2026-02-19-operational-lessons` | A fleet, not a server | none yet, both candidates rejected |
 | `2026-03-10-valkey-search-1_2` | Search, secondary indexing | `search-field-index` |

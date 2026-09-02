@@ -1,6 +1,6 @@
 {
   "generatedBy": "generate.mjs",
-  "count": 32,
+  "count": 36,
   "themes": [
     {
       "name": "community",
@@ -93,6 +93,46 @@
       "captioned": false
     },
     {
+      "name": "security-shield-clean",
+      "title": "Valkey security",
+      "desc": "A shield woven from a single even lattice with the white Valkey hexagon mark at its centre and nothing else inside it, representing security and hardening.",
+      "motif": "The woven shield with the speckle removed, lattice only",
+      "useFor": "Security in general, CVEs, hardening",
+      "image": "images/security-shield-clean.webp",
+      "svg": "svg/security-shield-clean.svg",
+      "captioned": false
+    },
+    {
+      "name": "security-shield-plated",
+      "title": "Valkey security, layered",
+      "desc": "A shield built from five even courses of armour plating with the white Valkey hexagon mark at its centre, representing hardening applied in layers.",
+      "motif": "The shield built from even courses of armour plating",
+      "useFor": "Hardening in layers, defence posture",
+      "image": "images/security-shield-plated.webp",
+      "svg": "svg/security-shield-plated.svg",
+      "captioned": false
+    },
+    {
+      "name": "security-shield-nested",
+      "title": "Valkey defence in depth",
+      "desc": "Three shields of the same shape nested inside one another, the innermost holding the white Valkey hexagon mark, representing defence in depth.",
+      "motif": "Three shields of one shape nested inside each other",
+      "useFor": "Defence in depth, layered controls",
+      "image": "images/security-shield-nested.webp",
+      "svg": "svg/security-shield-nested.svg",
+      "captioned": false
+    },
+    {
+      "name": "security-acl-simple",
+      "title": "Valkey access control",
+      "desc": "Four lanes of traffic arriving at one lit gate centred on the white Valkey hexagon mark, three of them continuing through in green and one stopped by a red cross, representing access control.",
+      "motif": "Four lanes at one centred gate, three through and one refused",
+      "useFor": "ACLs, authentication, TLS",
+      "image": "images/security-acl-simple.webp",
+      "svg": "svg/security-acl-simple.svg",
+      "captioned": false
+    },
+    {
       "name": "benchmarks",
       "title": "Valkey benchmarks",
       "desc": "A bar chart of throughput climbing left to right, beneath two flat latency series labelled P99 in green and P50 in red, representing benchmarking and observability.",
@@ -153,13 +193,13 @@
       "captioned": false
     },
     {
-      "name": "event-gather-ring",
-      "title": "Valkey event",
-      "desc": "Arrivals closing in from every direction on a lit venue ring centred on the white Valkey hexagon mark, thickest right against it, representing a community gathering.",
-      "motif": "Arrivals thickening against a lit venue ring",
-      "useFor": "Events where the gathering is the point",
-      "image": "images/event-gather-ring.webp",
-      "svg": "svg/event-gather-ring.svg",
+      "name": "blackhole",
+      "title": "Valkey black hole",
+      "desc": "A black sphere with a bright ring of light lensed around it and the flat near edge of its accretion disk crossing in front, the white Valkey hexagon mark at the centre, representing gravity pulling everything to one place.",
+      "motif": "A dark sphere with its accretion disk lensed into a ring around it",
+      "useFor": "Talks, keynotes, anything that wants one striking abstract image",
+      "image": "images/blackhole.webp",
+      "svg": "svg/blackhole.svg",
       "captioned": false
     },
     {
@@ -315,7 +355,7 @@
     {
       "name": "key-size-distribution",
       "title": "Valkey key size distribution",
-      "desc": "A panel on the left ranking key sizes as horizontal bars, the top two far longer than the rest and drawn in red, fanning out along rails into a three by three grid of servers each drawn as the white Valkey hexagon mark, representing a few very large keys spread across a deployment.",
+      "desc": "A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two measured in gigabytes and drawn in red, fanning out into three shards of three servers each drawn as the white Valkey hexagon mark, representing a few very large objects spread across a deployment.",
       "motif": "Ranked key-size bars with two big outliers, fanning into a grid of servers",
       "useFor": "Key size skew, heavy hitters, hot keys across a fleet",
       "image": "images/key-size-distribution.webp",
