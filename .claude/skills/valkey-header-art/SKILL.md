@@ -105,7 +105,8 @@ Note that the skeleton above does **not** start with `starfield`. See rule 6.
 4. **Text is a last resort, and there is exactly one font.** Text goes illegible once cropped
    and it needs translating, so most themes carry their idea with shape alone. When a label is
    genuinely required — a product name, a unit, a scale — use the `FONT` constant and nothing
-   else, at 700 weight for a title and 600 for a label, 38px or larger, inside the safe area.
+   else, at 600 weight for a title and 500 for a label, 38px or larger, inside the safe area.
+   700 read as too heavy at banner size and was dropped one step.
    Never introduce a second family, and never mix sizes for labels of the same kind.
 5. **Reuse the helpers**: `mark`, `dot`, `weighted`, `arcPath`, `slotRing`, `starfield`.
    Adding a sixth way to draw a glowing dot is how the set stops looking like one system.

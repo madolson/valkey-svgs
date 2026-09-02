@@ -194,14 +194,31 @@ function defs(focal) {
 // narrower column, so the crop flips to horizontal and keeps only the middle ~70%
 // of the width. Anything that must stay whole (the mark, a label) belongs between
 // 15% and 85% of the framed width. Streaks, chevrons and graph edges can bleed.
-function frame(theme) {
+function frameBox(theme) {
   const zoom = theme.zoom ?? 1;
   const vw = W / zoom;
   const vh = H / zoom;
   const [cx, cy] = theme.center ?? [W / 2, H / 2];
-  const vx = clamp(cx - vw / 2, 0, W - vw);
-  const vy = clamp(cy - vh / 2, 0, H - vh);
+  return { vx: clamp(cx - vw / 2, 0, W - vw), vy: clamp(cy - vh / 2, 0, H - vh), vw, vh };
+}
+
+function frame(theme) {
+  const { vx, vy, vw, vh } = frameBox(theme);
   return `${n(vx)} ${n(vy)} ${n(vw)} ${n(vh)}`;
+}
+
+// The brand stamp: one mark in the upper left of every banner, at the same
+// rendered size and the same inset whatever the theme's zoom is. It is placed in
+// framed coordinates rather than on the 1920 grid, so a theme cropping in tightly
+// does not push it off the edge or blow it up.
+//
+// Corner placement means the narrow 247x200 crop, which keeps only the middle 70%
+// of the width, cuts it. That is what a corner costs; nothing else can sit there.
+function stamp(theme) {
+  const { vx, vy, vw, vh } = frameBox(theme);
+  const px = vh / H; // one output pixel, in framed units
+  const h = 72 * px;
+  return `  <g opacity="0.92">${mark(vx + 0.052 * vw + h / 2, vy + 0.085 * vh + h / 2, h)}</g>`;
 }
 
 // `solid` is the strongest of the three background settings: one brand purple,
@@ -221,7 +238,8 @@ function wrap(theme, art) {
   <desc>${theme.desc}</desc>
 ${defs(theme.focal)}
 ${bg}
-${art}${finish}
+${art}
+${stamp(theme)}${finish}
 </svg>
 `;
 }
@@ -3379,7 +3397,7 @@ function keySizeDistribution(r) {
       `<rect x="${n(axisX)}" y="${n(y - 12)}" width="${n(len)}" height="24" rx="12" ` +
         `fill="${outlier ? C.coral : C.cyanLt}" opacity="${outlier ? 0.95 : n(0.7 - i * 0.05)}"/>`,
       `<text x="${n(labelX)}" y="${n(y + 14)}" fill="${outlier ? C.coral : C.ice}" text-anchor="end" ` +
-        `font-family="${FONT}" font-size="38" font-weight="600" opacity="${outlier ? 0.95 : 0.6}">${esc(size)}</text>`
+        `font-family="${FONT}" font-size="38" font-weight="500" opacity="${outlier ? 0.95 : 0.6}">${esc(size)}</text>`
     );
   });
 
@@ -3390,7 +3408,7 @@ function keySizeDistribution(r) {
       `stroke-width="2" opacity="0.45"/>` +
     `<g opacity="0.95">${mark(axisX, sTop + 52, 48)}</g>` +
     `<text x="${n(headX + 62)}" y="${sTop + 68}" fill="#FFFFFF" font-family="${FONT}" font-size="44" ` +
-      `font-weight="700" letter-spacing="0.5">Valkey Admin</text>` +
+      `font-weight="600" letter-spacing="0.6">Valkey Admin</text>` +
     `<line x1="${n(axisX)}" y1="${sTop + 126}" x2="${n(axisX)}" y2="816" stroke="${C.ice}" stroke-width="2" opacity="0.4"/>`;
 
   // One curve per shard, leaving the panel at the middle and arriving level with
