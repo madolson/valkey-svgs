@@ -27,6 +27,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SVG_DIR = join(HERE, 'svg');
 const OUT_DIR = join(HERE, 'images');
+const OG_DIR = join(HERE, 'images', 'og');
 const LOGO = join(HERE, 'assets', 'Valkey-logo.svg');
 
 const W = 1920;
@@ -218,7 +219,16 @@ function stamp(theme) {
   const { vx, vy, vw, vh } = frameBox(theme);
   const px = vh / H; // one output pixel, in framed units
   const h = 72 * px;
-  return `  <g opacity="0.92">${mark(vx + 0.052 * vw + h / 2, vy + 0.085 * vh + h / 2, h)}</g>`;
+  const cx = vx + 0.052 * vw + h / 2;
+  const cy = vy + 0.085 * vh + h / 2;
+  // The wordmark sits to the right of the mark, cap height matched to it, so the
+  // pair reads as one lockup rather than as a logo with a caption.
+  const wordX = cx + (h * MARK.vw) / MARK.vh / 2 + 16 * px;
+  return (
+    `  <g opacity="0.92">${mark(cx, cy, h)}` +
+    `<text x="${n(wordX)}" y="${n(cy + 17 * px)}" fill="#FFFFFF" font-family="${FONT}" ` +
+    `font-size="${n(48 * px)}" font-weight="600" letter-spacing="${n(0.6 * px)}">Valkey</text></g>`
+  );
 }
 
 // `solid` is the strongest of the three background settings: one brand purple,
@@ -3531,9 +3541,15 @@ function findChrome() {
 const ENCODE = `
 import sys
 from PIL import Image
-src, dst, width, height, quality = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5])
-im = Image.open(src).convert("RGB").resize((width, height), Image.LANCZOS)
-im.save(dst, "WEBP", quality=quality, method=6)
+src, dst, width, height, quality, og = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]), sys.argv[6]
+im = Image.open(src).convert("RGB")
+im.resize((width, height), Image.LANCZOS).save(dst, "WEBP", quality=quality, method=6)
+# The unfurl copy: 1200x630, the 1.91:1 that og:image consumers expect. Centre
+# crop the height rather than squash, so nothing is distorted, then downsample.
+ow, oh = 1200, 630
+keep = round(im.width / (ow / oh))
+top = (im.height - keep) // 2
+im.crop((0, top, im.width, top + keep)).resize((ow, oh), Image.LANCZOS).save(og, "WEBP", quality=quality, method=6)
 `;
 
 function checkPillow() {
@@ -3580,6 +3596,7 @@ if (flags.text !== undefined && !(wanted.length && themes.every((t) => t.text !=
 
 mkdirSync(SVG_DIR, { recursive: true });
 mkdirSync(OUT_DIR, { recursive: true });
+mkdirSync(OG_DIR, { recursive: true });
 
 // themes.json: the machine-readable index of the set, so consumers do not have to
 // parse this file or the README. madelynolson.com/valkey-banners reads it through
@@ -3639,11 +3656,12 @@ try {
     );
 
     const webpPath = join(OUT_DIR, `${slug}.webp`);
-    execFileSync('python3', ['-c', ENCODE, pngPath, webpPath, String(W), String(H), '92'], {
+    const ogPath = join(OG_DIR, `${slug}.webp`);
+    execFileSync('python3', ['-c', ENCODE, pngPath, webpPath, String(W), String(H), '92', ogPath], {
       stdio: ['ignore', 'ignore', 'inherit'],
     });
 
-    console.log(`${theme.name.padEnd(22)} svg/${slug}.svg -> images/${slug}.webp`);
+    console.log(`${theme.name.padEnd(22)} svg/${slug}.svg -> images/${slug}.webp + images/og/${slug}.webp`);
   }
 } finally {
   rmSync(scratch, { recursive: true, force: true });

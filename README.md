@@ -53,8 +53,17 @@ can't drift, and regenerating is a no-op diff.
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
 
-Rasters are in [`images/`](images/) at 1920x1080 WebP. Vector sources are in [`svg/`](svg/),
-committed so you can tweak one by hand without running Node.
+Rasters are in [`images/`](images/) at 1920x1080 WebP, and every one of them also gets an
+unfurl copy in [`images/og/`](images/og/) at 1200x630, the 1.91:1 that `og:image` consumers
+(LinkedIn, Slack, Facebook) expect and that X accepts. Those are centre-cropped from the
+master rather than squashed, so nothing is distorted; use them for link previews and the
+1920x1080 masters for page heroes. Vector sources are in [`svg/`](svg/), committed so you can
+tweak one by hand without running Node.
+
+Every banner carries the Valkey lockup, mark plus wordmark, stamped in the upper left by
+`wrap()`. It is placed in framed coordinates, so it lands at the same size and inset whatever
+a theme's `zoom` is. The narrow 200px-tall crop keeps only the middle 70% of the width and
+cuts it; that is the cost of a corner.
 
 [`themes.json`](themes.json) is the machine-readable index of the table above, regenerated
 on every run from `THEMES` and the README rows. Consumers read it instead of parsing this
