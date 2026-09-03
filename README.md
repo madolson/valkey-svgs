@@ -28,6 +28,9 @@ can't drift, and regenerating is a no-op diff.
 | `security-shield-plated` | The shield built from even courses of armour plating | Hardening in layers, defence posture |
 | `security-shield-nested` | Three shields of one shape nested inside each other | Defence in depth, layered controls |
 | `security-acl-simple` | Four lanes at one centred gate, three through and one refused | ACLs, authentication, TLS |
+| `security-queue-depth` | Rows of inbound reports stacked against one review line, three cleared | Security report volume, triage load, advisory policy |
+| `security-triage-funnel` | A field of findings narrowing to three confirmed, the rest discarded | Machine-generated findings, adversarial review, audit pipelines |
+| `security-same-bug-twice` | Two identical tracks, one cell repaired, the same cell still faulty | Bug classes, incomplete fixes, sweeping for other instances |
 | `benchmarks` | Throughput bars climbing under flat P50/P99 latency | Benchmark results, observability, metrics |
 | `data-structures` | Hash buckets chaining out beside a skip list | Internals: hash tables, skip lists, new types, modules |
 | `how-to` | Step track with the current step lit | Tutorials, guides, getting started |

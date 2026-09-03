@@ -1,6 +1,6 @@
 {
   "generatedBy": "generate.mjs",
-  "count": 74,
+  "count": 80,
   "themes": [
     {
       "name": "community",
@@ -178,6 +178,42 @@
       "useFor": "ACLs, authentication, TLS",
       "image": "images/security-acl-simple.webp",
       "svg": "svg/security-acl-simple.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
+      "name": "security-queue-depth",
+      "title": "Valkey security report queue",
+      "desc": "Rows of inbound security reports stacked against a single lit review line, each row longer than the one above it, with three of them cleared through the line in red, representing reports arriving faster than they can be judged.",
+      "motif": "Rows of inbound reports stacked against one review line, three cleared",
+      "useFor": "Security report volume, triage load, advisory policy",
+      "image": "images/security-queue-depth.webp",
+      "svg": "svg/security-queue-depth.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
+      "name": "security-triage-funnel",
+      "title": "Valkey security triage",
+      "desc": "A large grid of candidate findings narrowing along two rails into a smaller grid and then into three large red cells, with discarded findings drifting away below in purple, representing most machine-generated findings failing an adversarial second look.",
+      "motif": "A field of findings narrowing to three confirmed, the rest discarded",
+      "useFor": "Machine-generated findings, adversarial review, audit pipelines",
+      "image": "images/security-triage-funnel.webp",
+      "svg": "svg/security-triage-funnel.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
+      "name": "security-same-bug-twice",
+      "title": "Valkey security, one bug in two places",
+      "desc": "Two identical tracks of six cells, the upper one with its fourth cell repaired in green and the lower one with the same cell still faulty in glowing red, representing a defect fixed in one implementation and left standing in the other.",
+      "motif": "Two identical tracks, one cell repaired, the same cell still faulty",
+      "useFor": "Bug classes, incomplete fixes, sweeping for other instances",
+      "image": "images/security-same-bug-twice.webp",
+      "svg": "svg/security-same-bug-twice.svg",
       "captioned": false,
       "caption": null,
       "derivedFrom": null
@@ -637,6 +673,42 @@
       "captioned": false,
       "caption": "Access control",
       "derivedFrom": "security-acl-simple"
+    },
+    {
+      "name": "security-queue-depth-caption",
+      "title": "Valkey security report queue",
+      "desc": "Rows of inbound security reports stacked against a single lit review line, each row longer than the one above it, with three of them cleared through the line in red, representing reports arriving faster than they can be judged. The title \"Valkey security report queue\" is set on solid light blocks in the lower left.",
+      "motif": "Rows of inbound reports stacked against one review line, three cleared",
+      "useFor": "Security report volume, triage load, advisory policy",
+      "image": "images/security-queue-depth-caption.webp",
+      "svg": "svg/security-queue-depth-caption.svg",
+      "captioned": false,
+      "caption": "Security report queue",
+      "derivedFrom": "security-queue-depth"
+    },
+    {
+      "name": "security-triage-funnel-caption",
+      "title": "Valkey security triage",
+      "desc": "A large grid of candidate findings narrowing along two rails into a smaller grid and then into three large red cells, with discarded findings drifting away below in purple, representing most machine-generated findings failing an adversarial second look. The title \"Valkey security triage\" is set on solid light blocks in the lower left.",
+      "motif": "A field of findings narrowing to three confirmed, the rest discarded",
+      "useFor": "Machine-generated findings, adversarial review, audit pipelines",
+      "image": "images/security-triage-funnel-caption.webp",
+      "svg": "svg/security-triage-funnel-caption.svg",
+      "captioned": false,
+      "caption": "Security triage",
+      "derivedFrom": "security-triage-funnel"
+    },
+    {
+      "name": "security-same-bug-twice-caption",
+      "title": "Valkey security, one bug in two places",
+      "desc": "Two identical tracks of six cells, the upper one with its fourth cell repaired in green and the lower one with the same cell still faulty in glowing red, representing a defect fixed in one implementation and left standing in the other. The title \"Valkey security, one bug in two places\" is set on solid light blocks in the lower left.",
+      "motif": "Two identical tracks, one cell repaired, the same cell still faulty",
+      "useFor": "Bug classes, incomplete fixes, sweeping for other instances",
+      "image": "images/security-same-bug-twice-caption.webp",
+      "svg": "svg/security-same-bug-twice-caption.svg",
+      "captioned": false,
+      "caption": "Security, one bug in two places",
+      "derivedFrom": "security-same-bug-twice"
     },
     {
       "name": "data-structures-caption",

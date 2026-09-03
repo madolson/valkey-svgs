@@ -1069,6 +1069,164 @@ function securityAclSimple() {
   ].join('\n');
 }
 
+// ------------------------------------------------- security reporting in 2026
+//
+// Three readings of one post: reports arrive faster than they can be judged
+// (`security-queue-depth`), most findings do not survive an adversarial second
+// look (`security-triage-funnel`), and a fix that removed one instance left the
+// same defect standing in a second implementation (`security-same-bug-twice`).
+
+// Idea: reports arrive faster than review clears them, so the queue grows.
+// Focal: the mass of waiting reports, the largest and brightest thing in frame.
+function securityQueueDepth(r) {
+  const gate = 1330;
+  const rows = 9;
+  const pill = 46;
+  const gap = 11;
+
+  // Each row is one day's worth of reports, and the rows get longer downward:
+  // the backlog is deeper the further you read.
+  const waiting = [];
+  for (let i = 0; i < rows; i++) {
+    const y = 236 + i * 80;
+    // Six on the first row, one more on each row after it: the backlog grows at a
+    // readable rate instead of collapsing to a single pill at the top.
+    const left = gate - 22 - (6 + i) * (pill + gap);
+    for (let x = gate - 22 - pill; x > left; x -= pill + gap) {
+      waiting.push(
+        `<rect x="${n(x)}" y="${n(y - 13)}" width="${pill}" height="26" rx="13" fill="${C.cyan}" ` +
+          `opacity="${n(0.45 + (i / rows) * 0.35)}"/>`
+      );
+    }
+  }
+
+  // What clears review: three confirmed advisories, the only coral in the frame.
+  const cleared = [1, 4, 7].map((i) => {
+    const y = 236 + i * 80;
+    return (
+      `<rect x="${gate + 26}" y="${n(y - 13)}" width="${pill}" height="26" rx="13" fill="none" ` +
+        `stroke="${C.coral}" stroke-width="14" opacity="0.3" filter="url(#blur8)"/>` +
+      `<rect x="${gate + 26}" y="${n(y - 13)}" width="${pill}" height="26" rx="13" fill="${C.coral}" opacity="0.95"/>`
+    );
+  });
+
+  return [
+    `  <g>${waiting.join('')}</g>`,
+    `  <line x1="${gate}" y1="196" x2="${gate}" y2="916" stroke="${C.ice}" stroke-width="8" ` +
+      `stroke-linecap="round" opacity="0.9"/>`,
+    `  <g>${cleared.join('')}</g>`,
+  ].join('\n');
+}
+
+// Idea: two thirds of machine-generated findings do not survive an adversarial
+// second look, so the output is a handful, not a hundred.
+// Focal: the three confirmed findings at the end, the only coral and the largest
+// cells in the frame.
+function securityTriageFunnel(r) {
+  const stages = [
+    { x: 475, cols: 6, rows: 8, cell: 26, gapx: 34, gapy: 30, color: C.cyan, op: 0.5 },
+    { x: 885, cols: 3, rows: 5, cell: 34, gapx: 44, gapy: 44, color: C.cyan, op: 0.75 },
+  ];
+
+  const grid = (st) => {
+    const out = [];
+    const w = st.cols * st.cell + (st.cols - 1) * (st.gapx - st.cell);
+    const h = st.rows * st.cell + (st.rows - 1) * (st.gapy - st.cell);
+    for (let c = 0; c < st.cols; c++) {
+      for (let row = 0; row < st.rows; row++) {
+        out.push(
+          `<rect x="${n(st.x - w / 2 + c * st.gapx)}" y="${n(540 - h / 2 + row * st.gapy)}" ` +
+            `width="${st.cell}" height="${st.cell}" rx="7" fill="${st.color}" opacity="${st.op}"/>`
+        );
+      }
+    }
+    return out.join('');
+  };
+
+  // Confirmed, at the far right: bigger cells, full opacity, the one halo.
+  const confirmed = [-1, 0, 1]
+    .map((k) => {
+      const y = 540 + k * 118;
+      return (
+        `<rect x="1377" y="${n(y - 34)}" width="68" height="68" rx="14" fill="none" stroke="${C.coral}" ` +
+          `stroke-width="18" opacity="0.3" filter="url(#blur8)"/>` +
+        `<rect x="1377" y="${n(y - 34)}" width="68" height="68" rx="14" fill="${C.coral}" opacity="0.95"/>`
+      );
+    })
+    .join('');
+
+  // What each stage discards, drifting away below the line in the retired colour.
+  // What each stage discards, falling away under the rail that discarded it, so the
+  // loss is attached to a stage instead of scattered across the floor.
+  const dropped = [];
+  for (const [cx, count, spread] of [[680, 16, 120], [1175, 10, 140]]) {
+    for (let i = 0; i < count; i++) {
+      const x = cx + (r() - 0.5) * spread * 2;
+      const y = 620 + r() * 240;
+      dropped.push(
+        `<rect x="${n(x)}" y="${n(y)}" width="24" height="24" rx="7" fill="${C.violet}" opacity="0.42"/>`
+      );
+    }
+  }
+
+  const rail = (x0, x1) =>
+    `<line x1="${x0}" y1="540" x2="${x1}" y2="540" stroke="${C.ice}" stroke-width="3" opacity="0.45"/>`;
+
+  return [
+    `  <g>${grid(stages[0])}</g>`,
+    `  ${rail(615, 745)}`,
+    `  <g>${grid(stages[1])}</g>`,
+    `  ${rail(1005, 1345)}`,
+    `  <g>${dropped.join('')}</g>`,
+    `  <g>${confirmed}</g>`,
+  ].join('\n');
+}
+
+// Idea: the same defect existed in a second implementation of the same pattern, so
+// fixing one instance and closing the report left the class alive.
+// Focal: the unpatched cell, the only coral and the only thing carrying a halo.
+function securitySameBugTwice(r) {
+  const cells = 6;
+  const cw = 152;
+  const gap = 36;
+  const x0 = 960 - (cells * cw + (cells - 1) * gap) / 2;
+  const bad = 3; // the same position in both rows
+
+  const track = (cy, fixed) => {
+    // The rail only shows in the gaps between cells; drawn straight through, it
+    // bisected every cell.
+    const out = [];
+    for (let i = 0; i < cells - 1; i++) {
+      const x = x0 + i * (cw + gap) + cw;
+      out.push(
+        `<line x1="${n(x)}" y1="${cy}" x2="${n(x + gap)}" y2="${cy}" stroke="${C.ice}" stroke-width="3" opacity="0.35"/>`
+      );
+    }
+    for (let i = 0; i < cells; i++) {
+      const x = x0 + i * (cw + gap);
+      const isBad = i === bad;
+      const color = isBad ? (fixed ? C.mint : C.coral) : C.cyan;
+      if (isBad && !fixed) {
+        out.push(
+          `<rect x="${n(x)}" y="${n(cy - 70)}" width="${cw}" height="140" rx="22" fill="none" ` +
+            `stroke="${C.coral}" stroke-width="24" opacity="0.34" filter="url(#blur18)"/>`
+        );
+      }
+      out.push(
+        `<rect x="${n(x)}" y="${n(cy - 70)}" width="${cw}" height="140" rx="22" fill="${color}" ` +
+          `fill-opacity="${isBad ? 0.34 : 0.16}" stroke="${color}" stroke-width="${isBad ? 5 : 3}" ` +
+          `opacity="${isBad ? 0.95 : 0.55}"/>`
+      );
+    }
+    return out.join('');
+  };
+
+  return [
+    `  <g>${track(310, true)}</g>`,
+    `  <g>${track(776, false)}</g>`,
+  ].join('\n');
+}
+
 // Benchmarks: throughput bars climbing, latency percentiles holding flat above
 // them. The two motifs are stacked rather than overlaid so neither muddies the
 // other: bars own everything below y=560, the series sit above it.
@@ -3589,6 +3747,9 @@ const BASE_THEMES = [
   { name: 'security-shield-plated', seed: 44021, focal: [960, 540], zoom: 1.38, center: [960, 545], flat: true, title: 'Valkey security, layered', desc: 'A shield built from five even courses of armour plating with the white Valkey hexagon mark at its centre, representing hardening applied in layers.', art: securityShieldPlated },
   { name: 'security-shield-nested', seed: 44031, focal: [960, 540], zoom: 1.32, center: [960, 548], flat: true, title: 'Valkey defence in depth', desc: 'Three shields of the same shape nested inside one another, the innermost holding the white Valkey hexagon mark, representing defence in depth.', art: securityShieldNested },
   { name: 'security-acl-simple', seed: 44041, focal: [960, 540], zoom: 1.35, center: [960, 540], flat: true, title: 'Valkey access control', desc: 'Four lanes of traffic arriving at one lit gate centred on the white Valkey hexagon mark, three of them continuing through in green and one stopped by a red cross, representing access control.', art: securityAclSimple },
+  { name: 'security-queue-depth', seed: 47011, focal: [960, 540], zoom: 1.24, center: [960, 540], flat: true, title: 'Valkey security report queue', desc: 'Rows of inbound security reports stacked against a single lit review line, each row longer than the one above it, with three of them cleared through the line in red, representing reports arriving faster than they can be judged.', art: securityQueueDepth },
+  { name: 'security-triage-funnel', seed: 47021, focal: [960, 540], zoom: 1.2, center: [960, 540], flat: true, title: 'Valkey security triage', desc: 'A large grid of candidate findings narrowing along two rails into a smaller grid and then into three large red cells, with discarded findings drifting away below in purple, representing most machine-generated findings failing an adversarial second look.', art: securityTriageFunnel },
+  { name: 'security-same-bug-twice', seed: 47031, focal: [960, 540], zoom: 1.3, center: [960, 540], flat: true, title: 'Valkey security, one bug in two places', desc: 'Two identical tracks of six cells, the upper one with its fourth cell repaired in green and the lower one with the same cell still faulty in glowing red, representing a defect fixed in one implementation and left standing in the other.', art: securitySameBugTwice },
   { name: 'benchmarks', seed: 7741, focal: [960, 560], zoom: 1.12, center: [900, 568], title: 'Valkey benchmarks', desc: 'A bar chart of throughput climbing left to right, beneath two flat latency series labelled P99 in green and P50 in red, representing benchmarking and observability.', art: observability },
   { name: 'data-structures', seed: 8849, focal: [820, 540], zoom: 1.22, center: [960, 540], title: 'Valkey data structures', desc: 'Abstract hash table buckets chaining outward beside a skip list of express lanes, representing Valkey data structures and internals.', art: dataStructures },
   { name: 'how-to', seed: 9953, focal: [1180, 540], zoom: 1.22, center: [960, 540], title: 'Valkey how-to', desc: 'An abstract track of numbered steps with the current step lit, representing a step-by-step guide.', art: howTo },
