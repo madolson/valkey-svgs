@@ -88,10 +88,36 @@ No npm dependencies. Nothing to install beyond those two.
 Every theme seeds its own PRNG and `Math.random()` is never called, so regenerating
 produces byte-identical files. A rebuild should show no diff unless you changed the code.
 
-Two themes carry live text (`benchmarks` labels its series, `release-version` has a
-caption). Those depend on a font resolving at render time, so they reproduce identically on
-a given machine but can shift a pixel across machines with different font stacks. The other
-29 are geometry only and reproduce anywhere.
+Themes that carry live text (`benchmarks` labels its series, `release-version` has a
+caption, `key-size-distribution` prints sizes, and every `-caption` variant) depend on a
+font resolving at render time, so they reproduce identically on a given machine but can
+shift a pixel across machines with different font stacks. The rest are geometry only and
+reproduce anywhere.
+
+## Caption variants
+
+Every theme in the table ships twice. `<name>` is the full-screen version: the motif fills
+the frame and there is no text. `<name>-caption` is the same drawing with the bottom left
+given over to sticker text, the way a blog card wants it. The variant is derived from the
+original in `THEMES` rather than written out, so a theme is drawn once and the two cannot
+drift apart.
+
+```sh
+node generate.mjs security-caption                                   # the theme's own title
+node generate.mjs security-caption --caption "CVE-2026-1234 explained" --out my-post
+```
+
+Three things worth knowing:
+
+- The caption slot is fixed: bottom left, one solid light block per line, at most three
+  lines. Fixed on purpose, so a composition can be drawn to leave that corner alone.
+- To make room, the whole motif is scaled to 78% and anchored to the top right. Nothing in
+  a theme function changes, but thin strokes get thinner, so a theme that was already at the
+  legibility floor reads weaker captioned than full screen.
+- The 200px-tall mobile crop keeps only the middle 70% of the width and cuts the caption.
+  Captioned variants are for unfurls and wide heroes, where the crop takes height only.
+  `benchmarks`, `release-version` and both `key-size-distribution` variants have no captioned
+  version, because they already draw their own text.
 
 ## Captions
 

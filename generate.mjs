@@ -248,6 +248,76 @@ function frame(theme) {
 //
 // Corner placement means the narrow 247x200 crop, which keeps only the middle 70%
 // of the width, cuts it. That is what a corner costs; nothing else can sit there.
+// Caption stickers: the post title set on solid light blocks in the bottom left.
+// One block per line, because a block guarantees contrast where a scrim only hopes
+// for it. Position is fixed: bottom left, every time, so a composition can be
+// drawn to leave that corner alone.
+const CAPTION_SLOT = { left: 0.055, bottom: 0.085, size: 62, gap: 8, padX: 22, padY: 14 };
+
+// Rough advance widths, enough to size a block around a line of Helvetica. Getting
+// this wrong by a few percent shows up as uneven padding, not as broken layout.
+const GLYPH_W = { i: 0.27, j: 0.27, l: 0.27, t: 0.35, f: 0.32, r: 0.38, ' ': 0.29, m: 0.88, w: 0.76, M: 0.9, W: 0.96, I: 0.29 };
+function textWidth(str, size) {
+  let em = 0;
+  for (const c of str) em += GLYPH_W[c] ?? (c === c.toUpperCase() && c !== c.toLowerCase() ? 0.7 : 0.58);
+  return em * size;
+}
+
+// Wrap a title into at most three sticker lines, longest-first so the stack does
+// not end on a runt.
+function captionLines(text, max = 17) {
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const next = line ? `${line} ${w}` : w;
+    if (next.length > max && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = next;
+    }
+  }
+  if (line) lines.push(line);
+  return lines.slice(0, 3);
+}
+
+function captionBlocks(theme, text) {
+  const { vx, vy, vw, vh } = frameBox(theme);
+  const px = vh / H;
+  const size = CAPTION_SLOT.size * px;
+  const padX = CAPTION_SLOT.padX * px;
+  const padY = CAPTION_SLOT.padY * px;
+  const gap = CAPTION_SLOT.gap * px;
+  const lines = captionLines(text);
+  const blockH = size + padY * 2;
+  const x = vx + CAPTION_SLOT.left * vw;
+  const bottom = vy + vh - CAPTION_SLOT.bottom * vh;
+  const top = bottom - lines.length * blockH - (lines.length - 1) * gap;
+  return lines
+    .map((line, i) => {
+      const y = top + i * (blockH + gap);
+      const w = textWidth(line, size) + padX * 2;
+      return (
+        `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(blockH)}" rx="${n(4 * px)}" fill="${C.ice}"/>` +
+        `<text x="${n(x + padX)}" y="${n(y + padY + size * 0.79)}" fill="${C.ink}" font-family="${FONT}" ` +
+        `font-size="${n(size)}" font-weight="600">${esc(line)}</text>`
+      );
+    })
+    .join('');
+}
+
+// A captioned theme keeps its drawing and gives up room for the stickers: the whole
+// motif is scaled toward the top right, which clears the bottom left without
+// touching a single theme function.
+function reserve(theme, art) {
+  const { vx, vy, vw, vh } = frameBox(theme);
+  const k = 0.78;
+  const tx = vx + (1 - k) * vw - k * vx;
+  const ty = vy - k * vy;
+  return `  <g transform="translate(${n(tx)} ${n(ty)}) scale(${k})">\n${art}\n  </g>`;
+}
+
 function stamp(theme) {
   const { vx, vy, vw, vh } = frameBox(theme);
   const px = vh / H; // one output pixel, in framed units
@@ -271,8 +341,8 @@ function wrap(theme, art) {
   <desc>${theme.desc}</desc>
 ${defs(theme.focal)}
 ${bg}
-${art}
-${stamp(theme)}${finish}
+${theme.caption ? reserve(theme, art) : art}
+${stamp(theme)}${theme.caption ? `\n  <g>${captionBlocks(theme, theme.caption)}</g>` : ''}${finish}
 </svg>
 `;
 }
@@ -3503,7 +3573,7 @@ function keySizeDistribution(r) {
   ].join('\n');
 }
 
-const THEMES = [
+const BASE_THEMES = [
   { name: 'community', seed: 1041, focal: [960, 540], zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, focal: [1530, 505], zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
   { name: 'memory-efficiency', seed: 3313, focal: [1200, 540], zoom: 1.3, center: [885, 540], title: 'Valkey memory efficiency', desc: 'An abstract grid of cells that grows denser from left to right, representing the same data stored in less memory.', art: memoryEfficiency },
@@ -3543,6 +3613,26 @@ const THEMES = [
   { name: 'limits-gauge-pinned', seed: 42041, focal: [960, 540], zoom: 1.34, center: [960, 540], title: 'Valkey pinned near its limit', desc: 'A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.', art: limitsGaugePinned },
   { name: 'key-size-distribution', seed: 43011, focal: [960, 540], zoom: 1.26, center: [960, 540], flat: true, title: 'Valkey key size distribution', desc: 'A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.', art: keySizeDistribution },
   { name: 'key-size-distribution-flat', seed: 43021, focal: [960, 540], zoom: 1.26, center: [960, 540], solid: true, title: 'Valkey key size distribution', desc: 'On a flat purple field, a Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.', art: keySizeDistribution },
+];
+
+// Every theme ships twice: the full-screen original, and a `-caption` variant that
+// reserves the bottom left for sticker text. The variant is derived rather than
+// written out, so a theme is drawn once and cannot drift between the two.
+//
+// Excluded: themes that already draw their own text, where a sticker would be text
+// on text, and the captioned theme whose caption is the whole point.
+const NO_CAPTION = new Set(['benchmarks', 'release-version', 'key-size-distribution', 'key-size-distribution-flat']);
+
+const THEMES = [
+  ...BASE_THEMES,
+  ...BASE_THEMES.filter((t) => !NO_CAPTION.has(t.name)).map((t) => ({
+    ...t,
+    name: `${t.name}-caption`,
+    seed: t.seed + 1,
+    caption: t.title.replace(/^Valkey /, (m) => '').replace(/^./, (c) => c.toUpperCase()),
+    derivedFrom: t.name,
+    desc: `${t.desc} The title "${t.title}" is set on solid light blocks in the lower left.`,
+  })),
 ];
 
 // -------------------------------------------------------------------- render
@@ -3617,6 +3707,11 @@ if (flags.text !== undefined && !(wanted.length && themes.every((t) => t.text !=
   process.exit(1);
 }
 
+if (flags.caption !== undefined && !(wanted.length && themes.every((t) => t.caption !== undefined))) {
+  console.error('--caption needs a -caption theme named explicitly, e.g. security-caption.');
+  process.exit(1);
+}
+
 mkdirSync(SVG_DIR, { recursive: true });
 mkdirSync(OUT_DIR, { recursive: true });
 mkdirSync(OG_DIR, { recursive: true });
@@ -3631,7 +3726,7 @@ mkdirSync(OG_DIR, { recursive: true });
     const row = /^\|\s*`([\w.-]+)`\s*\|([^|]*)\|([^|]*)\|/.exec(line);
     if (row) table.set(row[1], { motif: row[2].trim(), useFor: row[3].trim() });
   }
-  const missing = THEMES.filter((t) => !table.has(t.name)).map((t) => t.name);
+  const missing = THEMES.filter((t) => !t.derivedFrom && !table.has(t.name)).map((t) => t.name);
   if (missing.length) throw new Error(`No README table row for: ${missing.join(', ')}`);
   const manifest = {
     generatedBy: 'generate.mjs',
@@ -3640,11 +3735,13 @@ mkdirSync(OG_DIR, { recursive: true });
       name: t.name,
       title: t.title,
       desc: t.desc,
-      motif: table.get(t.name).motif,
-      useFor: table.get(t.name).useFor,
+      motif: table.get(t.derivedFrom ?? t.name).motif,
+      useFor: table.get(t.derivedFrom ?? t.name).useFor,
       image: `images/${t.name}.webp`,
       svg: `svg/${t.name}.svg`,
       captioned: t.text !== undefined,
+      caption: t.caption ?? null,
+      derivedFrom: t.derivedFrom ?? null,
     })),
   };
   writeFileSync(join(HERE, 'themes.json'), `${JSON.stringify(manifest, null, 2)}\n`);
@@ -3659,7 +3756,11 @@ try {
     const text = flags.text ?? theme.text;
     const slug = flags.out ?? theme.name;
     const svgPath = join(SVG_DIR, `${slug}.svg`);
-    const captioned = theme.text !== undefined ? { ...theme, desc: `${theme.desc} The caption reads "${esc(text)}".` } : theme;
+    const withCaption = flags.caption ? { ...theme, caption: String(flags.caption) } : theme;
+    const captioned =
+      theme.text !== undefined
+        ? { ...withCaption, desc: `${withCaption.desc} The caption reads "${esc(text)}".` }
+        : withCaption;
     writeFileSync(svgPath, wrap(captioned, theme.art(rng(theme.seed), { text })));
 
     // Render at 2x and downsample, so thin strokes get proper antialiasing.
