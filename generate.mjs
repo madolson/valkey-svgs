@@ -252,7 +252,7 @@ function frame(theme) {
 // One block per line, because a block guarantees contrast where a scrim only hopes
 // for it. Position is fixed: bottom left, every time, so a composition can be
 // drawn to leave that corner alone.
-const CAPTION_SLOT = { left: 0.055, bottom: 0.085, size: 62, gap: 8, padX: 22, padY: 14 };
+const CAPTION_SLOT = { left: 0.05, bottom: 0.075, size: 54, gap: 7, padX: 19, padY: 12 };
 
 // Rough advance widths, enough to size a block around a line of Helvetica. Getting
 // this wrong by a few percent shows up as uneven padding, not as broken layout.
@@ -307,17 +307,6 @@ function captionBlocks(theme, text) {
     .join('');
 }
 
-// A captioned theme keeps its drawing and gives up room for the stickers: the whole
-// motif is scaled toward the top right, which clears the bottom left without
-// touching a single theme function.
-function reserve(theme, art) {
-  const { vx, vy, vw, vh } = frameBox(theme);
-  const k = 0.78;
-  const tx = vx + (1 - k) * vw - k * vx;
-  const ty = vy - k * vy;
-  return `  <g transform="translate(${n(tx)} ${n(ty)}) scale(${k})">\n${art}\n  </g>`;
-}
-
 function stamp(theme) {
   const { vx, vy, vw, vh } = frameBox(theme);
   const px = vh / H; // one output pixel, in framed units
@@ -341,7 +330,7 @@ function wrap(theme, art) {
   <desc>${theme.desc}</desc>
 ${defs(theme.focal)}
 ${bg}
-${theme.caption ? reserve(theme, art) : art}
+${art}
 ${stamp(theme)}${theme.caption ? `\n  <g>${captionBlocks(theme, theme.caption)}</g>` : ''}${finish}
 </svg>
 `;
@@ -1084,14 +1073,14 @@ function securityQueueDepth(r) {
   const pill = 46;
   const gap = 11;
 
-  // Each row is one day's worth of reports, and the rows get longer downward:
-  // the backlog is deeper the further you read.
+  // The pile leans against the review line, deepest at the top and tapering toward
+  // the bottom. Deepest-at-the-bottom read better on its own, but it filled the
+  // lower left, which is where a caption goes; this way the corner stays clear and
+  // the caption never covers a report.
   const waiting = [];
   for (let i = 0; i < rows; i++) {
     const y = 236 + i * 80;
-    // Six on the first row, one more on each row after it: the backlog grows at a
-    // readable rate instead of collapsing to a single pill at the top.
-    const left = gate - 22 - (6 + i) * (pill + gap);
+    const left = gate - 22 - (14 - i) * (pill + gap);
     for (let x = gate - 22 - pill; x > left; x -= pill + gap) {
       waiting.push(
         `<rect x="${n(x)}" y="${n(y - 13)}" width="${pill}" height="26" rx="13" fill="${C.cyan}" ` +

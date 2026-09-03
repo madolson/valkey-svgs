@@ -114,9 +114,12 @@ Three things worth knowing:
 
 - The caption slot is fixed: bottom left, one solid light block per line, at most three
   lines. Fixed on purpose, so a composition can be drawn to leave that corner alone.
-- To make room, the whole motif is scaled to 78% and anchored to the top right. Nothing in
-  a theme function changes, but thin strokes get thinner, so a theme that was already at the
-  legibility floor reads weaker captioned than full screen.
+- The stickers sit **on top of** the motif, which is drawn at full size. Nothing is scaled
+  down and nothing is pushed aside, so the captioned variant is the same image with text
+  over one corner. The stack is kept small enough to cover a corner rather than the whole
+  bottom edge: roughly a third of the width and a quarter of the height at three lines.
+  A theme whose motif runs through that corner will have art behind the blocks; the blocks
+  are opaque, so the text stays legible either way.
 - The 200px-tall mobile crop keeps only the middle 70% of the width and cuts the caption.
   Captioned variants are for unfurls and wide heroes, where the crop takes height only.
   `benchmarks`, `release-version` and both `key-size-distribution` variants have no captioned
