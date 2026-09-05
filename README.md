@@ -3,8 +3,10 @@
 Themed banner artwork for Valkey blog posts, talks, and docs, generated from code.
 
 Every image shares one visual system: the deep navy-to-purple gradient from the valkey.io
-hero, a focal glow, a vignette, film grain, and accents drawn only from the Valkey brand
-palette. Each one then layers a motif on top. The point is that a contributor writing about
+hero, a vignette, film grain, and accents drawn only from the Valkey brand palette. Each one
+then layers a motif on top. The background is the same on every banner, with no per-theme
+glow and no starfield except on the space themes (`blackhole-*`, `planet-ring`), because a
+purple gradient with stars scattered over it was the most generic thing in the set. The point is that a contributor writing about
 memory efficiency can grab a memory-efficiency banner instead of picking a random abstract
 image, and the result still looks like it belongs next to everything else.
 
@@ -22,22 +24,13 @@ can't drift, and regenerating is a no-op diff.
 | `slot-migration-lens` | A big lens over the migration stream, instances and stream quiet | Observability for migration, inspecting data in transit |
 | `release` | Valkey chevrons driving into a golden burst | Release and general announcements |
 | `release-version` | The same burst with a caption you set | A specific release. See [Captions](#captions) |
-| `security` | Shield woven from the lattice it protects | Security in general, CVEs, hardening |
-| `security-acl` | Commands at a gate, most admitted, some turned away | ACLs, authentication, TLS |
-| `security-shield-clean` | The woven shield with the speckle removed, lattice only | Security in general, CVEs, hardening |
-| `security-shield-plated` | The shield built from even courses of armour plating | Hardening in layers, defence posture |
-| `security-shield-nested` | Three shields of one shape nested inside each other | Defence in depth, layered controls |
-| `security-acl-simple` | Four lanes at one centred gate, three through and one refused | ACLs, authentication, TLS |
-| `security-queue-depth` | Rows of inbound reports stacked against one review line, three cleared | Security report volume, triage load, advisory policy |
-| `security-triage-funnel` | A field of findings narrowing to three confirmed, the rest discarded | Machine-generated findings, adversarial review, audit pipelines |
-| `security-same-bug-twice` | Two identical tracks, one cell repaired, the same cell still faulty | Bug classes, incomplete fixes, sweeping for other instances |
+| `security-shield-clean` | A radiant shield woven from one even lattice, the mark at its centre | Security in general, CVEs, hardening, ACLs, advisories |
 | `benchmarks` | Throughput bars climbing under flat P50/P99 latency | Benchmark results, observability, metrics |
 | `data-structures` | Hash buckets chaining out beside a skip list | Internals: hash tables, skip lists, new types, modules |
 | `how-to` | Step track with the current step lit | Tutorials, guides, getting started |
 | `keyspace-scan` | Cursor holding one lit window of a key field, uneven hop track below | `SCAN`, cursors, iterating a keyspace without blocking |
 | `large-key` | A field of identical key tiles with one scaled up until it dwarfs them | Large keys, hot keys, uneven key sizes |
 | `key-prefix-groups` | Sampled keys funnelling into prefix rows with count bars | Key naming, prefixes, keyspace browsing and clients |
-| `blackhole` | A dark sphere with its accretion disk lensed into a ring around it | Talks, keynotes, anything that wants one striking abstract image |
 | `bloom-bit-array` | Hash nodes fanning out of the mark, lighting a handful of cells in a bit array | Bloom filters, valkey-bloom, probabilistic data structures |
 | `search-vector-nearest` | Query at the centre of an indexed field, its nearest matches lit inside a search radius | Vector similarity search, KNN queries, embeddings |
 | `search-field-index` | Records giving up one field each to a sorted index, a query bracketing the matched run | Secondary indexing on hashes and JSON, FT.CREATE, filters |
@@ -51,16 +44,11 @@ can't drift, and regenerating is a no-op diff.
 | `data-structures-grid` | Six value types, one per cell on an even 3x2 grid: byte run, list, set, hash, sorted set, bitmap | Type overviews, command surveys, what Valkey stores |
 | `k8s-spec-fanout` | A declared spec panel fanning out along rails into a grid of identical instances | Helm charts, operators, declarative deployment |
 | `key-size-distribution` | Ranked key-size bars with two big outliers, fanning into a grid of servers | Key size skew, heavy hitters, hot keys across a fleet |
-| `key-size-distribution-flat` | The same panel and shards on one solid purple field | Same, where the banner should read as flat graphic design |
 | `blackhole-beamed` | Relativistic disk near edge on, one side blazing from Doppler beaming | Talks, keynotes, anything that wants one striking abstract image |
 | `blackhole-inclined` | The same model tilted, reading as a hot ring with a hole in it | Same |
 | `blackhole-open` | The same model close to face on, a broad white-to-red annulus | Same |
-| `planet-orbit` | A wireframe Valkey globe with four smaller marks riding one tilted orbit | Planet Valkey, community blog roundups, the wider ecosystem |
-| `planet-ring` | The same globe wearing a thick segmented ring | Same, where one world and one keyspace is the point |
-| `planet-horizon` | A planet's bright limb across the lower frame with the mark standing over it | Same, where the scale of the project is the point |
-| `key-size-title-a` | The flat panel and shards shifted right, with the lockup and post title in the left third | A standalone card for the big-keys post, balanced type and art |
-| `key-size-title-b` | Same split, motif at full size and bleeding off the right edge | Same, where the art should stay large |
-| `key-size-title-c` | Same split, title set large with "big keys" in coral | Same, where the title should lead |
+| `planet-ring` | A wireframe Valkey globe ringed by article cards, one data structure each | Planet Valkey, community blog roundups, the wider ecosystem |
+| `key-size-card` | Card layout: lockup upper left, title lower left, the Valkey Admin ranking in a framed panel on the right | The big-keys post; the reference card for the layout |
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
@@ -100,53 +88,60 @@ No npm dependencies. Nothing to install beyond those two.
 Every theme seeds its own PRNG and `Math.random()` is never called, so regenerating
 produces byte-identical files. A rebuild should show no diff unless you changed the code.
 
-Themes that carry live text (`benchmarks` labels its series, `release-version` has a
-caption, `key-size-distribution` prints sizes, and every `-caption` variant) depend on a
-font resolving at render time, so they reproduce identically on a given machine but can
-shift a pixel across machines with different font stacks. The rest are geometry only and
-reproduce anywhere.
-
-## Caption variants
-
-Every theme in the table ships twice. `<name>` is the full-screen version: the motif fills
-the frame and there is no text. `<name>-caption` is the same drawing with the bottom left
-given over to sticker text, the way a blog card wants it. The variant is derived from the
-original in `THEMES` rather than written out, so a theme is drawn once and the two cannot
-drift apart.
-
-```sh
-node generate.mjs security-caption                                   # the theme's own title
-node generate.mjs security-caption --caption "CVE-2026-1234 explained" --out my-post
-```
-
-Three things worth knowing:
-
-- The caption slot is fixed: bottom left, one solid light block per line, at most three
-  lines. Fixed on purpose, so a composition can be drawn to leave that corner alone.
-- The stickers sit **on top of** the motif, which is drawn at full size. Nothing is scaled
-  down and nothing is pushed aside, so the captioned variant is the same image with text
-  over one corner. The stack is kept small enough to cover a corner rather than the whole
-  bottom edge: roughly a third of the width and a quarter of the height at three lines.
-  A theme whose motif runs through that corner will have art behind the blocks; the blocks
-  are opaque, so the text stays legible either way.
-- The 200px-tall mobile crop keeps only the middle 70% of the width and cuts the caption.
-  Captioned variants are for unfurls and wide heroes, where the crop takes height only.
-  `benchmarks`, `release-version` and both `key-size-distribution` variants have no captioned
-  version, because they already draw their own text.
+Every banner carries text now, so all of them depend on a font resolving at render time:
+they reproduce identically on a given machine but can shift a pixel across machines with
+different font stacks.
 
 ## Captions
 
-`release-version` takes a caption, so one theme can produce a banner per release without
-drawing anything:
+The caption is on by default, so one theme is one file. There used to be a derived
+`<name>-caption` twin of every theme, which meant 95 files for 51 pictures; the plain
+uncaptioned copy is the rarer thing to want, so it is the flag now.
+
+```sh
+node generate.mjs security-shield-clean                                  # the theme's title
+node generate.mjs security-shield-clean --caption "CVE-2026-1234 explained" --out my-post
+node generate.mjs security-shield-clean --no-caption                     # no text at all
+```
+
+Four things worth knowing:
+
+- The slot is fixed: bottom left, one solid light block per line, at most three lines of up
+  to 26 characters. Fixed on purpose, so a composition can be drawn to leave that corner
+  alone. A title that needs a fourth line throws rather than silently losing its tail.
+- The stickers sit **on top of** the motif, which is drawn at full size. Nothing is scaled
+  down and nothing is pushed aside. A theme whose motif runs through that corner will have
+  art behind the blocks; the blocks are opaque, so the text stays legible either way.
+- The blocks and the corner lockup are painted above the vignette. They are chrome rather
+  than art, and the vignette was visibly darkening the outer end of every block.
+- The 200px-tall mobile crop keeps only the middle 70% of the width and cuts the caption.
+  That crop takes width; the wide crops and the unfurls take height only and keep it.
+  `benchmarks` and `release-version` have no sticker, because they draw their own text.
+
+## Card layout
+
+`key-size-card` is the reference for the card shape, after the Neon blog covers: the lockup
+in the upper left, the title on blocks in the lower left, one subject on the right inside a
+thin frame that it runs out through. The lockup comes from `stamp()` and the title from the
+caption slot, both of which every other banner already uses, so a card theme draws only the
+frame and the subject. `CARD` and `cardFrame()` in `generate.mjs` are the shared parts.
+
+The subject overlaps the frame rather than sitting inside it. A subject boxed in neatly
+reads as a screenshot; one breaking the edge reads as an object on a page.
+
+## The release number
+
+`release-version` takes a big drawn number, so one theme can produce a banner per release
+without drawing anything:
 
 ```sh
 node generate.mjs release-version --text "9.0" --out release-9-0
 ```
 
 That writes `images/release-9-0.webp`. Both `--text=9.0` and `--text 9.0` work. `--out`
-takes exactly one theme, and `--text` only applies to captioned themes, which have to be
-named explicitly. Keep captions short: the text is centred at 118px and starts running out
-of room past roughly 25 characters.
+takes exactly one theme, and `--text` only applies to `release-version`, which has to be
+named explicitly. Keep it short: the number is centred at 118px and starts running out of
+room past roughly 25 characters.
 
 ## Adding a theme
 

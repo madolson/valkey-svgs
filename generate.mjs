@@ -162,8 +162,7 @@ function dot(x, y, rad, color, key, opacity = 1, halo = 4.5) {
 
 // --------------------------------------------------------------- atmosphere
 
-function defs(focal) {
-  const [fx, fy] = focal;
+function defs() {
   const halos = Object.entries({
     cyan: C.cyanLt,
     ice: C.ice,
@@ -196,11 +195,6 @@ function defs(focal) {
       <stop offset="0.48" stop-color="${C.mid}"/>
       <stop offset="1" stop-color="${C.deep}"/>
     </linearGradient>
-    <radialGradient id="focus" gradientUnits="userSpaceOnUse" cx="${fx}" cy="${fy}" r="900">
-      <stop offset="0" stop-color="${C.cyan}" stop-opacity="0.42"/>
-      <stop offset="0.35" stop-color="${C.violet}" stop-opacity="0.20"/>
-      <stop offset="1" stop-color="${C.violet}" stop-opacity="0"/>
-    </radialGradient>
     <radialGradient id="vignette" gradientUnits="userSpaceOnUse" cx="${W / 2}" cy="${H / 2}" r="1180">
       <stop offset="0.5" stop-color="#03040F" stop-opacity="0"/>
       <stop offset="1" stop-color="#03040F" stop-opacity="0.8"/>
@@ -252,7 +246,7 @@ function frame(theme) {
 // One block per line, because a block guarantees contrast where a scrim only hopes
 // for it. Position is fixed: bottom left, every time, so a composition can be
 // drawn to leave that corner alone.
-const CAPTION_SLOT = { left: 0.05, bottom: 0.075, size: 54, gap: 7, padX: 19, padY: 12 };
+const CAPTION_SLOT = { left: 0.05, bottom: 0.075, size: 62, gap: 8, padX: 22, padY: 13 };
 
 // Rough advance widths, enough to size a block around a line of Helvetica. Getting
 // this wrong by a few percent shows up as uneven padding, not as broken layout.
@@ -263,9 +257,11 @@ function textWidth(str, size) {
   return em * size;
 }
 
-// Wrap a title into at most three sticker lines, longest-first so the stack does
-// not end on a runt.
-function captionLines(text, max = 17) {
+// Wrap a title into at most three sticker lines. 26 characters is what fits beside
+// a card's right-hand frame at the sticker size; short theme titles still land on
+// one line. Overflowing throws rather than silently dropping the tail, which is what
+// the old `.slice(0, 3)` did to any title longer than about fifty characters.
+function captionLines(text, max = 26) {
   const words = String(text).split(/\s+/);
   const lines = [];
   let line = '';
@@ -279,7 +275,10 @@ function captionLines(text, max = 17) {
     }
   }
   if (line) lines.push(line);
-  return lines.slice(0, 3);
+  if (lines.length > 3) {
+    throw new Error(`Caption needs ${lines.length} lines, the slot holds 3: ${JSON.stringify(text)}`);
+  }
+  return lines;
 }
 
 function captionBlocks(theme, text) {
@@ -313,29 +312,33 @@ function stamp(theme) {
   return `  <g opacity="0.92">${lockup(vx + 0.042 * vw, vy + 0.055 * vh, 52 * px)}</g>`;
 }
 
-// `solid` is the strongest of the three background settings: one brand purple,
-// no gradient, no vignette, no grain, so the background recedes entirely and the
-// motif reads as graphic design rather than as a scene. `flat` is the middle
-// setting, keeping the sky gradient but dropping the focal glow.
+// One background for the whole set: the sky gradient, a vignette and film grain.
+// There used to be three settings here (a focal glow, `flat` without it, and
+// `solid` with no gradient at all) and the result was that no two banners sat on
+// the same ground. The gradient is the ground now, everywhere, and the only thing
+// a theme varies is what it draws on top. The stamp and the caption sit above the
+// vignette, because they are chrome rather than art and the vignette was visibly
+// darkening the outer end of every caption block.
 function wrap(theme, art) {
-  const bg = theme.solid
-    ? `  <rect width="${W}" height="${H}" fill="${C.deep}"/>`
-    : `  <rect width="${W}" height="${H}" fill="url(#sky)"/>${theme.flat ? '' : `\n  <rect width="${W}" height="${H}" fill="url(#focus)"/>`}`;
-  const finish = theme.solid
-    ? ''
-    : `\n  <rect width="${W}" height="${H}" fill="url(#vignette)"/>` +
-      `\n  <rect width="${W}" height="${H}" filter="url(#grain)" opacity="0.055" style="mix-blend-mode:overlay"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${frame(theme)}">
   <title>${theme.title}</title>
   <desc>${theme.desc}</desc>
-${defs(theme.focal)}
-${bg}
-${art}${theme.noStamp ? '' : `\n${stamp(theme)}`}${theme.caption ? `\n  <g>${captionBlocks(theme, theme.caption)}</g>` : ''}${finish}
+${defs()}
+  <rect width="${W}" height="${H}" fill="url(#sky)"/>
+${art}
+  <rect width="${W}" height="${H}" fill="url(#vignette)"/>
+  <rect width="${W}" height="${H}" filter="url(#grain)" opacity="0.055" style="mix-blend-mode:overlay"/>
+${stamp(theme)}${theme.caption ? `\n  <g>${captionBlocks(theme, theme.caption)}</g>` : ''}
 </svg>
 `;
 }
 
-// Faint far-field specks, used to keep the empty corners from looking flat.
+// Faint far-field specks. Only the space themes get them now: on everything else a
+// purple gradient with scattered stars was the most generic thing in the set.
+//
+// The PRNG draws happen either way. Returning the stars or dropping them is decided
+// after the fact, so suppressing them cannot shift anything else a theme draws.
+let SPACE = false;
 function starfield(r, count = 90) {
   const out = [];
   for (let i = 0; i < count; i++) {
@@ -345,7 +348,7 @@ function starfield(r, count = 90) {
     const op = 0.08 + r() * 0.3;
     out.push(`<circle cx="${n(x)}" cy="${n(y)}" r="${n(rad)}" fill="${C.ice}" opacity="${n(op)}"/>`);
   }
-  return `  <g>${out.join('')}</g>`;
+  return SPACE ? `  <g>${out.join('')}</g>` : '';
 }
 
 // ------------------------------------------------------------------- themes
@@ -770,137 +773,6 @@ function releaseVersion(r, { text }) {
   ].join('\n');
 }
 
-// Security: a shield woven out of the lattice it protects.
-function security(r) {
-  const shield =
-    'M 690 300 L 1230 300 L 1230 606 C 1230 736 1086 806 960 846 ' +
-    'C 834 806 690 736 690 606 Z';
-
-  const lattice = [];
-  for (let k = -60; k <= 60; k++) {
-    const off = k * 38;
-    lattice.push(
-      `<line x1="${n(off)}" y1="0" x2="${n(off + H)}" y2="${H}" stroke="${C.cyanLt}" stroke-width="1.5"/>`,
-      `<line x1="${n(off)}" y1="0" x2="${n(off - H)}" y2="${H}" stroke="${C.cyanLt}" stroke-width="1.5"/>`
-    );
-  }
-  const latticeGroup = lattice.join('');
-
-  // Lattice intersections, brighter where they fall inside the shield.
-  const nodes = [];
-  for (let i = 0; i < 170; i++) {
-    const x = 680 + r() * 560;
-    const y = 290 + r() * 570;
-    nodes.push(`<circle cx="${n(x)}" cy="${n(y)}" r="${n(1.6 + r() * 2.8)}" fill="${weighted(r, [[C.ice, 7], [C.mint, 3]])}" opacity="${n(0.3 + r() * 0.55)}"/>`);
-  }
-
-  const backRings = [330, 430, 540]
-    .map((rad, i) => `<circle cx="960" cy="560" r="${rad}" fill="none" stroke="${C.violet}" stroke-width="1.6" stroke-dasharray="3 18" opacity="${n(0.22 - i * 0.05)}"/>`)
-    .join('');
-
-  const logo = mark(960, 550, 332);
-
-  return [
-    starfield(r, 50),
-    `  <clipPath id="shield"><path d="${shield}"/></clipPath>`,
-    `  <linearGradient id="shieldFill" x1="0" y1="0" x2="0" y2="1">` +
-      `<stop offset="0" stop-color="${C.cyan}" stop-opacity="0.3"/>` +
-      `<stop offset="1" stop-color="${C.violet}" stop-opacity="0.12"/></linearGradient>`,
-    `  <g>${backRings}</g>`,
-    `  <g opacity="0.08">${latticeGroup}</g>`,
-    `  <g clip-path="url(#shield)">` +
-      `<path d="${shield}" fill="url(#shieldFill)"/>` +
-      `<g opacity="0.72">${latticeGroup}</g>` +
-      `<g>${nodes.join('')}</g>` +
-      `</g>`,
-    `  <path d="${shield}" fill="none" stroke="${C.cyanLt}" stroke-width="16" opacity="0.4" filter="url(#blur18)"/>`,
-    `  <path d="${shield}" fill="none" stroke="${C.ice}" stroke-width="3.4" opacity="0.9"/>`,
-    `  <circle cx="960" cy="555" r="250" fill="url(#h-mint)" opacity="0.45"/>`,
-    `  <g filter="url(#blur18)" opacity="0.5">${logo}</g>`,
-    `  <g>${logo}</g>`,
-  ].join('\n');
-}
-
-// Security, access-control flavour: commands arriving at an authenticated gate,
-// most admitted, some turned away. More specific than the shield in `security`,
-// and the better fit for ACL, auth and TLS posts.
-function securityGate(r) {
-  const gate = 1010;
-  const cy = 540;
-  const lanes = 22;
-  const top = 272;
-  const span = 536;
-
-  const approach = [];
-  const admitted = [];
-  const refused = [];
-
-  for (let i = 0; i < lanes; i++) {
-    const y = top + (i + 0.5) * (span / lanes) + (r() - 0.5) * 9;
-    const pass = r() > 0.2;
-
-    // Inbound traffic, same colour whichever way it ends up going.
-    let x = 240 + r() * 130;
-    while (x < gate - 150) {
-      const len = 26 + r() * 118;
-      if (x + len > gate - 130) break;
-      approach.push(
-        `<line x1="${n(x)}" y1="${n(y)}" x2="${n(x + len)}" y2="${n(y)}" stroke="${weighted(r, [[C.cyanLt, 7], [C.ice, 3]])}" ` +
-          `stroke-width="${n(2 + r() * 2.4)}" stroke-linecap="round" opacity="${n(0.28 + r() * 0.38)}"/>`
-      );
-      x += len + 18 + r() * 58;
-    }
-
-    if (pass) {
-      let ox = gate + 40;
-      while (ox < 1760) {
-        const len = 30 + r() * 152;
-        admitted.push(
-          `<line x1="${n(ox)}" y1="${n(y)}" x2="${n(ox + len)}" y2="${n(y)}" stroke="${weighted(r, [[C.mint, 7], [C.ice, 3]])}" ` +
-            `stroke-width="${n(2.4 + r() * 2.6)}" stroke-linecap="round" opacity="${n(0.5 + r() * 0.45)}"/>`
-        );
-        ox += len + 20 + r() * 68;
-      }
-    } else {
-      // Turned away short of the gate, deflected clear of the traffic.
-      const dir = y < cy ? -1 : 1;
-      const bx = gate - 96;
-      const kick = 58 + r() * 26;
-      refused.push(
-        `<path d="M ${n(bx - 104)} ${n(y)} L ${n(bx)} ${n(y)} L ${n(bx - 62)} ${n(y + dir * kick)}" ` +
-          `fill="none" stroke="${C.coral}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>`,
-        `<circle cx="${n(bx)}" cy="${n(y)}" r="26" fill="url(#h-coral)" opacity="0.95"/>`,
-        `<path d="M ${n(bx - 9)} ${n(y - 9)} L ${n(bx + 9)} ${n(y + 9)} M ${n(bx + 9)} ${n(y - 9)} L ${n(bx - 9)} ${n(y + 9)}" ` +
-          `stroke="${C.coral}" stroke-width="3.4" stroke-linecap="round" opacity="0.95"/>`
-      );
-    }
-  }
-
-  // Tick marks up the gate, so it reads as a checkpoint rather than a wall.
-  const ticks = [];
-  for (let i = 0; i <= 30; i++) {
-    const y = top - 44 + (i / 30) * (span + 88);
-    ticks.push(
-      `<line x1="${gate - 20}" y1="${n(y)}" x2="${gate + 20}" y2="${n(y)}" stroke="${C.ice}" stroke-width="1.6" opacity="${i % 5 === 0 ? 0.4 : 0.16}"/>`
-    );
-  }
-
-  return [
-    starfield(r, 55),
-    `  <circle cx="${gate}" cy="${cy}" r="430" fill="url(#h-cyan)" opacity="0.18"/>`,
-    `  <g>${approach.join('')}</g>`,
-    `  <g>${admitted.join('')}</g>`,
-    `  <rect x="${gate - 19}" y="${top - 52}" width="38" height="${span + 104}" rx="19" fill="${C.ice}" opacity="0.17"/>`,
-    `  <line x1="${gate}" y1="${top - 56}" x2="${gate}" y2="${top + span + 56}" stroke="${C.ice}" stroke-width="12" opacity="0.32" filter="url(#blur18)"/>`,
-    `  <g>${ticks.join('')}</g>`,
-    `  <line x1="${gate}" y1="${top - 56}" x2="${gate}" y2="${top + span + 56}" stroke="${C.ice}" stroke-width="3.6" opacity="0.9"/>`,
-    `  <g>${refused.join('')}</g>`,
-    `  <circle cx="${gate}" cy="${cy}" r="190" fill="url(#scrim)"/>`,
-    `  <g filter="url(#blur18)" opacity="0.5">${mark(gate, cy, 262)}</g>`,
-    `  <g>${mark(gate, cy, 262)}</g>`,
-  ].join('\n');
-}
-
 // A heraldic shield centred on (cx, cy): flat top, straight sides, curved point.
 // Shared by the shield themes so they are one silhouette under four treatments.
 function shieldPath(cx, cy, w, h, shoulder = 0.56) {
@@ -940,120 +812,15 @@ function securityShieldClean() {
     `  <g clip-path="url(#shieldClean)">` +
       `<path d="${path}" fill="url(#shieldCleanFill)"/>` +
       `<g opacity="0.5">${weave}</g></g>`,
-    `  <path d="${path}" fill="none" stroke="${C.cyanLt}" stroke-width="16" opacity="0.35" filter="url(#blur18)"/>`,
-    `  <path d="${path}" fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.92"/>`,
+    // Radiance, the way the retired `security` theme did it: a wide blurred pass on
+    // the outline, a mint halo behind the mark, and a blurred copy of the mark under
+    // the sharp one. Three passes, all behind or under the thing they light.
+    `  <path d="${path}" fill="none" stroke="${C.cyanLt}" stroke-width="34" opacity="0.3" filter="url(#blur40)"/>`,
+    `  <path d="${path}" fill="none" stroke="${C.cyanLt}" stroke-width="16" opacity="0.45" filter="url(#blur18)"/>`,
+    `  <path d="${path}" fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.95"/>`,
+    `  <circle cx="${cx}" cy="${n(cy - 10)}" r="250" fill="url(#h-mint)" opacity="0.45"/>`,
+    `  <g filter="url(#blur18)" opacity="0.5">${mark(cx, cy - 10, 300)}</g>`,
     `  <g>${mark(cx, cy - 10, 300)}</g>`,
-  ].join('\n');
-}
-
-// Security, plated: the shield as courses of armour rather than a weave. Layers
-// are the idea, so the plates are even and the seams between them are the detail.
-function securityShieldPlated() {
-  const cx = 960;
-  const cy = 545;
-  const w = 570;
-  const h = 580;
-  const path = shieldPath(cx, cy, w, h);
-  const top = cy - h / 2;
-
-  const courses = 5;
-  const plates = [];
-  const ch = h / courses;
-  const pw = w / 3.5;
-  for (let row = 0; row < courses; row++) {
-    const y = top + row * ch;
-    // Every other course is offset by half a plate, so the seams break like
-    // brickwork and the shield reads as overlapping armour.
-    const x0 = cx - w / 2 - (row % 2 ? pw / 2 : 0) - pw / 2;
-    for (let col = 0; col < 6; col++) {
-      plates.push(
-        `<rect x="${n(x0 + col * pw)}" y="${n(y)}" width="${n(pw - 9)}" height="${n(ch - 9)}" rx="12" ` +
-          `fill="${C.cyan}" fill-opacity="${n(0.32 - row * 0.045)}" stroke="${C.cyanLt}" stroke-width="2.6" ` +
-          `opacity="${n(0.85 - row * 0.09)}"/>`
-      );
-    }
-  }
-
-  return [
-    `  <clipPath id="shieldPlated"><path d="${path}"/></clipPath>`,
-    `  <g clip-path="url(#shieldPlated)">${plates.join('')}</g>`,
-    `  <path d="${path}" fill="none" stroke="${C.cyanLt}" stroke-width="16" opacity="0.35" filter="url(#blur18)"/>`,
-    `  <path d="${path}" fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.92"/>`,
-    `  <g>${mark(cx, cy - 10, 290)}</g>`,
-  ].join('\n');
-}
-
-// Security, in depth: three shields of one silhouette nested inside each other,
-// the innermost holding the mark. Defence in layers, and nothing else drawn.
-function securityShieldNested() {
-  const cx = 960;
-  const cy = 548;
-  const layers = [
-    { w: 624, h: 624, color: C.violet, width: 5, op: 0.65 },
-    { w: 500, h: 500, color: C.cyanLt, width: 5, op: 0.85 },
-    { w: 376, h: 376, color: C.ice, width: 5.5, op: 0.95 },
-  ];
-  const inner = shieldPath(cx, cy, layers[2].w, layers[2].h);
-
-  return [
-    `  <linearGradient id="shieldNestedFill" x1="0" y1="0" x2="0" y2="1">` +
-      `<stop offset="0" stop-color="${C.cyan}" stop-opacity="0.26"/>` +
-      `<stop offset="1" stop-color="${C.violet}" stop-opacity="0.1"/></linearGradient>`,
-    `  <path d="${inner}" fill="url(#shieldNestedFill)"/>`,
-    ...layers.map(
-      (l) =>
-        `  <path d="${shieldPath(cx, cy, l.w, l.h)}" fill="none" stroke="${l.color}" ` +
-        `stroke-width="${l.width}" opacity="${l.op}"/>`
-    ),
-    `  <path d="${inner}" fill="none" stroke="${C.ice}" stroke-width="14" opacity="0.3" filter="url(#blur18)"/>`,
-    `  <g>${mark(cx, cy - 34, 196)}</g>`,
-  ].join('\n');
-}
-
-// Access control, said in as few marks as possible: four lanes at one gate, three
-// admitted and one refused. Symmetric about the gate, which is the centre of the
-// frame, because the gate is the whole subject.
-function securityAclSimple() {
-  const gate = 960;
-  const cy = 540;
-  const lanes = [
-    { y: 268, pass: true },
-    { y: 352, pass: false },
-    { y: cy, pass: true },
-    { y: 728, pass: true },
-    { y: 812, pass: true },
-  ];
-
-  const traffic = lanes
-    .map(({ y, pass }) => {
-      const stop = pass ? gate - 12 : 826;
-      const out = [
-        `<line x1="170" y1="${y}" x2="${n(stop)}" y2="${y}" stroke="${C.cyanLt}" stroke-width="7" ` +
-          `stroke-linecap="round" opacity="0.6"/>`,
-      ];
-      if (pass) {
-        out.push(
-          `<line x1="${gate + 12}" y1="${y}" x2="1750" y2="${y}" stroke="${C.mint}" stroke-width="7" ` +
-            `stroke-linecap="round" opacity="0.92"/>`
-        );
-      } else {
-        const bx = 884;
-        out.push(
-          `<path d="M ${bx - 28} ${y - 28} L ${bx + 28} ${y + 28} M ${bx + 28} ${y - 28} L ${bx - 28} ${y + 28}" ` +
-            `stroke="${C.coral}" stroke-width="9" stroke-linecap="round" opacity="0.95"/>`
-        );
-      }
-      return out.join('');
-    })
-    .join('');
-
-  return [
-    `  <line x1="${gate}" y1="222" x2="${gate}" y2="858" stroke="${C.ice}" stroke-width="20" ` +
-      `opacity="0.28" filter="url(#blur18)"/>`,
-    `  <line x1="${gate}" y1="222" x2="${gate}" y2="858" stroke="${C.ice}" stroke-width="8" ` +
-      `stroke-linecap="round" opacity="0.9"/>`,
-    `  <g>${traffic}</g>`,
-    `  <g>${mark(gate, cy, 320)}</g>`,
   ].join('\n');
 }
 
@@ -1063,157 +830,6 @@ function securityAclSimple() {
 // (`security-queue-depth`), most findings do not survive an adversarial second
 // look (`security-triage-funnel`), and a fix that removed one instance left the
 // same defect standing in a second implementation (`security-same-bug-twice`).
-
-// Idea: reports arrive faster than review clears them, so the queue grows.
-// Focal: the mass of waiting reports, the largest and brightest thing in frame.
-function securityQueueDepth(r) {
-  const gate = 1330;
-  const rows = 9;
-  const pill = 46;
-  const gap = 11;
-
-  // The pile leans against the review line, deepest at the top and tapering toward
-  // the bottom. Deepest-at-the-bottom read better on its own, but it filled the
-  // lower left, which is where a caption goes; this way the corner stays clear and
-  // the caption never covers a report.
-  const waiting = [];
-  for (let i = 0; i < rows; i++) {
-    const y = 236 + i * 80;
-    const left = gate - 22 - (14 - i) * (pill + gap);
-    for (let x = gate - 22 - pill; x > left; x -= pill + gap) {
-      waiting.push(
-        `<rect x="${n(x)}" y="${n(y - 13)}" width="${pill}" height="26" rx="13" fill="${C.cyan}" ` +
-          `opacity="${n(0.45 + (i / rows) * 0.35)}"/>`
-      );
-    }
-  }
-
-  // What clears review: three confirmed advisories, the only coral in the frame.
-  const cleared = [1, 4, 7].map((i) => {
-    const y = 236 + i * 80;
-    return (
-      `<rect x="${gate + 26}" y="${n(y - 13)}" width="${pill}" height="26" rx="13" fill="none" ` +
-        `stroke="${C.coral}" stroke-width="14" opacity="0.3" filter="url(#blur8)"/>` +
-      `<rect x="${gate + 26}" y="${n(y - 13)}" width="${pill}" height="26" rx="13" fill="${C.coral}" opacity="0.95"/>`
-    );
-  });
-
-  return [
-    `  <g>${waiting.join('')}</g>`,
-    `  <line x1="${gate}" y1="196" x2="${gate}" y2="916" stroke="${C.ice}" stroke-width="8" ` +
-      `stroke-linecap="round" opacity="0.9"/>`,
-    `  <g>${cleared.join('')}</g>`,
-  ].join('\n');
-}
-
-// Idea: two thirds of machine-generated findings do not survive an adversarial
-// second look, so the output is a handful, not a hundred.
-// Focal: the three confirmed findings at the end, the only coral and the largest
-// cells in the frame.
-function securityTriageFunnel(r) {
-  const stages = [
-    { x: 475, cols: 6, rows: 8, cell: 26, gapx: 34, gapy: 30, color: C.cyan, op: 0.5 },
-    { x: 885, cols: 3, rows: 5, cell: 34, gapx: 44, gapy: 44, color: C.cyan, op: 0.75 },
-  ];
-
-  const grid = (st) => {
-    const out = [];
-    const w = st.cols * st.cell + (st.cols - 1) * (st.gapx - st.cell);
-    const h = st.rows * st.cell + (st.rows - 1) * (st.gapy - st.cell);
-    for (let c = 0; c < st.cols; c++) {
-      for (let row = 0; row < st.rows; row++) {
-        out.push(
-          `<rect x="${n(st.x - w / 2 + c * st.gapx)}" y="${n(540 - h / 2 + row * st.gapy)}" ` +
-            `width="${st.cell}" height="${st.cell}" rx="7" fill="${st.color}" opacity="${st.op}"/>`
-        );
-      }
-    }
-    return out.join('');
-  };
-
-  // Confirmed, at the far right: bigger cells, full opacity, the one halo.
-  const confirmed = [-1, 0, 1]
-    .map((k) => {
-      const y = 540 + k * 118;
-      return (
-        `<rect x="1377" y="${n(y - 34)}" width="68" height="68" rx="14" fill="none" stroke="${C.coral}" ` +
-          `stroke-width="18" opacity="0.3" filter="url(#blur8)"/>` +
-        `<rect x="1377" y="${n(y - 34)}" width="68" height="68" rx="14" fill="${C.coral}" opacity="0.95"/>`
-      );
-    })
-    .join('');
-
-  // What each stage discards, drifting away below the line in the retired colour.
-  // What each stage discards, falling away under the rail that discarded it, so the
-  // loss is attached to a stage instead of scattered across the floor.
-  const dropped = [];
-  for (const [cx, count, spread] of [[680, 16, 120], [1175, 10, 140]]) {
-    for (let i = 0; i < count; i++) {
-      const x = cx + (r() - 0.5) * spread * 2;
-      const y = 620 + r() * 240;
-      dropped.push(
-        `<rect x="${n(x)}" y="${n(y)}" width="24" height="24" rx="7" fill="${C.violet}" opacity="0.42"/>`
-      );
-    }
-  }
-
-  const rail = (x0, x1) =>
-    `<line x1="${x0}" y1="540" x2="${x1}" y2="540" stroke="${C.ice}" stroke-width="3" opacity="0.45"/>`;
-
-  return [
-    `  <g>${grid(stages[0])}</g>`,
-    `  ${rail(615, 745)}`,
-    `  <g>${grid(stages[1])}</g>`,
-    `  ${rail(1005, 1345)}`,
-    `  <g>${dropped.join('')}</g>`,
-    `  <g>${confirmed}</g>`,
-  ].join('\n');
-}
-
-// Idea: the same defect existed in a second implementation of the same pattern, so
-// fixing one instance and closing the report left the class alive.
-// Focal: the unpatched cell, the only coral and the only thing carrying a halo.
-function securitySameBugTwice(r) {
-  const cells = 6;
-  const cw = 152;
-  const gap = 36;
-  const x0 = 960 - (cells * cw + (cells - 1) * gap) / 2;
-  const bad = 3; // the same position in both rows
-
-  const track = (cy, fixed) => {
-    // The rail only shows in the gaps between cells; drawn straight through, it
-    // bisected every cell.
-    const out = [];
-    for (let i = 0; i < cells - 1; i++) {
-      const x = x0 + i * (cw + gap) + cw;
-      out.push(
-        `<line x1="${n(x)}" y1="${cy}" x2="${n(x + gap)}" y2="${cy}" stroke="${C.ice}" stroke-width="3" opacity="0.35"/>`
-      );
-    }
-    for (let i = 0; i < cells; i++) {
-      const x = x0 + i * (cw + gap);
-      const isBad = i === bad;
-      const color = isBad ? (fixed ? C.mint : C.coral) : C.cyan;
-      if (isBad && !fixed) {
-        out.push(
-          `<rect x="${n(x)}" y="${n(cy - 70)}" width="${cw}" height="140" rx="22" fill="none" ` +
-            `stroke="${C.coral}" stroke-width="24" opacity="0.34" filter="url(#blur18)"/>`
-        );
-      }
-      out.push(
-        `<rect x="${n(x)}" y="${n(cy - 70)}" width="${cw}" height="140" rx="22" fill="${color}" ` +
-          `fill-opacity="${isBad ? 0.34 : 0.16}" stroke="${color}" stroke-width="${isBad ? 5 : 3}" ` +
-          `opacity="${isBad ? 0.95 : 0.55}"/>`
-      );
-    }
-    return out.join('');
-  };
-
-  return [
-    `  <g>${track(310, true)}</g>`,
-    `  <g>${track(776, false)}</g>`,
-  ].join('\n');
-}
 
 // Benchmarks: throughput bars climbing, latency percentiles holding flat above
 // them. The two motifs are stacked rather than overlaid so neither muddies the
@@ -1884,51 +1500,6 @@ function keyPrefixGroups(r) {
     `  <g stroke="${C.cyanLt}" stroke-width="1.6">${edges}</g>`,
     `  <g>${dots}</g>`,
     `  <g>${list.join('')}</g>`,
-  ].join('\n');
-}
-
-// A black hole, drawn the way Interstellar drew Gargantua: a dark sphere, the
-// accretion disk lensed into a ring that wraps over and under it, and the flat
-// near edge of that disk crossing in front. The one thing it says is gravity.
-function blackhole(r) {
-  const cx = 960;
-  const cy = 540;
-  const R = 210; // the event horizon
-  const ringR = 300; // the lensed disk wrapping the sphere
-  const diskRx = 720;
-  const diskRy = 86;
-
-  // Stars behind it, and nothing in front: the only light in the frame comes off
-  // the disk, so the disk is the only thing that gets a glow.
-  const stars = starfield(r, 90);
-
-  const disk = (extra = '') =>
-    `<ellipse cx="${cx}" cy="${cy}" rx="${diskRx}" ry="${diskRy}" fill="url(#diskFill)"${extra}/>`;
-
-  return [
-    `  <radialGradient id="diskFill">` +
-      `<stop offset="0.24" stop-color="${C.ice}" stop-opacity="0.95"/>` +
-      `<stop offset="0.42" stop-color="${C.gold}" stop-opacity="0.85"/>` +
-      `<stop offset="0.72" stop-color="${C.gold}" stop-opacity="0.35"/>` +
-      `<stop offset="1" stop-color="${C.coral}" stop-opacity="0"/></radialGradient>`,
-    `  <radialGradient id="ringFill">` +
-      `<stop offset="0.86" stop-color="${C.gold}" stop-opacity="0"/>` +
-      `<stop offset="0.94" stop-color="${C.gold}" stop-opacity="0.9"/>` +
-      `<stop offset="1" stop-color="${C.gold}" stop-opacity="0"/></radialGradient>`,
-    `  <clipPath id="diskFront"><rect x="0" y="${cy}" width="${W}" height="${H - cy}"/></clipPath>`,
-    stars,
-    // The far side of the disk, lensed up over the top of the sphere.
-    `  <g filter="url(#blur18)">${disk()}</g>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${n(ringR * 1.16)}" fill="url(#ringFill)" opacity="0.55" filter="url(#blur8)"/>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${ringR}" fill="none" stroke="${C.gold}" stroke-width="34" opacity="0.4" filter="url(#blur18)"/>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${ringR}" fill="none" stroke="${C.ice}" stroke-width="2.6" opacity="0.32"/>`,
-    // The sphere itself, which swallows the middle of everything behind it.
-    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="#03040F"/>`,
-    // The photon ring hugging the horizon, then the near edge of the disk in front.
-    `  <circle cx="${cx}" cy="${cy}" r="${n(R + 7)}" fill="none" stroke="${C.gold}" stroke-width="18" opacity="0.35" filter="url(#blur8)"/>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${n(R + 7)}" fill="none" stroke="${C.ice}" stroke-width="3.4" opacity="0.9"/>`,
-    `  <g clip-path="url(#diskFront)"><g filter="url(#blur8)">${disk()}</g>${disk(' opacity="0.9"')}</g>`,
-    `  <g>${mark(cx, cy, 150)}</g>`,
   ].join('\n');
 }
 
@@ -3595,11 +3166,13 @@ function dataStructuresGrid(r) {
 // far larger than the rest, and each enclosure on the right holds the three servers
 // of one shard. Connectors are elbows rather than curves, because a swept curve
 // over this distance reads as decoration.
-function keySizeDistribution(r) {
-  const sx = 440;
-  const sw = 420;
-  const sTop = 210;
-  const sH = 660;
+// The Valkey Admin panel: the ranked bars with their sizes printed. Pulled out of
+// keySizeDistribution so the card layout can show it on its own; the coordinates are
+// the originals, so the parent theme's output is unchanged.
+const ADMIN_PANEL = { sx: 440, sw: 420, sTop: 210, sH: 660 };
+
+function adminPanel() {
+  const { sx, sw, sTop, sH } = ADMIN_PANEL;
 
   // The header (mark plus title) is centred in the panel, and the chart baseline
   // runs down from the middle of the mark, so both readings hold at once.
@@ -3607,17 +3180,6 @@ function keySizeDistribution(r) {
   const headX = sx + (sw - HEADER_W) / 2;
   const axisX = headX + 24;
   const labelX = sx + sw - 28;
-
-  // The narrow crop keeps only the middle 70% of the width, so the whole
-  // composition has about 1050px to live in at this zoom. Tiles are therefore
-  // 120 with a 24px gap and 26px of enclosure padding: at 134 they filled the
-  // budget exactly and ended up edge to edge.
-  const rows = [310, 540, 770];
-  const cols = [1106, 1250, 1394];
-  const tile = 120;
-  const shardX0 = 1020; // 160px of air between the panel and the shards
-  const shardX1 = 1480;
-  const shardH = 200;
 
   // Ranked keys with their sizes printed. The top two are a different class of
   // object, not the top of a ramp: tens of megabytes against a few.
@@ -3659,6 +3221,25 @@ function keySizeDistribution(r) {
     `<text x="${n(headX + 62)}" y="${sTop + 68}" fill="#FFFFFF" font-family="${FONT}" font-size="44" ` +
       `font-weight="600" letter-spacing="0.6">Valkey Admin</text>` +
     `<line x1="${n(axisX)}" y1="${sTop + 126}" x2="${n(axisX)}" y2="816" stroke="${C.ice}" stroke-width="2" opacity="0.4"/>`;
+
+  return { panel, bars: bars.join('') };
+}
+
+function keySizeDistribution() {
+  const { sx, sw } = ADMIN_PANEL;
+  const { panel, bars } = adminPanel();
+
+  // The narrow crop keeps only the middle 70% of the width, so the whole
+  // composition has about 1050px to live in at this zoom. Tiles are therefore
+  // 120 with a 24px gap and 26px of enclosure padding: at 134 they filled the
+  // budget exactly and ended up edge to edge.
+  const rows = [310, 540, 770];
+  const cols = [1106, 1250, 1394];
+  const tile = 120;
+  const shardX0 = 1020; // 160px of air between the panel and the shards
+  const shardX1 = 1480;
+  const shardH = 200;
+
 
   // One curve per shard, leaving the panel at the middle and arriving level with
   // its enclosure. Both control points sit near the middle of the run, so the
@@ -3715,94 +3296,53 @@ function keySizeDistribution(r) {
     `  <g>${shards}</g>`,
     `  <g>${pods.join('')}</g>`,
     `  <g>${panel}</g>`,
-    `  <g>${bars.join('')}</g>`,
+    `  <g>${bars}</g>`,
   ].join('\n');
 }
 
-// ------------------------------------------------------- title-card variants
+// ------------------------------------------------------------------ cards
 //
-// Idea: same sentence as key-size-distribution — a few outsized keys, spread
-// across a deployment — but the frame is shared with the post title, so the
-// banner works as a standalone card and not only as a cropped header.
-// Focal: still the two coral bars. The title is type, not a competing object.
+// The card layout, after the Neon blog covers: the lockup in the upper left, the
+// title on solid blocks in the lower left, and one subject on the right inside a
+// thin frame that it overlaps. The lockup already comes from stamp() and the title
+// from the caption slot, so a card theme draws only the frame and the subject. That
+// is the whole point of standardising it: the three fixed positions are shared with
+// every other banner in the set, so a card is a normal banner with a framed subject.
 //
-// The motif is reused verbatim, wrapped in one transform, so these cannot drift
-// from the parent theme. All three sit at zoom 1 because the left column needs
-// the full 1920 of width; that also means the narrow 247x200 crop, which keeps
-// only the middle 70%, cuts the title. These are wide-crop and og:image art.
+// The subject overlaps the frame rather than sitting inside it. A subject boxed in
+// neatly reads as a screenshot; one breaking the edge reads as an object on a page.
+const CARD = { x: 1105, y: 210, w: 560, h: 660 };
 
-// Greedy wrap to the given pixel width. Unlike captionLines this is not capped at
-// three, because a post title is longer than a theme name.
-function wrapToWidth(text, size, width) {
-  const lines = [];
-  let line = '';
-  for (const w of String(text).split(/\s+/)) {
-    const next = line ? `${line} ${w}` : w;
-    if (textWidth(next, size) > width && line) {
-      lines.push(line);
-      line = w;
-    } else {
-      line = next;
-    }
-  }
-  if (line) lines.push(line);
-  return lines;
+function cardFrame({ x, y, w, h } = CARD) {
+  return (
+    `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" fill="${C.ink}" fill-opacity="0.2"/>` +
+    `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" fill="none" stroke="${C.ice}" ` +
+      `stroke-width="3" opacity="0.5"/>`
+  );
 }
 
-// The left column: the lockup at the given height, then the title in white under
-// it, the whole block vertically centred in the frame. `accent` words are drawn in
-// coral, which is the anomaly role and so is only ever the words naming the
-// outsized keys.
-function titleColumn(title, { x, width, lockupH, size, accent = [] }) {
-  const lines = wrapToWidth(title, size, width);
-  const lead = size * 1.24;
-  const gap = lockupH * 0.44;
-  const blockH = lockupH + gap + lines.length * lead;
-  const top = (H - blockH) / 2;
-  const baseline0 = top + lockupH + gap + size * 0.8;
-  const hot = new Set(accent.map((w) => w.toLowerCase()));
-
-  // One <text> per line so the renderer does the kerning; the accent phrase is a
-  // tspan inside it. `xml:space="preserve"` is what keeps the space that sits at a
-  // run boundary from being collapsed away.
-  const rows = lines.map((line, i) => {
-    const y = baseline0 + i * lead;
-    const runs = [];
-    for (const w of line.split(' ')) {
-      const on = hot.has(w.toLowerCase().replace(/[^a-z]/g, ''));
-      const last = runs[runs.length - 1];
-      if (last && last.on === on) last.words.push(w);
-      else runs.push({ on, words: [w] });
-    }
-    const body = runs
-      .map((run, j) => {
-        const txt = esc(run.words.join(' ')) + (j === runs.length - 1 ? '' : ' ');
-        return run.on ? `<tspan fill="${C.coral}">${txt}</tspan>` : `<tspan>${txt}</tspan>`;
-      })
-      .join('');
-    return (
-      `<text x="${n(x)}" y="${n(y)}" fill="#FFFFFF" font-family="${FONT}" font-size="${n(size)}" ` +
-      `font-weight="600" letter-spacing="-0.5" xml:space="preserve">${body}</text>`
-    );
-  });
-
-  return `<g>${lockup(x, top, lockupH)}${rows.join('')}</g>`;
+// Idea: a handful of keys are orders of magnitude bigger than the rest.
+// Focal: the two coral bars at the top of the ranking.
+//
+// The shard grid the parent theme wires this into is dropped. On a card the right
+// side holds one subject, and "where those keys live" is a second idea that was
+// competing with the ranking for the eye.
+function keySizeCard() {
+  const { x, y, w, h } = CARD;
+  const s = 1.15;
+  const { sx, sw, sTop } = ADMIN_PANEL;
+  const { panel, bars } = adminPanel();
+  // A tight frame with the subject running out through the bottom of it. The frame
+  // holds the subject rather than floating behind it, so the margins are small: an
+  // empty half-frame reads as a stray rectangle. The panel's right edge lands at
+  // 1623, inside the 1632 the narrow crop keeps, so the panel is never sliced.
+  const dx = x + 35 - sx * s;
+  const dy = y + 45 - sTop * s;
+  return [
+    `  <g>${cardFrame()}</g>`,
+    `  <g transform="translate(${n(dx)} ${n(dy)}) scale(${s})">${panel}${bars}</g>`,
+  ].join('\n');
 }
-
-// dx/dy/scale place the parent motif, whose drawn box is x 440..1480, y 210..870.
-// The three candidates trade motif size against column width, because at 16:9 you
-// cannot have both: filling the height means a wider motif, which eats the column.
-function keySizeTitleCard(opts) {
-  return (r) =>
-    [
-      `  <g transform="translate(${n(opts.dx)} ${n(opts.dy)}) scale(${opts.scale})">`,
-      keySizeDistribution(r),
-      `  </g>`,
-      `  ${titleColumn(opts.title, opts.column)}`,
-    ].join('\n');
-}
-
-const BIG_KEYS_TITLE = 'Finding big keys in a running Valkey cluster with Valkey Admin';
 
 // ------------------------------------------------------- relativistic disk
 //
@@ -4052,170 +3592,171 @@ function ellipseHalf(cx, cy, rx, ry, top) {
   return `M ${n(x0)} ${n(cy)} A ${n(rx)} ${n(ry)} 0 0 1 ${n(x1)} ${n(cy)}`;
 }
 
-// Idea: the Valkey world, with the community's blogs in orbit around it.
+// Idea: Planet Valkey collects what the community writes, and the writing goes
+// round the project in a ring.
 // Focal: the wireframe globe carrying the mark.
-function planetOrbit(r) {
-  const cx = 960;
-  const cy = 540;
-  const rad = 290;
-  const orx = 700;
-  const ory = 330;
-
-  // Four satellites, kept off the ellipse's left and right extremes so none of
-  // them lands outside the safe band. Two ride the far half, two the near one.
-  const at = (deg) => {
-    const t = (deg * Math.PI) / 180;
-    return [cx + orx * Math.cos(t), cy + ory * Math.sin(t)];
-  };
-  const sat = (deg) => {
-    const [x, y] = at(deg);
-    return `<g opacity="0.6">${mark(x, y, 94)}</g>`;
-  };
-  const path = (d, opacity) =>
-    `<path d="${d}" fill="none" stroke="${C.ice}" stroke-width="3.4" opacity="${opacity}"/>`;
-
-  return [
-    `  <g>${starfield(r, 55)}</g>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${n(rad * 1.1)}" fill="url(#h-ice)" opacity="0.4"/>`,
-    `  <g>${path(ellipseHalf(cx, cy, orx, ory, true), 0.3)}${sat(240)}${sat(300)}</g>`,
-    `  <g>${planetBody(cx, cy, rad, 250)}</g>`,
-    `  <g>${path(ellipseHalf(cx, cy, orx, ory, false), 0.45)}${sat(60)}${sat(120)}</g>`,
-  ].join('\n');
+//
+// Planet Valkey is an aggregator, so the ring is made of the things it aggregates.
+// Each is one article card holding one data structure: a list, a hash, a set, a
+// sorted set. Four kinds cycled rather than twelve different ones, so the ring reads
+// as one band of content and not as a legend.
+function articleCard(cx, cy, size, kind, tilt) {
+  const half = size / 2;
+  const g = size * 0.3; // the glyph's half-extent inside the card
+  const line = (body) => `<${body} fill="none" stroke="${C.cyanLt}" stroke-width="${n(size * 0.05)}"/>`;
+  const glyph = [];
+  if (kind === 0) {
+    // List: three stacked entries.
+    for (let i = -1; i <= 1; i++) {
+      glyph.push(
+        line(
+          `rect x="${n(cx - g)}" y="${n(cy + i * g * 0.72 - g * 0.2)}" ` +
+            `width="${n(g * 2)}" height="${n(g * 0.4)}" rx="${n(g * 0.2)}"`
+        )
+      );
+    }
+  } else if (kind === 1) {
+    // Hash: a 2x2 of buckets.
+    for (const ax of [-1, 1]) {
+      for (const ay of [-1, 1]) {
+        glyph.push(
+          line(
+            `rect x="${n(ax < 0 ? cx - g : cx + g - g * 0.82)}" ` +
+              `y="${n(ay < 0 ? cy - g : cy + g - g * 0.82)}" ` +
+              `width="${n(g * 0.82)}" height="${n(g * 0.82)}" rx="${n(g * 0.16)}"`
+          )
+        );
+      }
+    }
+  } else if (kind === 2) {
+    // Set: four unordered members.
+    for (const [ax, ay] of [[-0.55, -0.5], [0.6, -0.6], [-0.6, 0.55], [0.5, 0.5]]) {
+      glyph.push(`<circle cx="${n(cx + ax * g)}" cy="${n(cy + ay * g)}" r="${n(g * 0.3)}" fill="${C.cyanLt}"/>`);
+    }
+  } else {
+    // Sorted set: members ranked by score.
+    [0.45, 0.72, 1].forEach((f, i) => {
+      const bh = g * 1.7 * f;
+      glyph.push(
+        line(
+          `rect x="${n(cx + (i - 1.2) * g * 0.75)}" y="${n(cy + g * 0.85 - bh)}" ` +
+            `width="${n(g * 0.5)}" height="${n(bh)}" rx="${n(g * 0.12)}"`
+        )
+      );
+    });
+  }
+  return (
+    `<g transform="rotate(${n(tilt)} ${n(cx)} ${n(cy)})" opacity="0.85">` +
+    `<rect x="${n(cx - half)}" y="${n(cy - half)}" width="${n(size)}" height="${n(size)}" ` +
+      `rx="${n(size * 0.16)}" fill="${C.ink}" fill-opacity="0.72" stroke="${C.cyanLt}" ` +
+      `stroke-width="${n(size * 0.038)}" opacity="0.9"/>` +
+    glyph.join('') +
+    `</g>`
+  );
 }
 
-// Idea: one world, wearing its whole keyspace as a ring.
-// Focal: the wireframe globe carrying the mark.
 function planetRing(r) {
   const cx = 960;
   const cy = 540;
   const rad = 300;
   const rrx = 690;
   const rry = 190;
-  const ring = (top, opacity) =>
-    `<path d="${ellipseHalf(cx, cy, rrx, rry, top)}" fill="none" stroke="${C.cyanLt}" ` +
-    `stroke-width="30" stroke-dasharray="40 17" opacity="${opacity}"/>`;
+  const TILT = -13;
+  const COUNT = 12;
+  const SIZE = 78;
+
+  // The rail the articles ride. Thin, because the articles are the content and the
+  // rail is only what holds them in one orbit.
+  const rail = (top, opacity) =>
+    `<path d="${ellipseHalf(cx, cy, rrx, rry, top)}" fill="none" stroke="${C.ice}" ` +
+    `stroke-width="3" opacity="${opacity}"/>`;
+
+  // Position on the untilted ellipse, then rotated with it, so the cards sit on the
+  // rail rather than near it.
+  const a = (TILT * Math.PI) / 180;
+  const cards = [];
+  for (let i = 0; i < COUNT; i++) {
+    const th = (2 * Math.PI * i) / COUNT + Math.PI / COUNT;
+    const ex = rrx * Math.cos(th);
+    const ey = rry * Math.sin(th);
+    const px = cx + ex * Math.cos(a) - ey * Math.sin(a);
+    const py = cy + ex * Math.sin(a) + ey * Math.cos(a);
+    // A card whose centre falls behind the globe would show as a sliver poking out
+    // from the limb, which reads as a rendering fault. Dropping them leaves the ring
+    // openly interrupted where it passes behind the planet, which is what a ring does.
+    if (Math.hypot(px - cx, py - cy) < rad + SIZE * 0.6) continue;
+    cards.push({ far: Math.sin(th) < 0, svg: articleCard(px, py, SIZE, i % 4, TILT) });
+  }
+  const half = (far) => cards.filter((c) => c.far === far).map((c) => c.svg).join('');
 
   return [
     `  <g>${starfield(r, 45)}</g>`,
     `  <circle cx="${cx}" cy="${cy}" r="${n(rad * 1.1)}" fill="url(#h-ice)" opacity="0.4"/>`,
-    `  <g transform="rotate(-13 ${cx} ${cy})">${ring(true, 0.4)}</g>`,
+    `  <g transform="rotate(${TILT} ${cx} ${cy})">${rail(true, 0.3)}</g>`,
+    `  <g>${half(true)}</g>`,
     `  <g>${planetBody(cx, cy, rad, 260)}</g>`,
-    `  <g transform="rotate(-13 ${cx} ${cy})">${ring(false, 0.6)}</g>`,
-  ].join('\n');
-}
-
-// Idea: Valkey seen from orbit, the whole project as one world.
-// Focal: the mark standing over the planet's limb.
-function planetHorizon(r) {
-  const cx = 960;
-  const cy = 2050;
-  const rad = 1315;
-  const top = cy - rad; // 735
-
-  // The limb, then two latitudes receding below it. Same weight, dropping opacity,
-  // so they read as distance rather than as a second kind of line.
-  const lat = (rr, opacity) =>
-    `<circle cx="${cx}" cy="${cy}" r="${n(rr)}" fill="none" stroke="${C.cyanLt}" ` +
-    `stroke-width="4" opacity="${opacity}"/>`;
-
-  return [
-    `  <g>${starfield(r, 60)}</g>`,
-    // The atmosphere: the one highlight in the frame, and it sits behind the mark
-    // that the composition is pointing at.
-    `  <ellipse cx="${cx}" cy="${n(top)}" rx="1180" ry="330" fill="url(#h-ice)" opacity="0.5"/>`,
-    `  <circle cx="${cx}" cy="${cy}" r="${rad}" fill="${C.ink}" fill-opacity="0.72"/>`,
-    `  <g>${lat(rad, 0.85)}${lat(rad - 135, 0.35)}${lat(rad - 285, 0.2)}</g>`,
-    `  ${mark(cx, 440, 330)}`,
+    `  <g transform="rotate(${TILT} ${cx} ${cy})">${rail(false, 0.45)}</g>`,
+    `  <g>${half(false)}</g>`,
   ].join('\n');
 }
 
 const BASE_THEMES = [
-  { name: 'community', seed: 1041, focal: [960, 540], zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
-  { name: 'performance', seed: 2207, focal: [1530, 505], zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
-  { name: 'memory-efficiency', seed: 3313, focal: [1200, 540], zoom: 1.3, center: [885, 540], title: 'Valkey memory efficiency', desc: 'An abstract grid of cells that grows denser from left to right, representing the same data stored in less memory.', art: memoryEfficiency },
-  { name: 'clustering', seed: 4421, focal: [960, 540], zoom: 1.34, center: [960, 540], title: 'Valkey clustering and scale', desc: 'An abstract ring of slot segments around a meshed core centred on the white Valkey hexagon mark, with shards joining from outside, representing cluster mode and horizontal scale.', art: clustering },
-  { name: 'release', seed: 5527, focal: [1420, 460], zoom: 1.2, center: [1130, 540], title: 'Valkey release', desc: 'Valkey chevrons driving into a golden burst centred on the white Valkey hexagon mark, representing a new Valkey release.', art: release },
-  { name: 'release-version', seed: 5528, focal: [960, 430], zoom: 1.3, center: [960, 520], title: 'Valkey release with a caption', text: '9.0', desc: 'A golden burst centred on the white Valkey hexagon mark above a large caption, representing a specific Valkey release.', art: releaseVersion },
-  { name: 'atomic-slot-migration', seed: 14041, focal: [960, 470], zoom: 1.1, center: [960, 522], title: 'Valkey atomic slot migration', desc: 'Two shard slot rings, each centred on the white Valkey hexagon mark, with a chevron arrow driving a stream of slot segments from one to the other and a magnifier inspecting them mid-flight, representing atomic slot migration.', art: slotMigrationRings },
-  { name: 'atomic-slot-migration-quiet', seed: 46011, focal: [960, 528], zoom: 1.22, center: [960, 528], flat: true, title: 'Valkey atomic slot migration', desc: 'Two shard slot rings each centred on the white Valkey hexagon mark, the left one showing four contiguous slots vacated in dashed purple and the right one the same four arrived in solid green, a quiet stream of slot segments running between them, a green chevron driving that stream into the destination, and a large magnifier over the middle of the stream resolving the band into separate slots, representing watching one contiguous range migrate atomically.', art: slotMigrationQuiet },
-  { name: 'slot-migration-lens', seed: 45011, focal: [960, 520], zoom: 1.26, center: [960, 540], solid: true, title: 'Valkey slot migration under inspection', desc: 'Two Valkey instances drawn as quiet rings around the white hexagon mark with a thin stream running between them, and a large teal magnifying glass over the middle of that stream showing the objects in transit as bars of different lengths and colours, on a flat purple field, representing observability for slot migration.', art: slotMigrationLens },
-  { name: 'security', seed: 6631, focal: [960, 520], zoom: 1.35, center: [960, 565], title: 'Valkey security', desc: 'An abstract shield woven from a lattice with the white Valkey hexagon mark at its centre, representing security and access control.', art: security },
-  { name: 'security-acl', seed: 17071, focal: [1010, 540], zoom: 1.14, center: [960, 540], title: 'Valkey access control', desc: 'Streams of commands arriving at a lit gate centred on the white Valkey hexagon mark, most admitted in green and some turned away in red, representing access control and authentication.', art: securityGate },
-  { name: 'security-shield-clean', seed: 44011, focal: [960, 540], zoom: 1.38, center: [960, 545], flat: true, title: 'Valkey security', desc: 'A shield woven from a single even lattice with the white Valkey hexagon mark at its centre and nothing else inside it, representing security and hardening.', art: securityShieldClean },
-  { name: 'security-shield-plated', seed: 44021, focal: [960, 540], zoom: 1.38, center: [960, 545], flat: true, title: 'Valkey security, layered', desc: 'A shield built from five even courses of armour plating with the white Valkey hexagon mark at its centre, representing hardening applied in layers.', art: securityShieldPlated },
-  { name: 'security-shield-nested', seed: 44031, focal: [960, 540], zoom: 1.32, center: [960, 548], flat: true, title: 'Valkey defence in depth', desc: 'Three shields of the same shape nested inside one another, the innermost holding the white Valkey hexagon mark, representing defence in depth.', art: securityShieldNested },
-  { name: 'security-acl-simple', seed: 44041, focal: [960, 540], zoom: 1.35, center: [960, 540], flat: true, title: 'Valkey access control', desc: 'Four lanes of traffic arriving at one lit gate centred on the white Valkey hexagon mark, three of them continuing through in green and one stopped by a red cross, representing access control.', art: securityAclSimple },
-  { name: 'security-queue-depth', seed: 47011, focal: [960, 540], zoom: 1.24, center: [960, 540], flat: true, title: 'Valkey security report queue', desc: 'Rows of inbound security reports stacked against a single lit review line, each row longer than the one above it, with three of them cleared through the line in red, representing reports arriving faster than they can be judged.', art: securityQueueDepth },
-  { name: 'security-triage-funnel', seed: 47021, focal: [960, 540], zoom: 1.2, center: [960, 540], flat: true, title: 'Valkey security triage', desc: 'A large grid of candidate findings narrowing along two rails into a smaller grid and then into three large red cells, with discarded findings drifting away below in purple, representing most machine-generated findings failing an adversarial second look.', art: securityTriageFunnel },
-  { name: 'security-same-bug-twice', seed: 47031, focal: [960, 540], zoom: 1.3, center: [960, 540], flat: true, title: 'Valkey security, one bug in two places', desc: 'Two identical tracks of six cells, the upper one with its fourth cell repaired in green and the lower one with the same cell still faulty in glowing red, representing a defect fixed in one implementation and left standing in the other.', art: securitySameBugTwice },
-  { name: 'benchmarks', seed: 7741, focal: [960, 560], zoom: 1.12, center: [900, 568], title: 'Valkey benchmarks', desc: 'A bar chart of throughput climbing left to right, beneath two flat latency series labelled P99 in green and P50 in red, representing benchmarking and observability.', art: observability },
-  { name: 'data-structures', seed: 8849, focal: [820, 540], zoom: 1.22, center: [960, 540], title: 'Valkey data structures', desc: 'Abstract hash table buckets chaining outward beside a skip list of express lanes, representing Valkey data structures and internals.', art: dataStructures },
-  { name: 'how-to', seed: 9953, focal: [1180, 540], zoom: 1.22, center: [960, 540], title: 'Valkey how-to', desc: 'An abstract track of numbered steps with the current step lit, representing a step-by-step guide.', art: howTo },
-  { name: 'keyspace-scan', seed: 19087, focal: [960, 540], zoom: 1.26, center: [960, 540], title: 'Valkey keyspace scan', desc: 'A wide field of keys with one bounded window lit in green, the keys behind it dimmed and the keys ahead of it unlit, above a track of uneven cursor steps, representing scanning a keyspace a window at a time instead of reading it all at once.', art: keyspaceScan },
-  { name: 'large-key', seed: 21193, focal: [960, 548], zoom: 1.4, center: [960, 548], title: 'Valkey large key', desc: 'An even field of small identical key tiles with one key of the same shape scaled up until it dwarfs them all, outlined in red, representing a single key far larger than everything else in the keyspace.', art: largeKey },
-  { name: 'key-prefix-groups', seed: 23299, focal: [1000, 540], zoom: 1.3, center: [960, 542], title: 'Valkey key prefix groups', desc: 'A scattered cloud of sampled keys on the left funnelling into a short list of prefix rows with count bars on the right, representing a sample of key names grouped into browsable prefixes.', art: keyPrefixGroups },
-  { name: 'blackhole', seed: 38029, focal: [960, 540], zoom: 1.35, center: [960, 540], flat: true, title: 'Valkey black hole', desc: 'A black sphere with a bright ring of light lensed around it and the flat near edge of its accretion disk crossing in front, the white Valkey hexagon mark at the centre, representing gravity pulling everything to one place.', art: blackhole },
-  { name: 'bloom-bit-array', seed: 31013, focal: [960, 400], zoom: 1.4, center: [960, 475], flat: true, title: 'Valkey Bloom filters', desc: 'The white Valkey hexagon mark above a long row of bit cells, with five hash nodes fanning out of it and the five cells they land on lit in green, representing one item hashed to a handful of positions in a Bloom filter.', art: bloomBitArray },
-  { name: 'search-vector-nearest', seed: 32011, focal: [960, 540], zoom: 1.2, center: [960, 540], title: 'Valkey vector search', desc: 'A dark field of indexed vectors with the white Valkey hexagon mark at the centre as the query, spokes reaching out to six bright green nearest matches inside a dashed search radius, representing vector similarity search.', art: searchNearest },
-  { name: 'search-field-index', seed: 32047, focal: [960, 600], zoom: 1.1, center: [960, 540], title: 'Valkey secondary indexing', desc: 'Four record cards each contributing one highlighted green field to a sorted index lane below, with a query caliper bracketing three matched entries above the white Valkey hexagon mark, representing secondary indexing on hashes and JSON.', art: searchFieldIndex },
-  { name: 'client-ports', seed: 34037, focal: [960, 540], zoom: 1, center: [960, 540], title: 'Valkey client protocol', desc: 'Six differently drawn channels reaching in from distinct outer shapes, each meeting an identical port at the same radius, beyond which every spoke becomes the same run of pale segments arriving at the white Valkey hexagon mark, representing different client libraries meeting one protocol at one server.', art: clientPorts },
-  { name: 'ai-agent-memory', seed: 35011, focal: [1120, 380], zoom: 1.29, center: [960, 540], title: 'Valkey AI agent memory', desc: 'A row of conversation turns with the most recent ones lit inside a bright window, older turns dimmed and parked in an archive below the white Valkey hexagon mark, and two of them arcing back up into the window, representing agent memory with hot recent context and older context recalled on demand.', art: aiAgentMemory },
-  { name: 'workload-fanout', seed: 35023, focal: [700, 520], zoom: 1.18, center: [960, 540], title: 'Valkey workload primitives', desc: 'The white Valkey hexagon mark fanning out into five lanes, each ending in a differently shaped structure: a ring of slots, a chain of entries, a ranked stack, a grid of bits and a row of embedding magnitudes, representing a workload decomposing into the primitives Valkey already has.', art: workloadFanout },
-  { name: 'conn-storm-spike', seed: 36011, focal: [960, 620], zoom: 1.34, center: [960, 547], title: 'Valkey connection storms', desc: 'A timeline of connection attempts that is quiet, then spikes into a wall of simultaneous reconnects whose top rises in red above a dashed accept-capacity line, then falls quiet again, representing a connection storm.', art: connStormSpike },
-  { name: 'bundle-crate', seed: 33101, focal: [960, 500], zoom: 1.2, center: [960, 540], flat: true, title: 'Valkey bundle', desc: 'One bracketed package outline sealed with the white Valkey hexagon mark, holding four module diagrams inside it: a bit array, a nested document in brackets, a magnifier over a scatter of points, and a padlock, representing the four modules valkey-bundle ships as one package.', art: bundleCrate },
-  { name: 'bundle-one-install', seed: 33207, focal: [860, 540], zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A port marked with the white Valkey hexagon fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a padlock, representing one install that delivers all four bundled modules.', art: bundleOneInstall },
-  { name: 'tooling-stack', seed: 33311, focal: [960, 620], zoom: 1.25, center: [960, 540], title: 'Valkey primitives and tools', desc: 'A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives.', art: toolingStack },
-  { name: 'data-structures-grid', seed: 33419, focal: [960, 540], zoom: 1.2, center: [960, 540], title: 'Valkey data types', desc: 'Six Valkey value types laid out one per cell on an even three-by-two grid: a run of bytes, a linked list, unordered members inside a boundary, field and value pairs, members ranked by score, and a dense bitmap, representing the range of structures Valkey stores.', art: dataStructuresGrid },
-  { name: 'k8s-spec-fanout', seed: 42011, focal: [1150, 520], zoom: 1.34, center: [960, 540], title: 'Valkey deployed from a chart', desc: 'A declared specification panel on the left fanning out along rails into a grid of nine identical instances, each drawn as the white Valkey hexagon mark, representing deploying Valkey on Kubernetes from a Helm chart.', art: k8sSpecFanout },
-  { name: 'k8s-desired-count', seed: 42021, focal: [960, 400], zoom: 1.34, center: [960, 540], title: 'Valkey replicas reaching the declared count', desc: 'Six declared slots under a gold span, four filled with instances drawn as the white Valkey hexagon mark, one instance rising into place and one slot still empty, representing a declared replica count and the running instances converging on it.', art: k8sDesiredCount },
-  { name: 'limits-tight-envelope', seed: 42031, focal: [960, 540], zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
-  { name: 'limits-gauge-pinned', seed: 42041, focal: [960, 540], zoom: 1.34, center: [960, 540], title: 'Valkey pinned near its limit', desc: 'A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.', art: limitsGaugePinned },
-  { name: 'key-size-distribution', seed: 43011, focal: [960, 540], zoom: 1.26, center: [960, 540], flat: true, title: 'Valkey key size distribution', desc: 'A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.', art: keySizeDistribution },
-  { name: 'blackhole-beamed', seed: 52011, focal: [960, 540], zoom: 1.2, center: [960, 540], flat: true, title: 'Valkey black hole', desc: 'A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 80, outer: 24, scale: 47.6, markH: 220, rings: 28, segs: 108 }) },
-  { name: 'blackhole-inclined', seed: 52021, focal: [960, 540], zoom: 1.2, center: [960, 540], flat: true, title: 'Valkey black hole', desc: 'A relativistic accretion disk seen at a moderate tilt, reading as a hot ring with a hole in it: white at the inner edge, gold through the middle and red at the rim, brighter on the left where the orbiting gas comes towards the viewer, lensed up over the dark shadow at the centre and crossing in front of it below, with the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 62, outer: 18, scale: 34.5, markH: 155, rings: 28, segs: 108 }) },
-  { name: 'blackhole-open', seed: 52031, focal: [960, 540], zoom: 1, center: [960, 540], flat: true, title: 'Valkey black hole', desc: 'A relativistic accretion disk seen close to face on, a broad ring running white at its inner edge through gold to red at the rim, with the dark shadow and its thin photon ring at the centre and the white Valkey hexagon mark on top.', art: blackholeAt({ incDeg: 42, outer: 15, scale: 36.5, markH: 165, rings: 28, segs: 108 }) },
-  { name: 'planet-orbit', seed: 51011, focal: [960, 540], zoom: 1.14, center: [960, 540], flat: true, title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, with four smaller marks riding one tilted orbit around it against a sparse starfield, representing the Valkey world and the community blogs orbiting it.', art: planetOrbit },
-  { name: 'planet-ring', seed: 51021, focal: [960, 540], zoom: 1.16, center: [960, 540], flat: true, title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing },
-  { name: 'planet-horizon', seed: 51031, focal: [960, 470], zoom: 1.06, center: [960, 540], title: 'Planet Valkey', desc: 'The bright limb of a planet curving across the lower half of the frame with two fainter latitudes receding below it, a pale atmosphere glow along the horizon, and the large white Valkey hexagon mark standing above it against a starfield, representing the whole Valkey project seen from orbit.', art: planetHorizon },
-  // A: balanced. The motif is scaled up to 1.08 so it fills the frame height, and
-  // sits flush to the right edge; the title gets the remaining third.
-  { name: 'key-size-title-a', seed: 43031, focal: [960, 540], zoom: 1, center: [960, 540], solid: true, noStamp: true, title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'On a flat purple field, the Valkey lockup above the white title "Finding big keys in a running Valkey cluster with Valkey Admin" fills the left third, and to its right a Valkey Admin panel ranks keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark.', art: keySizeTitleCard({ title: BIG_KEYS_TITLE, dx: 272, dy: -54, scale: 1.1, column: { x: 96, width: 600, lockupH: 122, size: 54 } }) },
-  // B: bleed. The motif is larger still and the far pod column runs off the right
-  // edge, which buys the title a bigger lockup without shrinking the chart.
-  { name: 'key-size-title-b', seed: 43041, focal: [960, 540], zoom: 1, center: [960, 540], solid: true, noStamp: true, title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'On a flat purple field, a large Valkey lockup above the white title "Finding big keys in a running Valkey cluster with Valkey Admin" fills the left third, and to its right a Valkey Admin panel ranks keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, the furthest column running off the right edge.', art: keySizeTitleCard({ title: BIG_KEYS_TITLE, dx: 266, dy: -129.4, scale: 1.24, column: { x: 96, width: 640, lockupH: 132, size: 56 } }) },
-  // C: type-forward. The title is the largest thing in the frame and "big keys"
-  // carries the coral of the outlier bars, so the type and the chart agree.
-  { name: 'key-size-title-c', seed: 43051, focal: [960, 540], zoom: 1, center: [960, 540], solid: true, noStamp: true, title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'On a flat purple field, the Valkey lockup above the large title "Finding big keys in a running Valkey cluster with Valkey Admin" in white with "big keys" in red fills the left half, and to its right a Valkey Admin panel ranks keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark.', art: keySizeTitleCard({ title: BIG_KEYS_TITLE, dx: 538.4, dy: 43.3, scale: 0.92, column: { x: 96, width: 784, lockupH: 140, size: 72, accent: ['big', 'keys'] } }) },
-  { name: 'key-size-distribution-flat', seed: 43021, focal: [960, 540], zoom: 1.26, center: [960, 540], solid: true, title: 'Valkey key size distribution', desc: 'On a flat purple field, a Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.', art: keySizeDistribution },
+  { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
+  { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
+  { name: 'memory-efficiency', seed: 3313, zoom: 1.3, center: [885, 540], title: 'Valkey memory efficiency', desc: 'An abstract grid of cells that grows denser from left to right, representing the same data stored in less memory.', art: memoryEfficiency },
+  { name: 'clustering', seed: 4421, zoom: 1.34, center: [960, 540], title: 'Valkey clustering and scale', desc: 'An abstract ring of slot segments around a meshed core centred on the white Valkey hexagon mark, with shards joining from outside, representing cluster mode and horizontal scale.', art: clustering },
+  { name: 'release', seed: 5527, zoom: 1.2, center: [1130, 540], title: 'Valkey release', desc: 'Valkey chevrons driving into a golden burst centred on the white Valkey hexagon mark, representing a new Valkey release.', art: release },
+  { name: 'release-version', seed: 5528, zoom: 1.3, center: [960, 520], title: 'Valkey release with a caption', text: '9.0', desc: 'A golden burst centred on the white Valkey hexagon mark above a large caption, representing a specific Valkey release.', art: releaseVersion },
+  { name: 'atomic-slot-migration', seed: 14041, zoom: 1.1, center: [960, 522], title: 'Valkey atomic slot migration', desc: 'Two shard slot rings, each centred on the white Valkey hexagon mark, with a chevron arrow driving a stream of slot segments from one to the other and a magnifier inspecting them mid-flight, representing atomic slot migration.', art: slotMigrationRings },
+  { name: 'atomic-slot-migration-quiet', seed: 46011, zoom: 1.22, center: [960, 528], title: 'Valkey atomic slot migration', desc: 'Two shard slot rings each centred on the white Valkey hexagon mark, the left one showing four contiguous slots vacated in dashed purple and the right one the same four arrived in solid green, a quiet stream of slot segments running between them, a green chevron driving that stream into the destination, and a large magnifier over the middle of the stream resolving the band into separate slots, representing watching one contiguous range migrate atomically.', art: slotMigrationQuiet },
+  { name: 'slot-migration-lens', seed: 45011, zoom: 1.26, center: [960, 540], title: 'Valkey slot migration under inspection', desc: 'Two Valkey instances drawn as quiet rings around the white hexagon mark with a thin stream running between them, and a large teal magnifying glass over the middle of that stream showing the objects in transit as bars of different lengths and colours, on a flat purple field, representing observability for slot migration.', art: slotMigrationLens },
+  { name: 'security-shield-clean', seed: 44011, zoom: 1.38, center: [960, 545], title: 'Valkey security', desc: 'A shield woven from a single even lattice with the white Valkey hexagon mark at its centre and nothing else inside it, representing security and hardening.', art: securityShieldClean },
+  { name: 'benchmarks', seed: 7741, zoom: 1.12, center: [900, 568], title: 'Valkey benchmarks', desc: 'A bar chart of throughput climbing left to right, beneath two flat latency series labelled P99 in green and P50 in red, representing benchmarking and observability.', art: observability },
+  { name: 'data-structures', seed: 8849, zoom: 1.22, center: [960, 540], title: 'Valkey data structures', desc: 'Abstract hash table buckets chaining outward beside a skip list of express lanes, representing Valkey data structures and internals.', art: dataStructures },
+  { name: 'how-to', seed: 9953, zoom: 1.22, center: [960, 540], title: 'Valkey how-to', desc: 'An abstract track of numbered steps with the current step lit, representing a step-by-step guide.', art: howTo },
+  { name: 'keyspace-scan', seed: 19087, zoom: 1.26, center: [960, 540], title: 'Valkey keyspace scan', desc: 'A wide field of keys with one bounded window lit in green, the keys behind it dimmed and the keys ahead of it unlit, above a track of uneven cursor steps, representing scanning a keyspace a window at a time instead of reading it all at once.', art: keyspaceScan },
+  { name: 'large-key', seed: 21193, zoom: 1.4, center: [960, 548], title: 'Valkey large key', desc: 'An even field of small identical key tiles with one key of the same shape scaled up until it dwarfs them all, outlined in red, representing a single key far larger than everything else in the keyspace.', art: largeKey },
+  { name: 'key-prefix-groups', seed: 23299, zoom: 1.3, center: [960, 542], title: 'Valkey key prefix groups', desc: 'A scattered cloud of sampled keys on the left funnelling into a short list of prefix rows with count bars on the right, representing a sample of key names grouped into browsable prefixes.', art: keyPrefixGroups },
+  { name: 'bloom-bit-array', seed: 31013, zoom: 1.4, center: [960, 475], title: 'Valkey Bloom filters', desc: 'The white Valkey hexagon mark above a long row of bit cells, with five hash nodes fanning out of it and the five cells they land on lit in green, representing one item hashed to a handful of positions in a Bloom filter.', art: bloomBitArray },
+  { name: 'search-vector-nearest', seed: 32011, zoom: 1.2, center: [960, 540], title: 'Valkey vector search', desc: 'A dark field of indexed vectors with the white Valkey hexagon mark at the centre as the query, spokes reaching out to six bright green nearest matches inside a dashed search radius, representing vector similarity search.', art: searchNearest },
+  { name: 'search-field-index', seed: 32047, zoom: 1.1, center: [960, 540], title: 'Valkey secondary indexing', desc: 'Four record cards each contributing one highlighted green field to a sorted index lane below, with a query caliper bracketing three matched entries above the white Valkey hexagon mark, representing secondary indexing on hashes and JSON.', art: searchFieldIndex },
+  { name: 'client-ports', seed: 34037, zoom: 1, center: [960, 540], title: 'Valkey client protocol', desc: 'Six differently drawn channels reaching in from distinct outer shapes, each meeting an identical port at the same radius, beyond which every spoke becomes the same run of pale segments arriving at the white Valkey hexagon mark, representing different client libraries meeting one protocol at one server.', art: clientPorts },
+  { name: 'ai-agent-memory', seed: 35011, zoom: 1.29, center: [960, 540], title: 'Valkey AI agent memory', desc: 'A row of conversation turns with the most recent ones lit inside a bright window, older turns dimmed and parked in an archive below the white Valkey hexagon mark, and two of them arcing back up into the window, representing agent memory with hot recent context and older context recalled on demand.', art: aiAgentMemory },
+  { name: 'workload-fanout', seed: 35023, zoom: 1.18, center: [960, 540], title: 'Valkey workload primitives', desc: 'The white Valkey hexagon mark fanning out into five lanes, each ending in a differently shaped structure: a ring of slots, a chain of entries, a ranked stack, a grid of bits and a row of embedding magnitudes, representing a workload decomposing into the primitives Valkey already has.', art: workloadFanout },
+  { name: 'conn-storm-spike', seed: 36011, zoom: 1.34, center: [960, 547], title: 'Valkey connection storms', desc: 'A timeline of connection attempts that is quiet, then spikes into a wall of simultaneous reconnects whose top rises in red above a dashed accept-capacity line, then falls quiet again, representing a connection storm.', art: connStormSpike },
+  { name: 'bundle-crate', seed: 33101, zoom: 1.2, center: [960, 540], title: 'Valkey bundle', desc: 'One bracketed package outline sealed with the white Valkey hexagon mark, holding four module diagrams inside it: a bit array, a nested document in brackets, a magnifier over a scatter of points, and a padlock, representing the four modules valkey-bundle ships as one package.', art: bundleCrate },
+  { name: 'bundle-one-install', seed: 33207, zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A port marked with the white Valkey hexagon fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a padlock, representing one install that delivers all four bundled modules.', art: bundleOneInstall },
+  { name: 'tooling-stack', seed: 33311, zoom: 1.25, center: [960, 540], title: 'Valkey primitives and tools', desc: 'A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives.', art: toolingStack },
+  { name: 'data-structures-grid', seed: 33419, zoom: 1.2, center: [960, 540], title: 'Valkey data types', desc: 'Six Valkey value types laid out one per cell on an even three-by-two grid: a run of bytes, a linked list, unordered members inside a boundary, field and value pairs, members ranked by score, and a dense bitmap, representing the range of structures Valkey stores.', art: dataStructuresGrid },
+  { name: 'k8s-spec-fanout', seed: 42011, zoom: 1.34, center: [960, 540], title: 'Valkey deployed from a chart', desc: 'A declared specification panel on the left fanning out along rails into a grid of nine identical instances, each drawn as the white Valkey hexagon mark, representing deploying Valkey on Kubernetes from a Helm chart.', art: k8sSpecFanout },
+  { name: 'k8s-desired-count', seed: 42021, zoom: 1.34, center: [960, 540], title: 'Valkey replicas reaching the declared count', desc: 'Six declared slots under a gold span, four filled with instances drawn as the white Valkey hexagon mark, one instance rising into place and one slot still empty, representing a declared replica count and the running instances converging on it.', art: k8sDesiredCount },
+  { name: 'limits-tight-envelope', seed: 42031, zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
+  { name: 'limits-gauge-pinned', seed: 42041, zoom: 1.34, center: [960, 540], title: 'Valkey pinned near its limit', desc: 'A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.', art: limitsGaugePinned },
+  { name: 'key-size-distribution', seed: 43011, zoom: 1.26, center: [960, 540], title: 'Valkey key size distribution', desc: 'A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.', art: keySizeDistribution },
+  { name: 'blackhole-beamed', space: true, seed: 52011, zoom: 1.2, center: [960, 540], title: 'Valkey black hole', desc: 'A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 80, outer: 24, scale: 47.6, markH: 220, rings: 28, segs: 108 }) },
+  { name: 'blackhole-inclined', space: true, seed: 52021, zoom: 1.2, center: [960, 540], title: 'Valkey black hole', desc: 'A relativistic accretion disk seen at a moderate tilt, reading as a hot ring with a hole in it: white at the inner edge, gold through the middle and red at the rim, brighter on the left where the orbiting gas comes towards the viewer, lensed up over the dark shadow at the centre and crossing in front of it below, with the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 62, outer: 18, scale: 34.5, markH: 155, rings: 28, segs: 108 }) },
+  { name: 'blackhole-open', space: true, seed: 52031, zoom: 1, center: [960, 540], title: 'Valkey black hole', desc: 'A relativistic accretion disk seen close to face on, a broad ring running white at its inner edge through gold to red at the rim, with the dark shadow and its thin photon ring at the centre and the white Valkey hexagon mark on top.', art: blackholeAt({ incDeg: 42, outer: 15, scale: 36.5, markH: 165, rings: 28, segs: 108 }) },
+  { name: 'planet-ring', space: true, seed: 51021, zoom: 1.16, center: [960, 540], title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing },
+  { name: 'key-size-card', seed: 43031, zoom: 1, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the title on solid light blocks in the lower left, and on the right a thin frame holding a Valkey Admin panel that ranks keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, the panel running out through the bottom of the frame.', art: keySizeCard },
 ];
 
-// Every theme ships twice: the full-screen original, and a `-caption` variant that
-// reserves the bottom left for sticker text. The variant is derived rather than
-// written out, so a theme is drawn once and cannot drift between the two.
+// The caption is on by default, because a banner with no words on it is the rarer
+// case. Each theme is one output: there used to be a derived `-caption` twin of
+// every theme, which doubled the set to 95 files for 51 pictures.
 //
-// Excluded: themes that already draw their own text, where a sticker would be text
-// on text, and the captioned theme whose caption is the whole point.
-const NO_CAPTION = new Set([
-  'benchmarks',
-  'release-version',
-  'key-size-distribution',
-  'key-size-distribution-flat',
-  'key-size-title-a',
-  'key-size-title-b',
-  'key-size-title-c',
-]);
+// Excluded: themes that draw their own text, where a sticker would be text on text,
+// and the captioned theme whose caption is the whole point.
+const NO_CAPTION = new Set(['benchmarks', 'release-version']);
 
-const THEMES = [
-  ...BASE_THEMES,
-  ...BASE_THEMES.filter((t) => !NO_CAPTION.has(t.name)).map((t) => ({
-    ...t,
-    name: `${t.name}-caption`,
-    seed: t.seed + 1,
-    caption: t.title.replace(/^Valkey /, (m) => '').replace(/^./, (c) => c.toUpperCase()),
-    derivedFrom: t.name,
-    desc: `${t.desc} The title "${t.title}" is set on solid light blocks in the lower left.`,
-  })),
-];
+const THEMES = BASE_THEMES.map((t) =>
+  NO_CAPTION.has(t.name)
+    ? t
+    : {
+        ...t,
+        caption: t.title.replace(/^Valkey /, '').replace(/^./, (c) => c.toUpperCase()),
+        desc: `${t.desc} The title "${t.title}" is set on solid light blocks in the lower left.`,
+      }
+);
 
 // -------------------------------------------------------------------- render
 
@@ -4257,7 +3798,8 @@ function checkPillow() {
   }
 }
 
-// Positional args select themes; --text and --out configure the captioned ones.
+// Positional args select themes. --text sets the big drawn number on release-version,
+// --caption replaces a sticker's text, --no-caption drops it, --out renames the file.
 const flags = {};
 const wanted = [];
 const argv = process.argv.slice(2);
@@ -4289,8 +3831,8 @@ if (flags.text !== undefined && !(wanted.length && themes.every((t) => t.text !=
   process.exit(1);
 }
 
-if (flags.caption !== undefined && !(wanted.length && themes.every((t) => t.caption !== undefined))) {
-  console.error('--caption needs a -caption theme named explicitly, e.g. security-caption.');
+if (flags.caption !== undefined && !wanted.length) {
+  console.error('--caption changes one banner\'s sticker text, so name the theme explicitly.');
   process.exit(1);
 }
 
@@ -4308,7 +3850,7 @@ mkdirSync(OG_DIR, { recursive: true });
     const row = /^\|\s*`([\w.-]+)`\s*\|([^|]*)\|([^|]*)\|/.exec(line);
     if (row) table.set(row[1], { motif: row[2].trim(), useFor: row[3].trim() });
   }
-  const missing = THEMES.filter((t) => !t.derivedFrom && !table.has(t.name)).map((t) => t.name);
+  const missing = THEMES.filter((t) => !table.has(t.name)).map((t) => t.name);
   if (missing.length) throw new Error(`No README table row for: ${missing.join(', ')}`);
   const manifest = {
     generatedBy: 'generate.mjs',
@@ -4317,13 +3859,13 @@ mkdirSync(OG_DIR, { recursive: true });
       name: t.name,
       title: t.title,
       desc: t.desc,
-      motif: table.get(t.derivedFrom ?? t.name).motif,
-      useFor: table.get(t.derivedFrom ?? t.name).useFor,
+      motif: table.get(t.name).motif,
+      useFor: table.get(t.name).useFor,
       image: `images/${t.name}.webp`,
       svg: `svg/${t.name}.svg`,
       captioned: t.text !== undefined,
       caption: t.caption ?? null,
-      derivedFrom: t.derivedFrom ?? null,
+      space: t.space === true,
     })),
   };
   writeFileSync(join(HERE, 'themes.json'), `${JSON.stringify(manifest, null, 2)}\n`);
@@ -4338,7 +3880,13 @@ try {
     const text = flags.text ?? theme.text;
     const slug = flags.out ?? theme.name;
     const svgPath = join(SVG_DIR, `${slug}.svg`);
-    const withCaption = flags.caption ? { ...theme, caption: String(flags.caption) } : theme;
+    // --caption replaces the sticker text, --no-caption drops the sticker entirely.
+    const withCaption = flags['no-caption']
+      ? { ...theme, caption: undefined }
+      : flags.caption
+        ? { ...theme, caption: String(flags.caption) }
+        : theme;
+    SPACE = theme.space === true;
     const captioned =
       theme.text !== undefined
         ? { ...withCaption, desc: `${withCaption.desc} The caption reads "${esc(text)}".` }
