@@ -330,8 +330,7 @@ function wrap(theme, art) {
   <desc>${theme.desc}</desc>
 ${defs(theme.focal)}
 ${bg}
-${art}
-${stamp(theme)}${theme.caption ? `\n  <g>${captionBlocks(theme, theme.caption)}</g>` : ''}${finish}
+${art}${theme.noStamp ? '' : `\n${stamp(theme)}`}${theme.caption ? `\n  <g>${captionBlocks(theme, theme.caption)}</g>` : ''}${finish}
 </svg>
 `;
 }
@@ -3720,6 +3719,416 @@ function keySizeDistribution(r) {
   ].join('\n');
 }
 
+// ------------------------------------------------------- title-card variants
+//
+// Idea: same sentence as key-size-distribution — a few outsized keys, spread
+// across a deployment — but the frame is shared with the post title, so the
+// banner works as a standalone card and not only as a cropped header.
+// Focal: still the two coral bars. The title is type, not a competing object.
+//
+// The motif is reused verbatim, wrapped in one transform, so these cannot drift
+// from the parent theme. All three sit at zoom 1 because the left column needs
+// the full 1920 of width; that also means the narrow 247x200 crop, which keeps
+// only the middle 70%, cuts the title. These are wide-crop and og:image art.
+
+// Greedy wrap to the given pixel width. Unlike captionLines this is not capped at
+// three, because a post title is longer than a theme name.
+function wrapToWidth(text, size, width) {
+  const lines = [];
+  let line = '';
+  for (const w of String(text).split(/\s+/)) {
+    const next = line ? `${line} ${w}` : w;
+    if (textWidth(next, size) > width && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = next;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+// The left column: the lockup at the given height, then the title in white under
+// it, the whole block vertically centred in the frame. `accent` words are drawn in
+// coral, which is the anomaly role and so is only ever the words naming the
+// outsized keys.
+function titleColumn(title, { x, width, lockupH, size, accent = [] }) {
+  const lines = wrapToWidth(title, size, width);
+  const lead = size * 1.24;
+  const gap = lockupH * 0.44;
+  const blockH = lockupH + gap + lines.length * lead;
+  const top = (H - blockH) / 2;
+  const baseline0 = top + lockupH + gap + size * 0.8;
+  const hot = new Set(accent.map((w) => w.toLowerCase()));
+
+  // One <text> per line so the renderer does the kerning; the accent phrase is a
+  // tspan inside it. `xml:space="preserve"` is what keeps the space that sits at a
+  // run boundary from being collapsed away.
+  const rows = lines.map((line, i) => {
+    const y = baseline0 + i * lead;
+    const runs = [];
+    for (const w of line.split(' ')) {
+      const on = hot.has(w.toLowerCase().replace(/[^a-z]/g, ''));
+      const last = runs[runs.length - 1];
+      if (last && last.on === on) last.words.push(w);
+      else runs.push({ on, words: [w] });
+    }
+    const body = runs
+      .map((run, j) => {
+        const txt = esc(run.words.join(' ')) + (j === runs.length - 1 ? '' : ' ');
+        return run.on ? `<tspan fill="${C.coral}">${txt}</tspan>` : `<tspan>${txt}</tspan>`;
+      })
+      .join('');
+    return (
+      `<text x="${n(x)}" y="${n(y)}" fill="#FFFFFF" font-family="${FONT}" font-size="${n(size)}" ` +
+      `font-weight="600" letter-spacing="-0.5" xml:space="preserve">${body}</text>`
+    );
+  });
+
+  return `<g>${lockup(x, top, lockupH)}${rows.join('')}</g>`;
+}
+
+// dx/dy/scale place the parent motif, whose drawn box is x 440..1480, y 210..870.
+// The three candidates trade motif size against column width, because at 16:9 you
+// cannot have both: filling the height means a wider motif, which eats the column.
+function keySizeTitleCard(opts) {
+  return (r) =>
+    [
+      `  <g transform="translate(${n(opts.dx)} ${n(opts.dy)}) scale(${opts.scale})">`,
+      keySizeDistribution(r),
+      `  </g>`,
+      `  ${titleColumn(opts.title, opts.column)}`,
+    ].join('\n');
+}
+
+const BIG_KEYS_TITLE = 'Finding big keys in a running Valkey cluster with Valkey Admin';
+
+// ------------------------------------------------------- relativistic disk
+//
+// A small accretion-disk model, used by the blackhole-* themes. Not a ray tracer:
+// it evaluates the standard closed-form pieces on a grid of circular orbits and
+// emits one short stroke per sample, so the asymmetry, the colour gradient and the
+// far side arcing over the shadow fall out of the formulae instead of being drawn
+// in by hand. Geometrised units, M = 1, c = 1.
+//
+//   Keplerian speed         beta = sqrt(M / rho)
+//   shift factor            delta = sqrt(1 - 3M/rho) / (1 - beta . n)   (Schwarzschild
+//                           circular orbit, gravitational and Doppler together)
+//   observed brightness     F_obs = F_emit * delta^4                    (I/nu^3 invariant)
+//   emitted flux            F_emit ~ rho^-3 (1 - sqrt(rho_isco/rho))    (Shakura-Sunyaev)
+//   observed colour temp    T_obs ~ delta * F_emit^(1/4)
+//   apparent radius         r_app = hypot(r_flat, b_ph * sqrt(w))       (see below)
+//
+// The last line is the one approximation with no textbook behind it. Proper light
+// bending needs an elliptic integral; instead the flat projected radius is added in
+// quadrature with the photon-ring radius, weighted by how much of the ray's path
+// grazes the hole. That reproduces what matters — no part of the image can appear
+// inside the photon ring, so the far side of the disk is pushed up over the shadow,
+// and the effect dies away for orbits already far from it.
+const ISCO = 6; // innermost stable circular orbit, 6M
+const B_PH = 3 * Math.sqrt(3); // photon-ring impact parameter, 5.196M: the shadow's edge
+
+function mixHex(a, b, t) {
+  const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const [r1, g1, b1] = p(a);
+  const [r2, g2, b2] = p(b);
+  const c = (u, v) => Math.round(u + (v - u) * clamp(t, 0, 1)).toString(16).padStart(2, '0');
+  return `#${c(r1, r2)}${c(g1, g2)}${c(b1, b2)}`;
+}
+
+// Cold to hot across the palette's three warm accents. Nothing outside them: the
+// intermediate values are interpolations of C, the same way a gradient's stops are.
+const diskColor = (t) => (t > 0.5 ? mixHex(C.gold, C.ice, (t - 0.5) * 2) : mixHex(C.coral, C.gold, t * 2));
+
+// `rings + 1` orbits of `segs + 1` samples each: the grid corners of a mesh, so
+// the disk can be tiled with quads that neither overlap nor leave gaps. Overlapping
+// translucent strokes were the first attempt and they saturate to a flat blob.
+function diskSamples({ inc, outer, rings, segs }) {
+  const si = Math.sin(inc);
+  const ci = Math.cos(inc);
+  const drho = (outer - ISCO) / rings;
+  const out = [];
+  for (let i = 0; i <= rings; i++) {
+    const rho = ISCO + i * drho;
+    const beta = 1 / Math.sqrt(rho);
+    const grav = Math.sqrt(Math.max(1e-3, 1 - 3 / rho));
+    const emit = Math.max(0, Math.pow(rho, -3) * (1 - Math.sqrt(ISCO / rho)));
+
+    const ring = [];
+    for (let j = 0; j <= segs; j++) {
+      const th = (2 * Math.PI * j) / segs;
+      const x0 = rho * Math.cos(th);
+      const up0 = rho * Math.sin(th) * ci; // screen-up; sin(th) > 0 is the far side
+
+      // Lensing. `w` is the far-side weighting: a ray from behind the hole grazes
+      // it, a ray from the near side does not.
+      const w = Math.max(0, Math.sin(th));
+      const flat = Math.hypot(x0, up0) || 1e-6;
+      const k = Math.hypot(flat, B_PH * Math.sqrt(w)) / flat;
+
+      // Beaming. `los` is the orbital velocity projected onto the line of sight,
+      // positive when that patch of disk is coming towards the viewer.
+      const los = -Math.cos(th) * si;
+      const delta = grav / (1 - beta * los);
+
+      ring.push({
+        x: x0 * k,
+        up: up0 * k,
+        flux: emit * Math.pow(delta, 4),
+        temp: delta * Math.pow(emit, 0.25),
+      });
+    }
+    out.push(ring);
+  }
+  return out;
+}
+
+// The secondary image: light that loops the hole and emerges on the other side.
+// Every radius piles up just outside the photon ring, so it is one thin arc rather
+// than a disk, and its azimuth mapping is flipped.
+function photonRing({ inc, scale, cx, cy }) {
+  const si = Math.sin(inc);
+  const segs = 120;
+  const rad = B_PH * 1.035 * scale;
+  const parts = [];
+  for (let j = 0; j < segs; j++) {
+    const th = (2 * Math.PI * j) / segs;
+    const beta = 1 / Math.sqrt(ISCO);
+    const delta = Math.sqrt(1 - 3 / ISCO) / (1 - beta * (-Math.cos(th) * si));
+    const a0 = th;
+    const a1 = th + (2 * Math.PI) / segs;
+    const p = (a) => `${n(cx + rad * Math.cos(a))} ${n(cy - rad * Math.sin(a))}`;
+    const op = clamp(Math.pow(delta, 3) * 0.8, 0.12, 0.98);
+    parts.push(
+      `<path d="M ${p(a0)} L ${p(a1)}" stroke="${C.ice}" stroke-width="${n(scale * 0.17)}" ` +
+        `opacity="${op.toFixed(3)}"/>`
+    );
+  }
+  return parts.join('');
+}
+
+// Draws the model. Returns the far half, the near half and the shadow separately,
+// because the shadow has to sit between them.
+function relativisticDisk({ inc, outer, scale, cx, cy, rings = 28, segs = 100 }) {
+  const s = diskSamples({ inc, outer, rings, segs });
+  const flat = s.flat();
+  const fMax = Math.max(...flat.map((p) => p.flux));
+  const tLo = Math.min(...flat.map((p) => p.temp));
+  const tHi = Math.max(...flat.map((p) => p.temp));
+
+  // One quad per cell of the mesh. Because quads tile rather than overlap, the
+  // computed brightness lands on screen as written instead of compounding. No
+  // stroke: a stroke doubles the alpha along every shared edge, which is what
+  // turned the first version of this into visible graph paper.
+  // Three groups, not two. Splitting the whole disk into far and near halves means
+  // the split line runs the full width of the frame, and because the halves are
+  // blurred separately it shows there as a hairline. Only quads that actually
+  // overlap the shadow need ordering, so the rest go into one group and the split
+  // is confined to the shadow's edge, where the photon ring covers it.
+  const outside = [];
+  const far = [];
+  const near = [];
+  const shadowR = B_PH * scale;
+  const at = (p) => [cx + p.x * scale, cy - p.up * scale];
+  // Tiling exactly leaves a half-covered pixel on every shared edge, which reads as
+  // a faint grid. Inflating the quads to overlap only trades it for a brighter grid,
+  // so the seams are dissolved with a 3px blur on the layer instead (see below);
+  // disk features are tens of pixels across, so nothing real is lost.
+  const quad = (pts) => pts.map(([x, y]) => `${n(x)} ${n(y)}`).join(' L ');
+  // The model is truncated at `outer`, where the real disk still has brightness.
+  // Fading the last fifth of the radial range is the one purely cosmetic step here;
+  // without it the disk ends on a hard ellipse.
+  const smooth = (u) => (u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u));
+  for (let i = 0; i < rings; i++) {
+    const taper = 1 - smooth(((i + 0.5) / rings - 0.66) / 0.34);
+    for (let j = 0; j < segs; j++) {
+      const corners = [s[i][j], s[i][j + 1], s[i + 1][j + 1], s[i + 1][j]];
+      const flux = corners.reduce((t, p) => t + p.flux, 0) / 4;
+      const op = clamp(Math.pow(flux / fMax, 0.85) * 0.9 * taper, 0, 0.92);
+      if (op < 0.006) continue;
+      const temp = corners.reduce((t, p) => t + p.temp, 0) / 4;
+      // 1.4 compresses the ramp towards the cool end, so only the genuinely hottest
+      // patch goes ice-white instead of half the disk.
+      const col = diskColor(Math.pow(clamp((temp - tLo) / (tHi - tLo || 1), 0, 1), 1.4));
+      // Three decimals, not one: rounding alpha to 0.1 quantises the disk into
+      // visible contour bands.
+      const pts = corners.map(at);
+      const el = `<path d="M ${quad(pts)} Z" fill="${col}" opacity="${op.toFixed(3)}"/>`;
+      const inner = Math.min(...pts.map(([x, y]) => Math.hypot(x - cx, y - cy)));
+      if (inner > shadowR) outside.push(el);
+      else (Math.sin((2 * Math.PI * (j + 0.5)) / segs) >= 0 ? far : near).push(el);
+    }
+  }
+
+  return {
+    outside: outside.join(''),
+    far: far.join(''),
+    near: near.join(''),
+    shadowR,
+    ring: photonRing({ inc, scale, cx, cy }),
+  };
+}
+
+// One black-hole theme, parameterised by inclination. `inc` is measured from the
+// disk axis, so 90 degrees is edge on.
+function blackholeAt({ incDeg, outer, scale, markH, rings, segs }) {
+  return (r) => {
+    const cx = 960;
+    const cy = 540;
+    const d = relativisticDisk({ inc: (incDeg * Math.PI) / 180, outer, scale, cx, cy, rings, segs });
+    return [
+      `  <defs><g id="bh-out">${d.outside}</g><g id="bh-far">${d.far}</g>` +
+        `<g id="bh-near">${d.near}</g></defs>`,
+      `  <g>${starfield(r, 70)}</g>`,
+      // Bloom: the same geometry blurred, behind everything, so the light spills the
+      // way a bright source does instead of sitting flat on the background.
+      `  <use href="#bh-out" filter="url(#blur40)" opacity="0.3"/>`,
+      `  <use href="#bh-out" filter="url(#blur18)" opacity="0.35"/>`,
+      // The 3px blur is what dissolves the mesh seams.
+      `  <use href="#bh-out" filter="url(#blur3)"/>`,
+      `  <use href="#bh-far" filter="url(#blur3)"/>`,
+      // The shadow: the hole swallows the middle of everything behind it.
+      `  <circle cx="${cx}" cy="${cy}" r="${n(d.shadowR)}" fill="#03040F"/>`,
+      `  <g>${d.ring}</g>`,
+      `  <use href="#bh-near" filter="url(#blur3)"/>`,
+      `  <circle cx="${cx}" cy="${cy}" r="${n(markH * 0.7)}" fill="url(#scrim)"/>`,
+      `  ${mark(cx, cy, markH)}`,
+    ].join('\n');
+  };
+}
+
+// ---------------------------------------------------------------- planet art
+//
+// A wireframe globe: the limb, three latitudes, two meridians. Everything is one
+// stroke width, because they are all the same kind of line (rule 10), and the set
+// is deliberately sparse — a full lattice turns to dirt at the narrow crop.
+function globe(cx, cy, rad, { width = 3.6, opacity = 0.55 } = {}) {
+  const line = (body) => `<${body} fill="none" stroke="${C.cyanLt}" stroke-width="${n(width)}"/>`;
+  const parts = [];
+  // Latitudes. Half-width is the circle's chord at that height; the squash factor
+  // is what sets the apparent tilt, and is shared with the meridians below.
+  for (const f of [-0.46, 0, 0.46]) {
+    const rx = rad * Math.sqrt(1 - f * f);
+    parts.push(line(`ellipse cx="${n(cx)}" cy="${n(cy + f * rad)}" rx="${n(rx)}" ry="${n(rx * 0.24)}"`));
+  }
+  // Meridians: one ellipse is two of them, plus the pole-to-pole line.
+  parts.push(line(`ellipse cx="${n(cx)}" cy="${n(cy)}" rx="${n(rad * 0.52)}" ry="${n(rad)}"`));
+  parts.push(line(`line x1="${n(cx)}" y1="${n(cy - rad)}" x2="${n(cx)}" y2="${n(cy + rad)}"`));
+  return `<g opacity="${opacity}">${parts.join('')}</g>`;
+}
+
+// The planet body plus its wireframe plus the mark, the object all three planet
+// candidates are built around.
+function planetBody(cx, cy, rad, markH) {
+  return (
+    // The body is lit from the upper left, which is what makes a wireframe read as a
+    // sphere rather than as a wire ball. The gradient interpolates within C.
+    `<radialGradient id="p-lit" cx="0.36" cy="0.3" r="0.82">` +
+      `<stop offset="0" stop-color="${C.cyan}" stop-opacity="0.3"/>` +
+      `<stop offset="0.5" stop-color="${C.mid}" stop-opacity="0.72"/>` +
+      `<stop offset="1" stop-color="${C.ink}" stop-opacity="0.94"/>` +
+    `</radialGradient>` +
+    // An opaque backing under the gradient, or whatever passes behind the planet
+    // shows through it.
+    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(rad)}" fill="${C.ink}"/>` +
+    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(rad)}" fill="url(#p-lit)"/>` +
+    globe(cx, cy, rad) +
+    // The limb is the planet's edge, not part of the graticule, so it gets its own
+    // weight and the only bright stroke on the object.
+    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(rad)}" fill="none" stroke="${C.ice}" ` +
+      `stroke-width="5" opacity="0.8"/>` +
+    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(markH * 0.72)}" fill="url(#scrim)"/>` +
+    mark(cx, cy, markH)
+  );
+}
+
+// Half of an ellipse, so an orbit or a ring can pass behind the planet: `top`
+// draws the far half, the other draws the near one.
+function ellipseHalf(cx, cy, rx, ry, top) {
+  // Sweep is 1 either way: clockwise from the left point goes over the top, and
+  // clockwise from the right point goes under the bottom.
+  const [x0, x1] = top ? [cx - rx, cx + rx] : [cx + rx, cx - rx];
+  return `M ${n(x0)} ${n(cy)} A ${n(rx)} ${n(ry)} 0 0 1 ${n(x1)} ${n(cy)}`;
+}
+
+// Idea: the Valkey world, with the community's blogs in orbit around it.
+// Focal: the wireframe globe carrying the mark.
+function planetOrbit(r) {
+  const cx = 960;
+  const cy = 540;
+  const rad = 290;
+  const orx = 700;
+  const ory = 330;
+
+  // Four satellites, kept off the ellipse's left and right extremes so none of
+  // them lands outside the safe band. Two ride the far half, two the near one.
+  const at = (deg) => {
+    const t = (deg * Math.PI) / 180;
+    return [cx + orx * Math.cos(t), cy + ory * Math.sin(t)];
+  };
+  const sat = (deg) => {
+    const [x, y] = at(deg);
+    return `<g opacity="0.6">${mark(x, y, 94)}</g>`;
+  };
+  const path = (d, opacity) =>
+    `<path d="${d}" fill="none" stroke="${C.ice}" stroke-width="3.4" opacity="${opacity}"/>`;
+
+  return [
+    `  <g>${starfield(r, 55)}</g>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${n(rad * 1.1)}" fill="url(#h-ice)" opacity="0.4"/>`,
+    `  <g>${path(ellipseHalf(cx, cy, orx, ory, true), 0.3)}${sat(240)}${sat(300)}</g>`,
+    `  <g>${planetBody(cx, cy, rad, 250)}</g>`,
+    `  <g>${path(ellipseHalf(cx, cy, orx, ory, false), 0.45)}${sat(60)}${sat(120)}</g>`,
+  ].join('\n');
+}
+
+// Idea: one world, wearing its whole keyspace as a ring.
+// Focal: the wireframe globe carrying the mark.
+function planetRing(r) {
+  const cx = 960;
+  const cy = 540;
+  const rad = 300;
+  const rrx = 690;
+  const rry = 190;
+  const ring = (top, opacity) =>
+    `<path d="${ellipseHalf(cx, cy, rrx, rry, top)}" fill="none" stroke="${C.cyanLt}" ` +
+    `stroke-width="30" stroke-dasharray="40 17" opacity="${opacity}"/>`;
+
+  return [
+    `  <g>${starfield(r, 45)}</g>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${n(rad * 1.1)}" fill="url(#h-ice)" opacity="0.4"/>`,
+    `  <g transform="rotate(-13 ${cx} ${cy})">${ring(true, 0.4)}</g>`,
+    `  <g>${planetBody(cx, cy, rad, 260)}</g>`,
+    `  <g transform="rotate(-13 ${cx} ${cy})">${ring(false, 0.6)}</g>`,
+  ].join('\n');
+}
+
+// Idea: Valkey seen from orbit, the whole project as one world.
+// Focal: the mark standing over the planet's limb.
+function planetHorizon(r) {
+  const cx = 960;
+  const cy = 2050;
+  const rad = 1315;
+  const top = cy - rad; // 735
+
+  // The limb, then two latitudes receding below it. Same weight, dropping opacity,
+  // so they read as distance rather than as a second kind of line.
+  const lat = (rr, opacity) =>
+    `<circle cx="${cx}" cy="${cy}" r="${n(rr)}" fill="none" stroke="${C.cyanLt}" ` +
+    `stroke-width="4" opacity="${opacity}"/>`;
+
+  return [
+    `  <g>${starfield(r, 60)}</g>`,
+    // The atmosphere: the one highlight in the frame, and it sits behind the mark
+    // that the composition is pointing at.
+    `  <ellipse cx="${cx}" cy="${n(top)}" rx="1180" ry="330" fill="url(#h-ice)" opacity="0.5"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${rad}" fill="${C.ink}" fill-opacity="0.72"/>`,
+    `  <g>${lat(rad, 0.85)}${lat(rad - 135, 0.35)}${lat(rad - 285, 0.2)}</g>`,
+    `  ${mark(cx, 440, 330)}`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, focal: [960, 540], zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, focal: [1530, 505], zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -3762,6 +4171,21 @@ const BASE_THEMES = [
   { name: 'limits-tight-envelope', seed: 42031, focal: [960, 540], zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
   { name: 'limits-gauge-pinned', seed: 42041, focal: [960, 540], zoom: 1.34, center: [960, 540], title: 'Valkey pinned near its limit', desc: 'A large gauge around the white Valkey hexagon mark, filled from blue through green into gold and stopping just short of a red end zone, representing a small resource envelope run right up to its limit.', art: limitsGaugePinned },
   { name: 'key-size-distribution', seed: 43011, focal: [960, 540], zoom: 1.26, center: [960, 540], flat: true, title: 'Valkey key size distribution', desc: 'A Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.', art: keySizeDistribution },
+  { name: 'blackhole-beamed', seed: 52011, focal: [960, 540], zoom: 1.2, center: [960, 540], flat: true, title: 'Valkey black hole', desc: 'A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 80, outer: 24, scale: 47.6, markH: 220, rings: 28, segs: 108 }) },
+  { name: 'blackhole-inclined', seed: 52021, focal: [960, 540], zoom: 1.2, center: [960, 540], flat: true, title: 'Valkey black hole', desc: 'A relativistic accretion disk seen at a moderate tilt, reading as a hot ring with a hole in it: white at the inner edge, gold through the middle and red at the rim, brighter on the left where the orbiting gas comes towards the viewer, lensed up over the dark shadow at the centre and crossing in front of it below, with the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 62, outer: 18, scale: 34.5, markH: 155, rings: 28, segs: 108 }) },
+  { name: 'blackhole-open', seed: 52031, focal: [960, 540], zoom: 1, center: [960, 540], flat: true, title: 'Valkey black hole', desc: 'A relativistic accretion disk seen close to face on, a broad ring running white at its inner edge through gold to red at the rim, with the dark shadow and its thin photon ring at the centre and the white Valkey hexagon mark on top.', art: blackholeAt({ incDeg: 42, outer: 15, scale: 36.5, markH: 165, rings: 28, segs: 108 }) },
+  { name: 'planet-orbit', seed: 51011, focal: [960, 540], zoom: 1.14, center: [960, 540], flat: true, title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, with four smaller marks riding one tilted orbit around it against a sparse starfield, representing the Valkey world and the community blogs orbiting it.', art: planetOrbit },
+  { name: 'planet-ring', seed: 51021, focal: [960, 540], zoom: 1.16, center: [960, 540], flat: true, title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing },
+  { name: 'planet-horizon', seed: 51031, focal: [960, 470], zoom: 1.06, center: [960, 540], title: 'Planet Valkey', desc: 'The bright limb of a planet curving across the lower half of the frame with two fainter latitudes receding below it, a pale atmosphere glow along the horizon, and the large white Valkey hexagon mark standing above it against a starfield, representing the whole Valkey project seen from orbit.', art: planetHorizon },
+  // A: balanced. The motif is scaled up to 1.08 so it fills the frame height, and
+  // sits flush to the right edge; the title gets the remaining third.
+  { name: 'key-size-title-a', seed: 43031, focal: [960, 540], zoom: 1, center: [960, 540], solid: true, noStamp: true, title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'On a flat purple field, the Valkey lockup above the white title "Finding big keys in a running Valkey cluster with Valkey Admin" fills the left third, and to its right a Valkey Admin panel ranks keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark.', art: keySizeTitleCard({ title: BIG_KEYS_TITLE, dx: 272, dy: -54, scale: 1.1, column: { x: 96, width: 600, lockupH: 122, size: 54 } }) },
+  // B: bleed. The motif is larger still and the far pod column runs off the right
+  // edge, which buys the title a bigger lockup without shrinking the chart.
+  { name: 'key-size-title-b', seed: 43041, focal: [960, 540], zoom: 1, center: [960, 540], solid: true, noStamp: true, title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'On a flat purple field, a large Valkey lockup above the white title "Finding big keys in a running Valkey cluster with Valkey Admin" fills the left third, and to its right a Valkey Admin panel ranks keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, the furthest column running off the right edge.', art: keySizeTitleCard({ title: BIG_KEYS_TITLE, dx: 266, dy: -129.4, scale: 1.24, column: { x: 96, width: 640, lockupH: 132, size: 56 } }) },
+  // C: type-forward. The title is the largest thing in the frame and "big keys"
+  // carries the coral of the outlier bars, so the type and the chart agree.
+  { name: 'key-size-title-c', seed: 43051, focal: [960, 540], zoom: 1, center: [960, 540], solid: true, noStamp: true, title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'On a flat purple field, the Valkey lockup above the large title "Finding big keys in a running Valkey cluster with Valkey Admin" in white with "big keys" in red fills the left half, and to its right a Valkey Admin panel ranks keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark.', art: keySizeTitleCard({ title: BIG_KEYS_TITLE, dx: 538.4, dy: 43.3, scale: 0.92, column: { x: 96, width: 784, lockupH: 140, size: 72, accent: ['big', 'keys'] } }) },
   { name: 'key-size-distribution-flat', seed: 43021, focal: [960, 540], zoom: 1.26, center: [960, 540], solid: true, title: 'Valkey key size distribution', desc: 'On a flat purple field, a Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.', art: keySizeDistribution },
 ];
 
@@ -3771,7 +4195,15 @@ const BASE_THEMES = [
 //
 // Excluded: themes that already draw their own text, where a sticker would be text
 // on text, and the captioned theme whose caption is the whole point.
-const NO_CAPTION = new Set(['benchmarks', 'release-version', 'key-size-distribution', 'key-size-distribution-flat']);
+const NO_CAPTION = new Set([
+  'benchmarks',
+  'release-version',
+  'key-size-distribution',
+  'key-size-distribution-flat',
+  'key-size-title-a',
+  'key-size-title-b',
+  'key-size-title-c',
+]);
 
 const THEMES = [
   ...BASE_THEMES,

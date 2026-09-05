@@ -52,6 +52,15 @@ can't drift, and regenerating is a no-op diff.
 | `k8s-spec-fanout` | A declared spec panel fanning out along rails into a grid of identical instances | Helm charts, operators, declarative deployment |
 | `key-size-distribution` | Ranked key-size bars with two big outliers, fanning into a grid of servers | Key size skew, heavy hitters, hot keys across a fleet |
 | `key-size-distribution-flat` | The same panel and shards on one solid purple field | Same, where the banner should read as flat graphic design |
+| `blackhole-beamed` | Relativistic disk near edge on, one side blazing from Doppler beaming | Talks, keynotes, anything that wants one striking abstract image |
+| `blackhole-inclined` | The same model tilted, reading as a hot ring with a hole in it | Same |
+| `blackhole-open` | The same model close to face on, a broad white-to-red annulus | Same |
+| `planet-orbit` | A wireframe Valkey globe with four smaller marks riding one tilted orbit | Planet Valkey, community blog roundups, the wider ecosystem |
+| `planet-ring` | The same globe wearing a thick segmented ring | Same, where one world and one keyspace is the point |
+| `planet-horizon` | A planet's bright limb across the lower frame with the mark standing over it | Same, where the scale of the project is the point |
+| `key-size-title-a` | The flat panel and shards shifted right, with the lockup and post title in the left third | A standalone card for the big-keys post, balanced type and art |
+| `key-size-title-b` | Same split, motif at full size and bleeding off the right edge | Same, where the art should stay large |
+| `key-size-title-c` | Same split, title set large with "big keys" in coral | Same, where the title should lead |
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |

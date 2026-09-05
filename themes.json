@@ -1,6 +1,6 @@
 {
   "generatedBy": "generate.mjs",
-  "count": 80,
+  "count": 95,
   "themes": [
     {
       "name": "community",
@@ -495,6 +495,114 @@
       "derivedFrom": null
     },
     {
+      "name": "blackhole-beamed",
+      "title": "Valkey black hole",
+      "desc": "A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.",
+      "motif": "Relativistic disk near edge on, one side blazing from Doppler beaming",
+      "useFor": "Talks, keynotes, anything that wants one striking abstract image",
+      "image": "images/blackhole-beamed.webp",
+      "svg": "svg/blackhole-beamed.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
+      "name": "blackhole-inclined",
+      "title": "Valkey black hole",
+      "desc": "A relativistic accretion disk seen at a moderate tilt, reading as a hot ring with a hole in it: white at the inner edge, gold through the middle and red at the rim, brighter on the left where the orbiting gas comes towards the viewer, lensed up over the dark shadow at the centre and crossing in front of it below, with the white Valkey hexagon mark at the centre.",
+      "motif": "The same model tilted, reading as a hot ring with a hole in it",
+      "useFor": "Same",
+      "image": "images/blackhole-inclined.webp",
+      "svg": "svg/blackhole-inclined.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
+      "name": "blackhole-open",
+      "title": "Valkey black hole",
+      "desc": "A relativistic accretion disk seen close to face on, a broad ring running white at its inner edge through gold to red at the rim, with the dark shadow and its thin photon ring at the centre and the white Valkey hexagon mark on top.",
+      "motif": "The same model close to face on, a broad white-to-red annulus",
+      "useFor": "Same",
+      "image": "images/blackhole-open.webp",
+      "svg": "svg/blackhole-open.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
+      "name": "planet-orbit",
+      "title": "Planet Valkey",
+      "desc": "A wireframe globe carrying the white Valkey hexagon mark, with four smaller marks riding one tilted orbit around it against a sparse starfield, representing the Valkey world and the community blogs orbiting it.",
+      "motif": "A wireframe Valkey globe with four smaller marks riding one tilted orbit",
+      "useFor": "Planet Valkey, community blog roundups, the wider ecosystem",
+      "image": "images/planet-orbit.webp",
+      "svg": "svg/planet-orbit.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
+      "name": "planet-ring",
+      "title": "Planet Valkey",
+      "desc": "A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.",
+      "motif": "The same globe wearing a thick segmented ring",
+      "useFor": "Same, where one world and one keyspace is the point",
+      "image": "images/planet-ring.webp",
+      "svg": "svg/planet-ring.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
+      "name": "planet-horizon",
+      "title": "Planet Valkey",
+      "desc": "The bright limb of a planet curving across the lower half of the frame with two fainter latitudes receding below it, a pale atmosphere glow along the horizon, and the large white Valkey hexagon mark standing above it against a starfield, representing the whole Valkey project seen from orbit.",
+      "motif": "A planet's bright limb across the lower frame with the mark standing over it",
+      "useFor": "Same, where the scale of the project is the point",
+      "image": "images/planet-horizon.webp",
+      "svg": "svg/planet-horizon.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
+      "name": "key-size-title-a",
+      "title": "Finding big keys in a running Valkey cluster with Valkey Admin",
+      "desc": "On a flat purple field, the Valkey lockup above the white title \"Finding big keys in a running Valkey cluster with Valkey Admin\" fills the left third, and to its right a Valkey Admin panel ranks keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark.",
+      "motif": "The flat panel and shards shifted right, with the lockup and post title in the left third",
+      "useFor": "A standalone card for the big-keys post, balanced type and art",
+      "image": "images/key-size-title-a.webp",
+      "svg": "svg/key-size-title-a.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
+      "name": "key-size-title-b",
+      "title": "Finding big keys in a running Valkey cluster with Valkey Admin",
+      "desc": "On a flat purple field, a large Valkey lockup above the white title \"Finding big keys in a running Valkey cluster with Valkey Admin\" fills the left third, and to its right a Valkey Admin panel ranks keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, the furthest column running off the right edge.",
+      "motif": "Same split, motif at full size and bleeding off the right edge",
+      "useFor": "Same, where the art should stay large",
+      "image": "images/key-size-title-b.webp",
+      "svg": "svg/key-size-title-b.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
+      "name": "key-size-title-c",
+      "title": "Finding big keys in a running Valkey cluster with Valkey Admin",
+      "desc": "On a flat purple field, the Valkey lockup above the large title \"Finding big keys in a running Valkey cluster with Valkey Admin\" in white with \"big keys\" in red fills the left half, and to its right a Valkey Admin panel ranks keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark.",
+      "motif": "Same split, title set large with \"big keys\" in coral",
+      "useFor": "Same, where the title should lead",
+      "image": "images/key-size-title-c.webp",
+      "svg": "svg/key-size-title-c.svg",
+      "captioned": false,
+      "caption": null,
+      "derivedFrom": null
+    },
+    {
       "name": "key-size-distribution-flat",
       "title": "Valkey key size distribution",
       "desc": "On a flat purple field, a Valkey Admin panel ranking keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, wired along a trunk into three shard enclosures of three servers each drawn as the white Valkey hexagon mark, representing a few outsized objects spread across a deployment.",
@@ -961,6 +1069,78 @@
       "captioned": false,
       "caption": "Pinned near its limit",
       "derivedFrom": "limits-gauge-pinned"
+    },
+    {
+      "name": "blackhole-beamed-caption",
+      "title": "Valkey black hole",
+      "desc": "A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre. The title \"Valkey black hole\" is set on solid light blocks in the lower left.",
+      "motif": "Relativistic disk near edge on, one side blazing from Doppler beaming",
+      "useFor": "Talks, keynotes, anything that wants one striking abstract image",
+      "image": "images/blackhole-beamed-caption.webp",
+      "svg": "svg/blackhole-beamed-caption.svg",
+      "captioned": false,
+      "caption": "Black hole",
+      "derivedFrom": "blackhole-beamed"
+    },
+    {
+      "name": "blackhole-inclined-caption",
+      "title": "Valkey black hole",
+      "desc": "A relativistic accretion disk seen at a moderate tilt, reading as a hot ring with a hole in it: white at the inner edge, gold through the middle and red at the rim, brighter on the left where the orbiting gas comes towards the viewer, lensed up over the dark shadow at the centre and crossing in front of it below, with the white Valkey hexagon mark at the centre. The title \"Valkey black hole\" is set on solid light blocks in the lower left.",
+      "motif": "The same model tilted, reading as a hot ring with a hole in it",
+      "useFor": "Same",
+      "image": "images/blackhole-inclined-caption.webp",
+      "svg": "svg/blackhole-inclined-caption.svg",
+      "captioned": false,
+      "caption": "Black hole",
+      "derivedFrom": "blackhole-inclined"
+    },
+    {
+      "name": "blackhole-open-caption",
+      "title": "Valkey black hole",
+      "desc": "A relativistic accretion disk seen close to face on, a broad ring running white at its inner edge through gold to red at the rim, with the dark shadow and its thin photon ring at the centre and the white Valkey hexagon mark on top. The title \"Valkey black hole\" is set on solid light blocks in the lower left.",
+      "motif": "The same model close to face on, a broad white-to-red annulus",
+      "useFor": "Same",
+      "image": "images/blackhole-open-caption.webp",
+      "svg": "svg/blackhole-open-caption.svg",
+      "captioned": false,
+      "caption": "Black hole",
+      "derivedFrom": "blackhole-open"
+    },
+    {
+      "name": "planet-orbit-caption",
+      "title": "Planet Valkey",
+      "desc": "A wireframe globe carrying the white Valkey hexagon mark, with four smaller marks riding one tilted orbit around it against a sparse starfield, representing the Valkey world and the community blogs orbiting it. The title \"Planet Valkey\" is set on solid light blocks in the lower left.",
+      "motif": "A wireframe Valkey globe with four smaller marks riding one tilted orbit",
+      "useFor": "Planet Valkey, community blog roundups, the wider ecosystem",
+      "image": "images/planet-orbit-caption.webp",
+      "svg": "svg/planet-orbit-caption.svg",
+      "captioned": false,
+      "caption": "Planet Valkey",
+      "derivedFrom": "planet-orbit"
+    },
+    {
+      "name": "planet-ring-caption",
+      "title": "Planet Valkey",
+      "desc": "A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring. The title \"Planet Valkey\" is set on solid light blocks in the lower left.",
+      "motif": "The same globe wearing a thick segmented ring",
+      "useFor": "Same, where one world and one keyspace is the point",
+      "image": "images/planet-ring-caption.webp",
+      "svg": "svg/planet-ring-caption.svg",
+      "captioned": false,
+      "caption": "Planet Valkey",
+      "derivedFrom": "planet-ring"
+    },
+    {
+      "name": "planet-horizon-caption",
+      "title": "Planet Valkey",
+      "desc": "The bright limb of a planet curving across the lower half of the frame with two fainter latitudes receding below it, a pale atmosphere glow along the horizon, and the large white Valkey hexagon mark standing above it against a starfield, representing the whole Valkey project seen from orbit. The title \"Planet Valkey\" is set on solid light blocks in the lower left.",
+      "motif": "A planet's bright limb across the lower frame with the mark standing over it",
+      "useFor": "Same, where the scale of the project is the point",
+      "image": "images/planet-horizon-caption.webp",
+      "svg": "svg/planet-horizon-caption.svg",
+      "captioned": false,
+      "caption": "Planet Valkey",
+      "derivedFrom": "planet-horizon"
     }
   ]
 }
