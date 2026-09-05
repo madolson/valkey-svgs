@@ -3171,11 +3171,8 @@ function dataStructuresGrid(r) {
 // the originals, so the parent theme's output is unchanged.
 const ADMIN_PANEL = { sx: 440, sw: 420, sTop: 210, sH: 660 };
 
-// `sw` is overridable because the card layout needs a wider panel: the caption blocks
-// reach x 838 of the framed box, and widening the panel pushes the size labels out past
-// them so none is half covered.
-function adminPanel({ sw = ADMIN_PANEL.sw } = {}) {
-  const { sx, sTop, sH } = ADMIN_PANEL;
+function adminPanel() {
+  const { sx, sw, sTop, sH } = ADMIN_PANEL;
 
   // The header (mark plus title) is centred in the panel, and the chart baseline
   // runs down from the middle of the mark, so both readings hold at once.
@@ -3228,11 +3225,14 @@ function adminPanel({ sw = ADMIN_PANEL.sw } = {}) {
   return { panel, bars: bars.join('') };
 }
 
-// `sw` widens the panel and `spread` adds air between it and the shards. Both default
-// to the values the theme shipped with, so key-size-distribution itself is unchanged.
-function keySizeDistribution(r, { sw = ADMIN_PANEL.sw, spread = 0 } = {}) {
-  const { sx } = ADMIN_PANEL;
-  const { panel, bars } = adminPanel({ sw });
+// `spread` adds air between the panel and the shards, and defaults to 0, so
+// key-size-distribution itself is unchanged. The panel's own width is not a parameter:
+// the header is centred on it, the axis is offset from that, the bar lengths are
+// absolute and the size labels are right-aligned to its far edge, so widening it pulls
+// the bars away from their labels and the chart stops reading as one column.
+function keySizeDistribution(r, { spread = 0 } = {}) {
+  const { sx, sw } = ADMIN_PANEL;
+  const { panel, bars } = adminPanel();
 
   // The narrow crop keeps only the middle 70% of the width, so the whole
   // composition has about 1050px to live in at this zoom. Tiles are therefore
@@ -3329,19 +3329,24 @@ function keySizeDistribution(r, { sw = ADMIN_PANEL.sw, spread = 0 } = {}) {
 // units of the framed height, so anything sitting entirely above it is top-heavy by
 // construction, and this composition is the parent theme's own overlap.
 //
-// What that costs is legibility of the bottom of the chart, so two things buy it back.
-// The panel is widened to 500, which pushes the right-aligned size labels out past the
-// caption's right edge at 838 so none of the eight is half covered. And the shards are
-// spread 150 further right, which fills the space on that side that the title's block
-// stack takes on this one. The two shortest bars do end up behind the blocks; at 19 and
-// 25 units long they read as dots either way, and their labels still show.
+// What that costs is legibility of the bottom of the chart, so the horizontal buys it
+// back. The size labels are right-aligned to the panel's far edge, and the longest of
+// them needs dx above 241 to clear the caption's right edge at 838; dx is 245. Widening
+// the panel would have done the same job and was tried first, but the header is centred
+// on the panel, the axis is offset from that and the bar lengths are absolute, so a
+// wider panel pulls the bars away from their labels and the chart stops reading as one
+// column. Moving it costs nothing.
+//
+// The shards are spread 150 further right, filling the space on that side that the
+// title's block stack takes on this one. The two shortest bars do end up behind the
+// blocks; at 19 and 25 units long they read as dots either way, and their labels show.
 //
 // dx/dy/scale place the motif, whose drawn box is x 440..1480, y 210..870.
 function keySizeCard(opts) {
   return (r) =>
     [
       `  <g transform="translate(${n(opts.dx)} ${n(opts.dy)}) scale(${opts.scale})">`,
-      keySizeDistribution(r, { sw: opts.sw, spread: opts.spread }),
+      keySizeDistribution(r, { spread: opts.spread }),
       `  </g>`,
     ].join('\n');
 }
@@ -3775,7 +3780,7 @@ const BASE_THEMES = [
   // The same model with the beaming left in, which is what a real disk does.
   { name: 'blackhole-beamed', space: true, seed: 52011, zoom: 1.2, center: [960, 540], title: 'Valkey black hole', desc: 'A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 80, outer: 24, scale: 47.6, markH: 220, beam: 1, rings: 28, segs: 108 }) },
   { name: 'planet-ring', space: true, seed: 51021, zoom: 1.16, center: [960, 540], title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing },
-  { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame with the shard enclosures running off the right edge.', art: keySizeCard({ dx: 190, dy: 76, scale: 0.86, sw: 500, spread: 150 }) },
+  { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame with the shard enclosures running off the right edge.', art: keySizeCard({ dx: 245, dy: 76, scale: 0.86, spread: 150 }) },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
