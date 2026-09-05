@@ -53,8 +53,10 @@ can't drift, and regenerating is a no-op diff.
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
 
-Rasters are in [`images/`](images/) at 1920x1080 WebP, and every one of them also gets an
-unfurl copy in [`images/og/`](images/og/) at 1200x630, the 1.91:1 that `og:image` consumers
+Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
+copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
+blocks, for setting your own type over. The gallery has a button that swaps between them.
+And every one gets an unfurl copy in [`images/og/`](images/og/) at 1200x630, the 1.91:1 that `og:image` consumers
 (LinkedIn, Slack, Facebook) expect and that X accepts. Those are centre-cropped from the
 master rather than squashed, so nothing is distorted; use them for link previews and the
 1920x1080 masters for page heroes. Vector sources are in [`svg/`](svg/), committed so you can
@@ -106,9 +108,14 @@ node generate.mjs security-shield-clean --no-caption                     # no te
 
 Four things worth knowing:
 
-- The slot is fixed: bottom left, one solid light block per line, at most three lines of up
-  to 26 characters. Fixed on purpose, so a composition can be drawn to leave that corner
-  alone. A title that needs a fourth line throws rather than silently losing its tail.
+- The slot is fixed: bottom left, one solid light block per line, at most two lines of up
+  to 32 characters. Fixed on purpose, so a composition can be drawn to leave that corner
+  alone. 32 is the smallest limit that fits the longest title in the set into two lines,
+  and it puts the widest block at 1038 of the 1920. A title needing a third line throws
+  rather than silently losing its tail.
+- Each block carries a drop shadow, three passes of it, so it reads as sitting above the
+  artwork rather than punched into it. Three because the ground is already dark, so a
+  single shadow that would be obvious on white barely registers here.
 - The stickers sit **on top of** the motif, which is drawn at full size. Nothing is scaled
   down and nothing is pushed aside. A theme whose motif runs through that corner will have
   art behind the blocks; the blocks are opaque, so the text stays legible either way.

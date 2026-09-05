@@ -28,6 +28,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const SVG_DIR = join(HERE, 'svg');
 const OUT_DIR = join(HERE, 'images');
 const OG_DIR = join(HERE, 'images', 'og');
+// The chrome-free copy: same art, no corner lockup and no title blocks, for anyone who
+// wants to set their own type over it. The gallery has a toggle that swaps to these.
+const PLAIN_DIR = join(HERE, 'images', 'plain');
 const LOGO = join(HERE, 'assets', 'Valkey-logo.svg');
 // The official horizontal lockup, mark plus wordmark, copied from
 // valkey-io.github.io/static/img/valkey-horizontal.svg. Used for the corner stamp
@@ -242,7 +245,10 @@ function frame(theme) {
 //
 // Corner placement means the narrow 247x200 crop, which keeps only the middle 70%
 // of the width, cuts it. That is what a corner costs; nothing else can sit there.
-// Caption stickers: the post title set on solid light blocks in the bottom left.
+// Caption stickers: the post title set on solid light blocks in the bottom left, each
+// with a drop shadow so it reads as sitting above the artwork rather than punched into
+// it. The shadows are the only thing in the set that is pure decoration; the blocks
+// worked without them, but flat on a dark field they read as holes.
 // One block per line, because a block guarantees contrast where a scrim only hopes
 // for it. Position is fixed: bottom left, every time, so a composition can be
 // drawn to leave that corner alone.
@@ -257,11 +263,11 @@ function textWidth(str, size) {
   return em * size;
 }
 
-// Wrap a title into at most three sticker lines. 26 characters is what fits beside
-// a card's right-hand frame at the sticker size; short theme titles still land on
-// one line. Overflowing throws rather than silently dropping the tail, which is what
-// the old `.slice(0, 3)` did to any title longer than about fifty characters.
-function captionLines(text, max = 26) {
+// Wrap a title into at most two sticker lines. 32 characters is the smallest limit
+// that fits the longest title in the set into two, and it puts the widest block at
+// 1038 of the 1920; short theme titles still land on one line. Overflowing throws
+// rather than silently dropping the tail.
+function captionLines(text, max = 32) {
   const words = String(text).split(/\s+/);
   const lines = [];
   let line = '';
@@ -275,8 +281,8 @@ function captionLines(text, max = 26) {
     }
   }
   if (line) lines.push(line);
-  if (lines.length > 3) {
-    throw new Error(`Caption needs ${lines.length} lines, the slot holds 3: ${JSON.stringify(text)}`);
+  if (lines.length > 2) {
+    throw new Error(`Caption needs ${lines.length} lines, the slot holds 2: ${JSON.stringify(text)}`);
   }
   return lines;
 }
@@ -293,17 +299,39 @@ function captionBlocks(theme, text) {
   const x = vx + CAPTION_SLOT.left * vw;
   const bottom = vy + vh - CAPTION_SLOT.bottom * vh;
   const top = bottom - lines.length * blockH - (lines.length - 1) * gap;
-  return lines
+  const rx = 4 * px;
+  const box = (i) => ({
+    y: top + i * (blockH + gap),
+    w: textWidth(lines[i], size) + padX * 2,
+  });
+
+  // Three shadows per block: a tight one that reads as contact, a mid one for the
+  // falloff, and a broad low pool that reads as height. Three because the ground is
+  // already dark, so a single shadow that would be obvious on white barely registers
+  // here. They are cast onto the artwork rather than onto each other, so every shadow
+  // is drawn before every block; the stack is coplanar.
+  const shadows = lines
+    .map((_, i) => {
+      const { y, w } = box(i);
+      const r = (dy, blur, op) =>
+        `<rect x="${n(x)}" y="${n(y + dy * px)}" width="${n(w)}" height="${n(blockH)}" ` +
+        `rx="${n(rx)}" fill="${C.ink}" opacity="${op}" filter="url(#blur${blur})"/>`;
+      return r(26, 40, '0.55') + r(10, 18, '0.5') + r(4, 8, '0.55');
+    })
+    .join('');
+
+  const blocks = lines
     .map((line, i) => {
-      const y = top + i * (blockH + gap);
-      const w = textWidth(line, size) + padX * 2;
+      const { y, w } = box(i);
       return (
-        `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(blockH)}" rx="${n(4 * px)}" fill="${C.ice}"/>` +
+        `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(blockH)}" rx="${n(rx)}" fill="${C.ice}"/>` +
         `<text x="${n(x + padX)}" y="${n(y + padY + size * 0.79)}" fill="${C.ink}" font-family="${FONT}" ` +
         `font-size="${n(size)}" font-weight="600">${esc(line)}</text>`
       );
     })
     .join('');
+
+  return shadows + blocks;
 }
 
 function stamp(theme) {
@@ -319,7 +347,7 @@ function stamp(theme) {
 // a theme varies is what it draws on top. The stamp and the caption sit above the
 // vignette, because they are chrome rather than art and the vignette was visibly
 // darkening the outer end of every caption block.
-function wrap(theme, art) {
+function wrap(theme, art, { chrome = true } = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${frame(theme)}">
   <title>${theme.title}</title>
   <desc>${theme.desc}</desc>
@@ -328,7 +356,7 @@ ${defs()}
 ${art}
   <rect width="${W}" height="${H}" fill="url(#vignette)"/>
   <rect width="${W}" height="${H}" filter="url(#grain)" opacity="0.055" style="mix-blend-mode:overlay"/>
-${stamp(theme)}${theme.caption ? `\n  <g>${captionBlocks(theme, theme.caption)}</g>` : ''}
+${chrome ? `${stamp(theme)}${theme.caption ? `\n  <g>${captionBlocks(theme, theme.caption)}</g>` : ''}` : ''}
 </svg>
 `;
 }
@@ -3324,22 +3352,21 @@ function keySizeDistribution(r, { spread = 0 } = {}) {
 //   the caption blocks  x 274..838,  y 682..904
 //   the motif's own box  x 440..1480, y 210..870 before scaling
 //
-// The motif is vertically centred in the frame, which means the caption crosses the
-// bottom rows of the chart. That is unavoidable: the caption band takes the lower 222
-// units of the framed height, so anything sitting entirely above it is top-heavy by
-// construction, and this composition is the parent theme's own overlap.
+// Two caption lines rather than three shortened the block stack to 146 units, which
+// moved its top edge down from 682 to 758 and left room for the whole chart above it.
+// The bottom size label's baseline lands at 735 and the last bar at 723, both clear, so
+// nothing in the panel is behind the blocks any more. The panel's rounded bottom still
+// runs 20 units under them, which is the overlap that ties the title to the artwork.
 //
-// What that costs is legibility of the bottom of the chart, so the horizontal buys it
-// back. The size labels are right-aligned to the panel's far edge, and the longest of
-// them needs dx above 241 to clear the caption's right edge at 838; dx is 245. Widening
-// the panel would have done the same job and was tried first, but the header is centred
-// on the panel, the axis is offset from that and the bar lengths are absolute, so a
-// wider panel pulls the bars away from their labels and the chart stops reading as one
-// column. Moving it costs nothing.
+// dx 245 comes from the labels: they are right-aligned at 832 before scaling, and the
+// widest needs dx above 241 to sit past where the caption reached at three lines.
+// Widening the panel would have cleared them too and was tried first, but the header is
+// centred on the panel, the axis is offset from that and the bar lengths are absolute,
+// so a wider panel pulls the bars away from their labels and the chart stops reading as
+// one column.
 //
 // The shards are spread 150 further right, filling the space on that side that the
-// title's block stack takes on this one. The two shortest bars do end up behind the
-// blocks; at 19 and 25 units long they read as dots either way, and their labels show.
+// title's block stack takes on this one.
 //
 // dx/dy/scale place the motif, whose drawn box is x 440..1480, y 210..870.
 function keySizeCard(opts) {
@@ -3780,7 +3807,7 @@ const BASE_THEMES = [
   // The same model with the beaming left in, which is what a real disk does.
   { name: 'blackhole-beamed', space: true, seed: 52011, zoom: 1.2, center: [960, 540], title: 'Valkey black hole', desc: 'A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 80, outer: 24, scale: 47.6, markH: 220, beam: 1, rings: 28, segs: 108 }) },
   { name: 'planet-ring', space: true, seed: 51021, zoom: 1.16, center: [960, 540], title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing },
-  { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame with the shard enclosures running off the right edge.', art: keySizeCard({ dx: 245, dy: 76, scale: 0.86, spread: 150 }) },
+  { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame with the shard enclosures running off the right edge.', art: keySizeCard({ dx: 245, dy: 30, scale: 0.86, spread: 150 }) },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
@@ -3829,6 +3856,14 @@ ow, oh = 1200, 630
 keep = round(im.width / (ow / oh))
 top = (im.height - keep) // 2
 im.crop((0, top, im.width, top + keep)).resize((ow, oh), Image.LANCZOS).save(og, "WEBP", quality=quality, method=6)
+`;
+
+// The plain copy needs the master size only: link previews use the captioned one.
+const ENCODE_ONE = `
+import sys
+from PIL import Image
+src, dst, width, height, quality = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5])
+Image.open(src).convert("RGB").resize((width, height), Image.LANCZOS).save(dst, "WEBP", quality=quality, method=6)
 `;
 
 function checkPillow() {
@@ -3882,6 +3917,7 @@ if (flags.caption !== undefined && !wanted.length) {
 mkdirSync(SVG_DIR, { recursive: true });
 mkdirSync(OUT_DIR, { recursive: true });
 mkdirSync(OG_DIR, { recursive: true });
+mkdirSync(PLAIN_DIR, { recursive: true });
 
 // themes.json: the machine-readable index of the set, so consumers do not have to
 // parse this file or the README. madelynolson.com/valkey-banners reads it through
@@ -3905,6 +3941,7 @@ mkdirSync(OG_DIR, { recursive: true });
       motif: table.get(t.name).motif,
       useFor: table.get(t.name).useFor,
       image: `images/${t.name}.webp`,
+      plain: `images/plain/${t.name}.webp`,
       svg: `svg/${t.name}.svg`,
       captioned: t.text !== undefined,
       caption: t.caption ?? null,
@@ -3958,7 +3995,31 @@ try {
       stdio: ['ignore', 'ignore', 'inherit'],
     });
 
-    console.log(`${theme.name.padEnd(22)} svg/${slug}.svg -> images/${slug}.webp + images/og/${slug}.webp`);
+    // The plain copy. Its SVG is not committed: it is the same art with two elements
+    // left off, so keeping it would be a second file to notice drifting.
+    const plainSvg = join(scratch, `${slug}-plain.svg`);
+    const plainPng = join(scratch, `${slug}-plain.png`);
+    writeFileSync(plainSvg, wrap(captioned, theme.art(rng(theme.seed), { text }), { chrome: false }));
+    execFileSync(
+      chrome,
+      [
+        '--headless',
+        '--disable-gpu',
+        '--hide-scrollbars',
+        '--force-device-scale-factor=2',
+        `--window-size=${W},${H}`,
+        `--screenshot=${plainPng}`,
+        `file://${plainSvg}`,
+      ],
+      { stdio: ['ignore', 'ignore', 'ignore'] }
+    );
+    execFileSync(
+      'python3',
+      ['-c', ENCODE_ONE, plainPng, join(PLAIN_DIR, `${slug}.webp`), String(W), String(H), '92'],
+      { stdio: ['ignore', 'ignore', 'inherit'] }
+    );
+
+    console.log(`${theme.name.padEnd(22)} svg/${slug}.svg -> images/${slug}.webp + og + plain`);
   }
 } finally {
   rmSync(scratch, { recursive: true, force: true });
