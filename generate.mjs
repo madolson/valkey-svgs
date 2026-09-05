@@ -3171,8 +3171,11 @@ function dataStructuresGrid(r) {
 // the originals, so the parent theme's output is unchanged.
 const ADMIN_PANEL = { sx: 440, sw: 420, sTop: 210, sH: 660 };
 
-function adminPanel() {
-  const { sx, sw, sTop, sH } = ADMIN_PANEL;
+// `sw` is overridable because the card layout needs a wider panel: the caption blocks
+// reach x 838 of the framed box, and widening the panel pushes the size labels out past
+// them so none is half covered.
+function adminPanel({ sw = ADMIN_PANEL.sw } = {}) {
+  const { sx, sTop, sH } = ADMIN_PANEL;
 
   // The header (mark plus title) is centred in the panel, and the chart baseline
   // runs down from the middle of the mark, so both readings hold at once.
@@ -3225,19 +3228,21 @@ function adminPanel() {
   return { panel, bars: bars.join('') };
 }
 
-function keySizeDistribution() {
-  const { sx, sw } = ADMIN_PANEL;
-  const { panel, bars } = adminPanel();
+// `sw` widens the panel and `spread` adds air between it and the shards. Both default
+// to the values the theme shipped with, so key-size-distribution itself is unchanged.
+function keySizeDistribution(r, { sw = ADMIN_PANEL.sw, spread = 0 } = {}) {
+  const { sx } = ADMIN_PANEL;
+  const { panel, bars } = adminPanel({ sw });
 
   // The narrow crop keeps only the middle 70% of the width, so the whole
   // composition has about 1050px to live in at this zoom. Tiles are therefore
   // 120 with a 24px gap and 26px of enclosure padding: at 134 they filled the
   // budget exactly and ended up edge to edge.
   const rows = [310, 540, 770];
-  const cols = [1106, 1250, 1394];
+  const cols = [1106 + spread, 1250 + spread, 1394 + spread];
   const tile = 120;
-  const shardX0 = 1020; // 160px of air between the panel and the shards
-  const shardX1 = 1480;
+  const shardX0 = 1020 + spread; // 160px of air between the panel and the shards
+  const shardX1 = 1480 + spread;
   const shardH = 200;
 
 
@@ -3319,23 +3324,24 @@ function keySizeDistribution() {
 //   the caption blocks  x 274..838,  y 682..904
 //   the motif's own box  x 440..1480, y 210..870 before scaling
 //
-// The parent theme sits centred, which puts the panel's top left corner just inside
-// the lockup. Scaling to 0.82 pulls it clear by 65 units and keeps the margins even at
-// 336 a side, so nothing runs off an edge either.
+// The motif is vertically centred in the frame, which means the caption crosses the
+// bottom rows of the chart. That is unavoidable: the caption band takes the lower 222
+// units of the framed height, so anything sitting entirely above it is top-heavy by
+// construction, and this composition is the parent theme's own overlap.
 //
-// The vertical is set by the last row of the chart, not by centring. At 0.88 the caption
-// crossed the panel far enough up to cut "1.2 MB" in half and leave "KB" orphaned. The
-// bottom size label's baseline is at 820 before scaling, so the motif is placed to put
-// it at 668, thirteen units above the caption's top edge at 682. The panel's rounded
-// bottom still runs 27 units under the blocks, which keeps the title tied to the
-// artwork without any of the chart disappearing behind it.
+// What that costs is legibility of the bottom of the chart, so two things buy it back.
+// The panel is widened to 500, which pushes the right-aligned size labels out past the
+// caption's right edge at 838 so none of the eight is half covered. And the shards are
+// spread 150 further right, which fills the space on that side that the title's block
+// stack takes on this one. The two shortest bars do end up behind the blocks; at 19 and
+// 25 units long they read as dots either way, and their labels still show.
 //
 // dx/dy/scale place the motif, whose drawn box is x 440..1480, y 210..870.
 function keySizeCard(opts) {
   return (r) =>
     [
       `  <g transform="translate(${n(opts.dx)} ${n(opts.dy)}) scale(${opts.scale})">`,
-      keySizeDistribution(r),
+      keySizeDistribution(r, { sw: opts.sw, spread: opts.spread }),
       `  </g>`,
     ].join('\n');
 }
@@ -3769,7 +3775,7 @@ const BASE_THEMES = [
   // The same model with the beaming left in, which is what a real disk does.
   { name: 'blackhole-beamed', space: true, seed: 52011, zoom: 1.2, center: [960, 540], title: 'Valkey black hole', desc: 'A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 80, outer: 24, scale: 47.6, markH: 220, beam: 1, rings: 28, segs: 108 }) },
   { name: 'planet-ring', space: true, seed: 51021, zoom: 1.16, center: [960, 540], title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing },
-  { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame with the shard enclosures running off the right edge.', art: keySizeCard({ dx: 173, dy: -4, scale: 0.82 }) },
+  { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame with the shard enclosures running off the right edge.', art: keySizeCard({ dx: 190, dy: 76, scale: 0.86, sw: 500, spread: 150 }) },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
