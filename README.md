@@ -48,7 +48,11 @@ can't drift, and regenerating is a no-op diff.
 | `blackhole-halo` | The same model tilted, the ring opened into a broad white-to-red halo | Same |
 | `blackhole-beamed` | The same model with Doppler beaming left in, so one side blazes | Same, when the physics is the point |
 | `planet-ring` | A wireframe Valkey globe ringed by article cards, one data structure each | Planet Valkey, community blog roundups, the wider ecosystem |
-| `key-size-card` | Card layout: lockup upper left, title lower left, the Valkey Admin ranking in a framed panel on the right | The big-keys post; the reference card for the layout |
+| `key-size-card-a` | Motif whole down the frame, shards off the right edge | Card layout candidate for the big-keys post |
+| `key-size-card-b` | Motif lifted, full width kept, tops off the top edge | Card layout candidate for the big-keys post |
+| `key-size-card-c` | Motif scaled down, only the last server column off the right | Card layout candidate for the big-keys post |
+| `key-size-card-d` | Motif dropped, bottoms off the bottom edge | Card layout candidate for the big-keys post |
+| `key-size-card-e` | Motif scaled up and dropped, off both bottom and right | Card layout candidate for the big-keys post |
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
@@ -120,14 +124,19 @@ Four things worth knowing:
 
 ## Card layout
 
-`key-size-card` is the reference for the card shape, after the Neon blog covers: the lockup
-in the upper left, the title on blocks in the lower left, one subject on the right inside a
-thin frame that it runs out through. The lockup comes from `stamp()` and the title from the
-caption slot, both of which every other banner already uses, so a card theme draws only the
-frame and the subject. `CARD` and `cardFrame()` in `generate.mjs` are the shared parts.
+`key-size-card-*` are the candidates for the card shape, after the Neon blog covers: the
+lockup in the upper left, the title on blocks in the lower left, the subject on the right.
+The lockup comes from `stamp()` and the title from the caption slot, both of which every
+other banner already uses, so a card theme only places the subject.
 
-The subject overlaps the frame rather than sitting inside it. A subject boxed in neatly
-reads as a screenshot; one breaking the edge reads as an object on a page.
+There is no frame around the subject. A thin rectangle was tried and looked wrong either way
+round: closed, its far edge showed straight through the translucent artwork; open on one
+side, it read as a stray bracket.
+
+The subject cannot both fill the height and clear the caption, because the Valkey Admin
+panel alone is 660 units tall and the caption takes the lower left. Clearing it means moving
+right, and the motif then runs off an edge. Which edge is the only thing the five candidates
+differ on, and it is a taste call rather than a correctness one.
 
 ## The release number
 

@@ -3303,49 +3303,29 @@ function keySizeDistribution() {
 // ------------------------------------------------------------------ cards
 //
 // The card layout, after the Neon blog covers: the lockup in the upper left, the
-// title on solid blocks in the lower left, and one subject on the right inside a
-// thin frame that it overlaps. The lockup already comes from stamp() and the title
-// from the caption slot, so a card theme draws only the frame and the subject. That
-// is the whole point of standardising it: the three fixed positions are shared with
-// every other banner in the set, so a card is a normal banner with a framed subject.
+// title on solid blocks in the lower left, and the subject on the right. The lockup
+// comes from stamp() and the title from the caption slot, both of which every other
+// banner already uses, so a card theme only places the subject.
 //
-// The subject overlaps the frame rather than sitting inside it. A subject boxed in
-// neatly reads as a screenshot; one breaking the edge reads as an object on a page.
-const CARD = { x: 975, y: 245, w: 830, h: 590 };
-
-// Three sides, open on the right, and the subject leaves through the opening. A
-// closed rectangle looked broken: the subjects here are translucent, so the frame's
-// far edge showed straight through the middle of the artwork instead of being
-// covered by it the way an opaque photograph would cover it.
-function cardFrame({ x, y, w, h } = CARD) {
-  return (
-    `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" fill="${C.ink}" fill-opacity="0.2"/>` +
-    `<path d="M ${n(x + w)} ${n(y)} L ${n(x)} ${n(y)} L ${n(x)} ${n(y + h)} L ${n(x + w)} ${n(y + h)}" ` +
-      `fill="none" stroke="${C.ice}" stroke-width="3" opacity="0.5"/>`
-  );
-}
-
-// Idea: a handful of keys are orders of magnitude bigger than the rest, and they are
-// spread across the deployment.
-// Focal: the two coral bars at the top of the ranking.
+// There is no frame around the subject any more. A thin rectangle was tried and it
+// looked wrong either way round: closed, its far edge showed straight through the
+// translucent artwork; open on one side, it read as a stray bracket.
 //
-// The subject is key-size-distribution's whole motif, panel and shards both, scaled
-// to sit in the frame and leaving through its open right side. The parent theme is
-// drawn by the same function, so the two cannot drift.
-function keySizeCard(r) {
-  const { x, y, w, h } = CARD;
-  const s = 0.84;
-  // The motif's drawn box is x 440..1480, y 210..870. Placed 35px inside the frame's
-  // left edge and centred in its height, which runs the shard enclosures out through
-  // the open right side.
-  const dx = x + 35 - 440 * s;
-  const dy = y + (h - 660 * s) / 2 - 210 * s;
-  return [
-    `  <g>${cardFrame()}</g>`,
-    `  <g transform="translate(${n(dx)} ${n(dy)}) scale(${s})">`,
-    keySizeDistribution(r),
-    `  </g>`,
-  ].join('\n');
+// The subject is key-size-distribution's motif, drawn by the same function as the
+// parent theme so the two cannot drift, moved far enough right that the caption is
+// clear of the panel. At this zoom the caption occupies x 274..838, y 682..904 of the
+// framed box (x 198..1722, y 111..969), and the panel alone is 660 tall, so it cannot
+// both fill the height and sit above the caption. Clearing it means moving right, and
+// the motif then runs off an edge. Which edge is what these five candidates differ on.
+//
+// dx/dy/scale place the motif, whose drawn box is x 440..1480, y 210..870.
+function keySizeCard(opts) {
+  return (r) =>
+    [
+      `  <g transform="translate(${n(opts.dx)} ${n(opts.dy)}) scale(${opts.scale})">`,
+      keySizeDistribution(r),
+      `  </g>`,
+    ].join('\n');
 }
 
 // ------------------------------------------------------- relativistic disk
@@ -3777,7 +3757,11 @@ const BASE_THEMES = [
   // The same model with the beaming left in, which is what a real disk does.
   { name: 'blackhole-beamed', space: true, seed: 52011, zoom: 1.2, center: [960, 540], title: 'Valkey black hole', desc: 'A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 80, outer: 24, scale: 47.6, markH: 220, beam: 1, rings: 28, segs: 108 }) },
   { name: 'planet-ring', space: true, seed: 51021, zoom: 1.16, center: [960, 540], title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing },
-  { name: 'key-size-card', seed: 43031, zoom: 1, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the title on solid light blocks in the lower left, and on the right a thin frame holding a Valkey Admin panel that ranks keys by size with each size printed beside its bar, the top two at tens of megabytes and drawn in red, the panel running out through the bottom of the frame.', art: keySizeCard },
+  { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame with the shard enclosures running off the right edge.', art: keySizeCard({ dx: 410, dy: 0, scale: 1 }) },
+  { name: 'key-size-card-b', seed: 43042, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, lifted so the whole width stays in frame and the tops of the panel and the shards run off the top edge.', art: keySizeCard({ dx: 0, dy: -195, scale: 1 }) },
+  { name: 'key-size-card-c', seed: 43043, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, scaled down so almost all of it stays in frame, with only the last column of servers running off the right edge.', art: keySizeCard({ dx: 450, dy: -30, scale: 0.9 }) },
+  { name: 'key-size-card-d', seed: 43044, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, dropped so the bottoms of the panel and the shards run off the bottom edge.', art: keySizeCard({ dx: 410, dy: 170, scale: 1 }) },
+  { name: 'key-size-card-e', seed: 43045, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, scaled up and dropped so it runs off both the bottom and the right edge.', art: keySizeCard({ dx: 340, dy: 110, scale: 1.14 }) },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
