@@ -1,6 +1,6 @@
 {
   "generatedBy": "generate.mjs",
-  "count": 41,
+  "count": 37,
   "themes": [
     {
       "name": "community",
@@ -438,58 +438,10 @@
       "name": "key-size-card-a",
       "title": "Finding big keys in a running Valkey cluster with Valkey Admin",
       "desc": "A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame with the shard enclosures running off the right edge. The title \"Finding big keys in a running Valkey cluster with Valkey Admin\" is set on solid light blocks in the lower left.",
-      "motif": "Motif whole down the frame, shards off the right edge",
-      "useFor": "Card layout candidate for the big-keys post",
+      "motif": "The key-size ranking and shards centred and scaled to clear the corner lockup, title overlapping the panel",
+      "useFor": "The big-keys post; the reference card layout",
       "image": "images/key-size-card-a.webp",
       "svg": "svg/key-size-card-a.svg",
-      "captioned": false,
-      "caption": "Finding big keys in a running Valkey cluster with Valkey Admin",
-      "space": false
-    },
-    {
-      "name": "key-size-card-b",
-      "title": "Finding big keys in a running Valkey cluster with Valkey Admin",
-      "desc": "A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, lifted so the whole width stays in frame and the tops of the panel and the shards run off the top edge. The title \"Finding big keys in a running Valkey cluster with Valkey Admin\" is set on solid light blocks in the lower left.",
-      "motif": "Motif lifted, full width kept, tops off the top edge",
-      "useFor": "Card layout candidate for the big-keys post",
-      "image": "images/key-size-card-b.webp",
-      "svg": "svg/key-size-card-b.svg",
-      "captioned": false,
-      "caption": "Finding big keys in a running Valkey cluster with Valkey Admin",
-      "space": false
-    },
-    {
-      "name": "key-size-card-c",
-      "title": "Finding big keys in a running Valkey cluster with Valkey Admin",
-      "desc": "A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, scaled down so almost all of it stays in frame, with only the last column of servers running off the right edge. The title \"Finding big keys in a running Valkey cluster with Valkey Admin\" is set on solid light blocks in the lower left.",
-      "motif": "Motif scaled down, only the last server column off the right",
-      "useFor": "Card layout candidate for the big-keys post",
-      "image": "images/key-size-card-c.webp",
-      "svg": "svg/key-size-card-c.svg",
-      "captioned": false,
-      "caption": "Finding big keys in a running Valkey cluster with Valkey Admin",
-      "space": false
-    },
-    {
-      "name": "key-size-card-d",
-      "title": "Finding big keys in a running Valkey cluster with Valkey Admin",
-      "desc": "A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, dropped so the bottoms of the panel and the shards run off the bottom edge. The title \"Finding big keys in a running Valkey cluster with Valkey Admin\" is set on solid light blocks in the lower left.",
-      "motif": "Motif dropped, bottoms off the bottom edge",
-      "useFor": "Card layout candidate for the big-keys post",
-      "image": "images/key-size-card-d.webp",
-      "svg": "svg/key-size-card-d.svg",
-      "captioned": false,
-      "caption": "Finding big keys in a running Valkey cluster with Valkey Admin",
-      "space": false
-    },
-    {
-      "name": "key-size-card-e",
-      "title": "Finding big keys in a running Valkey cluster with Valkey Admin",
-      "desc": "A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, scaled up and dropped so it runs off both the bottom and the right edge. The title \"Finding big keys in a running Valkey cluster with Valkey Admin\" is set on solid light blocks in the lower left.",
-      "motif": "Motif scaled up and dropped, off both bottom and right",
-      "useFor": "Card layout candidate for the big-keys post",
-      "image": "images/key-size-card-e.webp",
-      "svg": "svg/key-size-card-e.svg",
       "captioned": false,
       "caption": "Finding big keys in a running Valkey cluster with Valkey Admin",
       "space": false

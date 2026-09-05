@@ -48,11 +48,7 @@ can't drift, and regenerating is a no-op diff.
 | `blackhole-halo` | The same model tilted, the ring opened into a broad white-to-red halo | Same |
 | `blackhole-beamed` | The same model with Doppler beaming left in, so one side blazes | Same, when the physics is the point |
 | `planet-ring` | A wireframe Valkey globe ringed by article cards, one data structure each | Planet Valkey, community blog roundups, the wider ecosystem |
-| `key-size-card-a` | Motif whole down the frame, shards off the right edge | Card layout candidate for the big-keys post |
-| `key-size-card-b` | Motif lifted, full width kept, tops off the top edge | Card layout candidate for the big-keys post |
-| `key-size-card-c` | Motif scaled down, only the last server column off the right | Card layout candidate for the big-keys post |
-| `key-size-card-d` | Motif dropped, bottoms off the bottom edge | Card layout candidate for the big-keys post |
-| `key-size-card-e` | Motif scaled up and dropped, off both bottom and right | Card layout candidate for the big-keys post |
+| `key-size-card-a` | The key-size ranking and shards centred and scaled to clear the corner lockup, title overlapping the panel | The big-keys post; the reference card layout |
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
@@ -133,10 +129,14 @@ There is no frame around the subject. A thin rectangle was tried and looked wron
 round: closed, its far edge showed straight through the translucent artwork; open on one
 side, it read as a stray bracket.
 
-The subject cannot both fill the height and clear the caption, because the Valkey Admin
-panel alone is 660 units tall and the caption takes the lower left. Clearing it means moving
-right, and the motif then runs off an edge. Which edge is the only thing the five candidates
-differ on, and it is a taste call rather than a correctness one.
+Three fixed things set where the subject goes, all in the framed box x 198..1722,
+y 111..969: the corner lockup at x 262..469, y 158..228; the caption blocks at x 274..838,
+y 682..904; and the motif's own box at x 440..1480, y 210..870 before scaling.
+
+`key-size-distribution` sits centred, which puts the panel's top left corner just inside the
+lockup. Scaling to 0.88 pulls it clear and keeps the left and right margins even at 304 a
+side, so nothing runs off an edge. The caption still crosses the panel's lower left, which is
+what ties the title to the artwork; clearing it completely leaves a dead gap between them.
 
 ## The release number
 

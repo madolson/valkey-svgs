@@ -3312,13 +3312,23 @@ function keySizeDistribution() {
 // translucent artwork; open on one side, it read as a stray bracket.
 //
 // The subject is key-size-distribution's motif, drawn by the same function as the
-// parent theme so the two cannot drift, moved right until the title blocks only just
-// cross it. At this zoom the caption occupies x 274..838, y 682..904 of the framed box
-// (x 198..1722, y 111..969). Moving far enough right to clear it completely leaves a
-// dead gap between the text and the artwork, so each variant lands the panel about 55
-// units inside the caption's edge instead: the blocks overlap the artwork, which is
-// what holds the two halves of the card together. The panel alone is 660 tall, so the
-// motif still has to run off an edge, and which edge is what these five differ on.
+// parent theme so the two cannot drift. Three fixed things set where it goes, all in
+// the framed box x 198..1722, y 111..969:
+//
+//   the corner lockup   x 262..469,  y 158..228
+//   the caption blocks  x 274..838,  y 682..904
+//   the motif's own box  x 440..1480, y 210..870 before scaling
+//
+// The parent theme sits centred, which puts the panel's top left corner just inside
+// the lockup. Scaling to 0.82 pulls it clear by 65 units and keeps the margins even at
+// 336 a side, so nothing runs off an edge either.
+//
+// The vertical is set by the last row of the chart, not by centring. At 0.88 the caption
+// crossed the panel far enough up to cut "1.2 MB" in half and leave "KB" orphaned. The
+// bottom size label's baseline is at 820 before scaling, so the motif is placed to put
+// it at 668, thirteen units above the caption's top edge at 682. The panel's rounded
+// bottom still runs 27 units under the blocks, which keeps the title tied to the
+// artwork without any of the chart disappearing behind it.
 //
 // dx/dy/scale place the motif, whose drawn box is x 440..1480, y 210..870.
 function keySizeCard(opts) {
@@ -3759,11 +3769,7 @@ const BASE_THEMES = [
   // The same model with the beaming left in, which is what a real disk does.
   { name: 'blackhole-beamed', space: true, seed: 52011, zoom: 1.2, center: [960, 540], title: 'Valkey black hole', desc: 'A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 80, outer: 24, scale: 47.6, markH: 220, beam: 1, rings: 28, segs: 108 }) },
   { name: 'planet-ring', space: true, seed: 51021, zoom: 1.16, center: [960, 540], title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing },
-  { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame with the shard enclosures running off the right edge.', art: keySizeCard({ dx: 338, dy: 0, scale: 1 }) },
-  { name: 'key-size-card-b', seed: 43042, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, lifted so the whole width stays in frame and the tops of the panel and the shards run off the top edge.', art: keySizeCard({ dx: 0, dy: -135, scale: 1 }) },
-  { name: 'key-size-card-c', seed: 43043, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, scaled down so almost all of it stays in frame, with only the last column of servers running off the right edge.', art: keySizeCard({ dx: 382, dy: -30, scale: 0.9 }) },
-  { name: 'key-size-card-d', seed: 43044, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, dropped so the bottoms of the panel and the shards run off the bottom edge.', art: keySizeCard({ dx: 338, dy: 170, scale: 1 }) },
-  { name: 'key-size-card-e', seed: 43045, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, scaled up and dropped so it runs off both the bottom and the right edge.', art: keySizeCard({ dx: 276, dy: 110, scale: 1.14 }) },
+  { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame with the shard enclosures running off the right edge.', art: keySizeCard({ dx: 173, dy: -4, scale: 0.82 }) },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
