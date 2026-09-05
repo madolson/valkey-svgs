@@ -387,37 +387,37 @@
       "space": false
     },
     {
+      "name": "blackhole-gargantua",
+      "title": "Valkey black hole",
+      "desc": "A black hole seen almost edge on: a black circular shadow wrapped by one thin bright ring that closes all the way round it, the accretion disk lensed over the top and its secondary image returning underneath, the flat disk running out to both edges of the frame as a warm band, even in brightness on both sides, with the white Valkey hexagon mark at the centre. The title \"Valkey black hole\" is set on solid light blocks in the lower left.",
+      "motif": "Edge-on relativistic disk, one thin ring closing right round the shadow, even on both sides",
+      "useFor": "Talks, keynotes, anything that wants one striking abstract image",
+      "image": "images/blackhole-gargantua.webp",
+      "svg": "svg/blackhole-gargantua.svg",
+      "captioned": false,
+      "caption": "Black hole",
+      "space": true
+    },
+    {
+      "name": "blackhole-halo",
+      "title": "Valkey black hole",
+      "desc": "A black hole seen at a slight tilt so the lensed ring around its shadow opens into a broad halo, white at the inner edge through gold to red at the rim, even in brightness on both sides, with the white Valkey hexagon mark at the centre. The title \"Valkey black hole\" is set on solid light blocks in the lower left.",
+      "motif": "The same model tilted, the ring opened into a broad white-to-red halo",
+      "useFor": "Same",
+      "image": "images/blackhole-halo.webp",
+      "svg": "svg/blackhole-halo.svg",
+      "captioned": false,
+      "caption": "Black hole",
+      "space": true
+    },
+    {
       "name": "blackhole-beamed",
       "title": "Valkey black hole",
       "desc": "A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre. The title \"Valkey black hole\" is set on solid light blocks in the lower left.",
-      "motif": "Relativistic disk near edge on, one side blazing from Doppler beaming",
-      "useFor": "Talks, keynotes, anything that wants one striking abstract image",
+      "motif": "The same model with Doppler beaming left in, so one side blazes",
+      "useFor": "Same, when the physics is the point",
       "image": "images/blackhole-beamed.webp",
       "svg": "svg/blackhole-beamed.svg",
-      "captioned": false,
-      "caption": "Black hole",
-      "space": true
-    },
-    {
-      "name": "blackhole-inclined",
-      "title": "Valkey black hole",
-      "desc": "A relativistic accretion disk seen at a moderate tilt, reading as a hot ring with a hole in it: white at the inner edge, gold through the middle and red at the rim, brighter on the left where the orbiting gas comes towards the viewer, lensed up over the dark shadow at the centre and crossing in front of it below, with the white Valkey hexagon mark at the centre. The title \"Valkey black hole\" is set on solid light blocks in the lower left.",
-      "motif": "The same model tilted, reading as a hot ring with a hole in it",
-      "useFor": "Same",
-      "image": "images/blackhole-inclined.webp",
-      "svg": "svg/blackhole-inclined.svg",
-      "captioned": false,
-      "caption": "Black hole",
-      "space": true
-    },
-    {
-      "name": "blackhole-open",
-      "title": "Valkey black hole",
-      "desc": "A relativistic accretion disk seen close to face on, a broad ring running white at its inner edge through gold to red at the rim, with the dark shadow and its thin photon ring at the centre and the white Valkey hexagon mark on top. The title \"Valkey black hole\" is set on solid light blocks in the lower left.",
-      "motif": "The same model close to face on, a broad white-to-red annulus",
-      "useFor": "Same",
-      "image": "images/blackhole-open.webp",
-      "svg": "svg/blackhole-open.svg",
       "captioned": false,
       "caption": "Black hole",
       "space": true

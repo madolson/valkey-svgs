@@ -44,9 +44,9 @@ can't drift, and regenerating is a no-op diff.
 | `data-structures-grid` | Six value types, one per cell on an even 3x2 grid: byte run, list, set, hash, sorted set, bitmap | Type overviews, command surveys, what Valkey stores |
 | `k8s-spec-fanout` | A declared spec panel fanning out along rails into a grid of identical instances | Helm charts, operators, declarative deployment |
 | `key-size-distribution` | Ranked key-size bars with two big outliers, fanning into a grid of servers | Key size skew, heavy hitters, hot keys across a fleet |
-| `blackhole-beamed` | Relativistic disk near edge on, one side blazing from Doppler beaming | Talks, keynotes, anything that wants one striking abstract image |
-| `blackhole-inclined` | The same model tilted, reading as a hot ring with a hole in it | Same |
-| `blackhole-open` | The same model close to face on, a broad white-to-red annulus | Same |
+| `blackhole-gargantua` | Edge-on relativistic disk, one thin ring closing right round the shadow, even on both sides | Talks, keynotes, anything that wants one striking abstract image |
+| `blackhole-halo` | The same model tilted, the ring opened into a broad white-to-red halo | Same |
+| `blackhole-beamed` | The same model with Doppler beaming left in, so one side blazes | Same, when the physics is the point |
 | `planet-ring` | A wireframe Valkey globe ringed by article cards, one data structure each | Planet Valkey, community blog roundups, the wider ecosystem |
 | `key-size-card` | Card layout: lockup upper left, title lower left, the Valkey Admin ranking in a framed panel on the right | The big-keys post; the reference card for the layout |
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
