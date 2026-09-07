@@ -18,6 +18,7 @@
 // (downsamples and encodes the WebP): `pip3 install Pillow`. All randomness is
 // seeded, so re-running produces byte-identical output on a given machine.
 
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -31,6 +32,10 @@ const OG_DIR = join(HERE, 'images', 'og');
 // The chrome-free copy: same art, no corner lockup and no title blocks, for anyone who
 // wants to set their own type over it. The gallery has a toggle that swaps to these.
 const PLAIN_DIR = join(HERE, 'images', 'plain');
+// Render cache. An SVG fully determines its raster, so its hash is the cache key: a run
+// that regenerates identical markup can skip Chrome and Pillow entirely. Not committed,
+// because it describes this machine's outputs and nothing else.
+const CACHE_FILE = join(HERE, '.render-cache.json');
 const LOGO = join(HERE, 'assets', 'Valkey-logo.svg');
 // The official horizontal lockup, mark plus wordmark, copied from
 // valkey-io.github.io/static/img/valkey-horizontal.svg. Used for the corner stamp
@@ -3358,24 +3363,48 @@ function keySizeDistribution(r, { spread = 0 } = {}) {
 // nothing in the panel is behind the blocks any more. The panel's rounded bottom still
 // runs 20 units under them, which is the overlap that ties the title to the artwork.
 //
-// dx 245 comes from the labels: they are right-aligned at 832 before scaling, and the
-// widest needs dx above 241 to sit past where the caption reached at three lines.
-// Widening the panel would have cleared them too and was tried first, but the header is
-// centred on the panel, the axis is offset from that and the bar lengths are absolute,
+// The artwork is centred in the frame on both axes, 298 units of margin left and right
+// and 145 top and bottom, and those numbers are computed rather than tuned.
+//
+// The labels do not constrain the horizontal. They are right-aligned at 832 before
+// scaling, which once had to clear a three-line caption reaching to 838, but at two lines
+// the clearance is vertical instead. Widening the panel was tried and rejected: the header
+// is centred on the panel, the axis is offset from that and the bar lengths are absolute,
 // so a wider panel pulls the bars away from their labels and the chart stops reading as
 // one column.
 //
-// The shards are spread 150 further right, filling the space on that side that the
-// title's block stack takes on this one.
+// Centring costs the bottom row of the chart, the 860 KB bar and its label, which the
+// block stack crosses. One row, and the same overlap the parent theme has.
 //
-// dx/dy/scale place the motif, whose drawn box is x 440..1480, y 210..870.
+// Spread came down from 150 to 40 rather than to 0 because the shards have to stay clear
+// of the harness curves leaving the panel. At 40, centred, the enclosures end at 1424 and
+// the panel starts at 496, both inside the narrow crop's 427..1493, so the whole cluster
+// sits in both crops. The
+// intermediate values do not work: 26 units of enclosure padding is all that separates the
+// third tile's right edge from the enclosure's, so any framing that bleeds the enclosure
+// meaningfully also slices a tile, and a half-cut hexagon reads as a bug rather than as
+// the cluster continuing.
+//
+// The placement is computed, not tuned. The motif's drawn box is x 440..1480 plus
+// `spread`, y 210..870; scale it, then centre it in the framed box. Every hand-tuned
+// attempt at this drifted, most recently to 352 left against 243 right, because the
+// numbers to balance are the scaled box against the frame and neither is obvious by eye.
+function keySizeCardBox(theme, { scale, spread }) {
+  const { vx, vy, vw, vh } = frameBox(theme);
+  const w = (1040 + spread) * scale;
+  const h = 660 * scale;
+  return { dx: vx + (vw - w) / 2 - 440 * scale, dy: vy + (vh - h) / 2 - 210 * scale, w, h };
+}
+
 function keySizeCard(opts) {
-  return (r) =>
-    [
-      `  <g transform="translate(${n(opts.dx)} ${n(opts.dy)}) scale(${opts.scale})">`,
+  return (r, _opts, theme) => {
+    const { dx, dy } = keySizeCardBox(theme, opts);
+    return [
+      `  <g transform="translate(${n(dx)} ${n(dy)}) scale(${opts.scale})">`,
       keySizeDistribution(r, { spread: opts.spread }),
       `  </g>`,
     ].join('\n');
+  };
 }
 
 // ------------------------------------------------------- relativistic disk
@@ -3807,7 +3836,7 @@ const BASE_THEMES = [
   // The same model with the beaming left in, which is what a real disk does.
   { name: 'blackhole-beamed', space: true, seed: 52011, zoom: 1.2, center: [960, 540], title: 'Valkey black hole', desc: 'A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 80, outer: 24, scale: 47.6, markH: 220, beam: 1, rings: 28, segs: 108 }) },
   { name: 'planet-ring', space: true, seed: 51021, zoom: 1.16, center: [960, 540], title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing },
-  { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame with the shard enclosures running off the right edge.', art: keySizeCard({ dx: 245, dy: 30, scale: 0.86, spread: 150 }) },
+  { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame.', art: keySizeCard({ scale: 0.86, spread: 40 }) },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
@@ -3951,9 +3980,28 @@ mkdirSync(PLAIN_DIR, { recursive: true });
   writeFileSync(join(HERE, 'themes.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
+// Rendering is the whole cost of a run: two Chrome screenshots and two Pillow encodes per
+// theme, about six seconds each, so a full rebuild is four minutes and almost all of it is
+// spent redrawing files that did not change. The SVG fully determines the raster, so its
+// hash is the cache key. A theme is re-rendered when its markup differs from the hash on
+// record or when any of its outputs is missing; otherwise it is skipped. --force ignores
+// the cache. Nothing about correctness rests on this: delete .render-cache.json and the
+// next run rebuilds everything.
+const sha = (v) => createHash('sha256').update(v).digest('hex').slice(0, 16);
+const cache = (() => {
+  if (flags.force) return {};
+  try {
+    return JSON.parse(readFileSync(CACHE_FILE, 'utf8'));
+  } catch {
+    return {};
+  }
+})();
+
 const chrome = findChrome();
 checkPillow();
 const scratch = mkdtempSync(join(tmpdir(), 'valkey-headers-'));
+let rendered = 0;
+let skipped = 0;
 
 try {
   for (const theme of themes) {
@@ -3971,7 +4019,23 @@ try {
       theme.text !== undefined
         ? { ...withCaption, desc: `${withCaption.desc} The caption reads "${esc(text)}".` }
         : withCaption;
-    writeFileSync(svgPath, wrap(captioned, theme.art(rng(theme.seed), { text })));
+    const art = theme.art(rng(theme.seed), { text }, captioned);
+    const svgText = wrap(captioned, art);
+    const plainText = wrap(captioned, art, { chrome: false });
+    writeFileSync(svgPath, svgText);
+
+    const webpPath = join(OUT_DIR, `${slug}.webp`);
+    const ogPath = join(OG_DIR, `${slug}.webp`);
+    const plainPath = join(PLAIN_DIR, `${slug}.webp`);
+    const key = `${sha(svgText)}-${sha(plainText)}`;
+    const fresh =
+      !flags.out &&
+      cache[slug] === key &&
+      [webpPath, ogPath, plainPath].every((f) => existsSync(f));
+    if (fresh) {
+      skipped++;
+      continue;
+    }
 
     // Render at 2x and downsample, so thin strokes get proper antialiasing.
     const pngPath = join(scratch, `${slug}.png`);
@@ -3989,8 +4053,6 @@ try {
       { stdio: ['ignore', 'ignore', 'ignore'] }
     );
 
-    const webpPath = join(OUT_DIR, `${slug}.webp`);
-    const ogPath = join(OG_DIR, `${slug}.webp`);
     execFileSync('python3', ['-c', ENCODE, pngPath, webpPath, String(W), String(H), '92', ogPath], {
       stdio: ['ignore', 'ignore', 'inherit'],
     });
@@ -3999,7 +4061,7 @@ try {
     // left off, so keeping it would be a second file to notice drifting.
     const plainSvg = join(scratch, `${slug}-plain.svg`);
     const plainPng = join(scratch, `${slug}-plain.png`);
-    writeFileSync(plainSvg, wrap(captioned, theme.art(rng(theme.seed), { text }), { chrome: false }));
+    writeFileSync(plainSvg, plainText);
     execFileSync(
       chrome,
       [
@@ -4013,14 +4075,17 @@ try {
       ],
       { stdio: ['ignore', 'ignore', 'ignore'] }
     );
-    execFileSync(
-      'python3',
-      ['-c', ENCODE_ONE, plainPng, join(PLAIN_DIR, `${slug}.webp`), String(W), String(H), '92'],
-      { stdio: ['ignore', 'ignore', 'inherit'] }
-    );
+    execFileSync('python3', ['-c', ENCODE_ONE, plainPng, plainPath, String(W), String(H), '92'], {
+      stdio: ['ignore', 'ignore', 'inherit'],
+    });
 
+    if (!flags.out) cache[slug] = key;
+    rendered++;
     console.log(`${theme.name.padEnd(22)} svg/${slug}.svg -> images/${slug}.webp + og + plain`);
   }
 } finally {
   rmSync(scratch, { recursive: true, force: true });
+  writeFileSync(CACHE_FILE, `${JSON.stringify(cache, null, 2)}\n`);
 }
+
+console.log(`${rendered} rendered, ${skipped} unchanged`);

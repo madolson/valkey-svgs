@@ -75,9 +75,18 @@ pulls this repo in as a submodule and renders from it.
 ## Regenerating
 
 ```sh
-node generate.mjs                        # all themes
+node generate.mjs                        # all themes, skipping any that are unchanged
 node generate.mjs performance release    # just these
+node generate.mjs --force                # ignore the cache and redraw everything
 ```
+
+Rendering is the whole cost of a run: two Chrome screenshots and two Pillow encodes per
+theme, so a full rebuild from cold is about five and a half minutes. An SVG fully
+determines its raster, so its hash is used as a cache key in `.render-cache.json`
+(gitignored). A theme is redrawn when its markup differs from the hash on record or when
+one of its outputs is missing; otherwise it is skipped, and a no-op rebuild takes under a
+second. Nothing about correctness rests on it: delete the file and the next run redraws
+everything.
 
 Requirements:
 
