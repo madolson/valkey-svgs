@@ -49,6 +49,7 @@ can't drift, and regenerating is a no-op diff.
 | `blackhole-beamed` | The same model with Doppler beaming left in, so one side blazes | Same, when the physics is the point |
 | `planet-ring` | A wireframe Valkey globe ringed by article cards, one data structure each | Planet Valkey, community blog roundups, the wider ecosystem |
 | `key-size-card-a` | The key-size ranking and shards centred and scaled to clear the corner lockup, title overlapping the panel | The big-keys post; the reference card layout |
+| `key-size-card-flat` | The same card with the artwork short and wide, sitting clear of the title rather than under it | The big-keys post, when the title should not cross the chart |
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
@@ -243,6 +244,22 @@ Then confirm you did not churn anything else:
 ```sh
 node generate.mjs && git diff --stat    # should be empty except your theme
 ```
+
+## Rejected
+
+Candidates that were built, rendered and dropped. Read this before shortlisting: several
+obvious-looking ideas are already on it.
+
+```
+security-shield / tall (470x660)        — narrow and upright, reads as a crest rather than a shield
+security-shield / broad (700x520)       — low and wide, the glow reaches the narrow crop's edges
+security-shield / hex (536x620)         — hexagon silhouette, says Valkey twice with the mark inside it
+security-shield / high (mark up 86)     — empties the lower chamber, the weave becomes the subject
+security-shield / hex-high              — both faults at once
+```
+
+All five lost to `security-shield-clean` on the same judgement: the shipped proportions are
+better than any of them, and the shield's silhouette is not a knob worth turning.
 
 ## Licence
 

@@ -822,6 +822,9 @@ function shieldPath(cx, cy, w, h, shoulder = 0.56) {
 
 // Security, woven: the same shield as `security` with the speckle taken out, so
 // the only thing inside it is the lattice it is made of.
+//
+// The proportions are not parameters. Five variations on them were built and all five
+// lost to this one; see Rejected in the README before trying a sixth.
 function securityShieldClean() {
   const cx = 960;
   const cy = 545;
@@ -3263,7 +3266,7 @@ function adminPanel() {
 // the header is centred on it, the axis is offset from that, the bar lengths are
 // absolute and the size labels are right-aligned to its far edge, so widening it pulls
 // the bars away from their labels and the chart stops reading as one column.
-function keySizeDistribution(r, { spread = 0 } = {}) {
+function keySizeDistribution(r, { spread = 0, colPitch = 144 } = {}) {
   const { sx, sw } = ADMIN_PANEL;
   const { panel, bars } = adminPanel();
 
@@ -3271,11 +3274,17 @@ function keySizeDistribution(r, { spread = 0 } = {}) {
   // composition has about 1050px to live in at this zoom. Tiles are therefore
   // 120 with a 24px gap and 26px of enclosure padding: at 134 they filled the
   // budget exactly and ended up edge to edge.
+  //
+  // `colPitch` is the column spacing, and the tile stays 120 whatever it is, so
+  // raising it widens the gap between servers rather than the servers. The enclosure
+  // is derived from the outer columns instead of being written out, which is what
+  // keeps it hugging them at any pitch.
   const rows = [310, 540, 770];
-  const cols = [1106 + spread, 1250 + spread, 1394 + spread];
   const tile = 120;
-  const shardX0 = 1020 + spread; // 160px of air between the panel and the shards
-  const shardX1 = 1480 + spread;
+  const PAD = 26;
+  const cols = [0, 1, 2].map((i) => 1106 + i * colPitch + spread);
+  const shardX0 = cols[0] - tile / 2 - PAD; // 160px of air between the panel and the shards
+  const shardX1 = cols[2] + tile / 2 + PAD;
   const shardH = 200;
 
 
@@ -3385,15 +3394,33 @@ function keySizeDistribution(r, { spread = 0 } = {}) {
 // meaningfully also slices a tile, and a half-cut hexagon reads as a bug rather than as
 // the cluster continuing.
 //
-// The placement is computed, not tuned. The motif's drawn box is x 440..1480 plus
-// `spread`, y 210..870; scale it, then centre it in the framed box. Every hand-tuned
-// attempt at this drifted, most recently to 352 left against 243 right, because the
-// numbers to balance are the scaled box against the frame and neither is obvious by eye.
-function keySizeCardBox(theme, { scale, spread }) {
+// The placement is computed, not tuned. The motif's drawn box runs from x 440 to the
+// right edge of the last shard enclosure, y 210..870; scale it, then centre it in the
+// framed box. Every hand-tuned attempt at this drifted, most recently to 352 left against
+// 243 right, because the numbers to balance are the scaled box against the frame and
+// neither is obvious by eye.
+//
+// The right edge is derived, not written down, because two arguments move it: `spread`
+// slides the shards away from the panel and `colPitch` spaces the columns. It is the last
+// column's centre plus half a tile plus the enclosure's 26 units of padding, which comes
+// out at 1480 for the defaults.
+//
+// `clearY` is the one constraint that overrides centring, and only ever upwards. Vertical
+// centring knows about the framed box and nothing about the caption, so a variant that has
+// to sit clear of the title blocks states the y it must stay above and gets its dy from
+// that instead. Without a `clearY` the behaviour is unchanged.
+function keySizeCardBox(theme, { scale, spread, colPitch = 144, clearY }) {
   const { vx, vy, vw, vh } = frameBox(theme);
-  const w = (1040 + spread) * scale;
+  const right = 1192 + 2 * colPitch + spread;
+  const w = (right - 440) * scale;
   const h = 660 * scale;
-  return { dx: vx + (vw - w) / 2 - 440 * scale, dy: vy + (vh - h) / 2 - 210 * scale, w, h };
+  const dy = vy + (vh - h) / 2 - 210 * scale;
+  return {
+    dx: vx + (vw - w) / 2 - 440 * scale,
+    dy: clearY === undefined ? dy : Math.min(dy, clearY - 870 * scale),
+    w,
+    h,
+  };
 }
 
 function keySizeCard(opts) {
@@ -3401,7 +3428,7 @@ function keySizeCard(opts) {
     const { dx, dy } = keySizeCardBox(theme, opts);
     return [
       `  <g transform="translate(${n(dx)} ${n(dy)}) scale(${opts.scale})">`,
-      keySizeDistribution(r, { spread: opts.spread }),
+      keySizeDistribution(r, { spread: opts.spread, colPitch: opts.colPitch }),
       `  </g>`,
     ].join('\n');
   };
@@ -3837,6 +3864,22 @@ const BASE_THEMES = [
   { name: 'blackhole-beamed', space: true, seed: 52011, zoom: 1.2, center: [960, 540], title: 'Valkey black hole', desc: 'A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 80, outer: 24, scale: 47.6, markH: 220, beam: 1, rings: 28, segs: 108 }) },
   { name: 'planet-ring', space: true, seed: 51021, zoom: 1.16, center: [960, 540], title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing },
   { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame.', art: keySizeCard({ scale: 0.86, spread: 40 }) },
+  // The flat card: the same artwork in a shorter, wider footprint, sitting clear of the
+  // title blocks instead of overlapping them.
+  //
+  // 0.80 is not a taste choice, it is the only scale that works. The band between the
+  // lockup's bottom at 228 and the block stack's top at 758 is 530 units, the artwork's
+  // drawn height is 660, and 660 * 0.80 = 528 fits it with 2 to spare. Going smaller to
+  // buy margin is not available either: the size labels are drawn at 38, and 38 * 0.80 *
+  // 1.26 is 38.3 rendered, which is the smallest label anything in this set has survived
+  // at. So the vertical is fully determined and the only free variable is the width.
+  //
+  // Which the lockup caps. The artwork is centred, so every unit of width added to it
+  // moves its left edge half a unit towards the lockup, and the panel has to stop clear of
+  // x 469. That puts the ceiling at 920 scaled units, and colPitch 168 with spread 62
+  // spends it: the columns get 24 more units between them and the panel-to-shard span gets
+  // the rest. It is not a dramatic stretch, because the frame is the frame.
+  { name: 'key-size-card-flat', seed: 43049, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three widely spaced shard enclosures of servers drawn as the white Valkey hexagon mark, the whole chart sitting in a shallow band clear above the title blocks.', art: keySizeCard({ scale: 0.8, spread: 62, colPitch: 168, clearY: 748 }) },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

@@ -1,6 +1,6 @@
 {
   "generatedBy": "generate.mjs",
-  "count": 37,
+  "count": 38,
   "themes": [
     {
       "name": "community",
@@ -479,6 +479,19 @@
       "image": "images/key-size-card-a.webp",
       "plain": "images/plain/key-size-card-a.webp",
       "svg": "svg/key-size-card-a.svg",
+      "captioned": false,
+      "caption": "Finding big keys in a running Valkey cluster with Valkey Admin",
+      "space": false
+    },
+    {
+      "name": "key-size-card-flat",
+      "title": "Finding big keys in a running Valkey cluster with Valkey Admin",
+      "desc": "A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three widely spaced shard enclosures of servers drawn as the white Valkey hexagon mark, the whole chart sitting in a shallow band clear above the title blocks. The title \"Finding big keys in a running Valkey cluster with Valkey Admin\" is set on solid light blocks in the lower left.",
+      "motif": "The same card with the artwork short and wide, sitting clear of the title rather than under it",
+      "useFor": "The big-keys post, when the title should not cross the chart",
+      "image": "images/key-size-card-flat.webp",
+      "plain": "images/plain/key-size-card-flat.webp",
+      "svg": "svg/key-size-card-flat.svg",
       "captioned": false,
       "caption": "Finding big keys in a running Valkey cluster with Valkey Admin",
       "space": false
