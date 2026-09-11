@@ -26,7 +26,7 @@
     {
       "name": "cluster-gossip",
       "title": "Valkey cluster gossip",
-      "desc": "Seven shards on a tilted ring around a slot ring and the white Valkey mark, trading messages along a full mesh, each arriving message flashing the shard it reaches, with a highlight sweeping once round the slot ring.",
+      "desc": "Six shards at the corners of a hexagon around a hexagonal slot ring and the white Valkey mark, trading messages across a mesh, each arriving message flashing the shard it reaches, with a highlight sweeping once round the slot ring.",
       "loop": 4.8,
       "fps": 24,
       "animated": "motion/cluster-gossip.webp",
@@ -42,6 +42,16 @@
       "animated": "motion/performance-traffic.webp",
       "poster": "motion/performance-traffic-poster.webp",
       "source": "html/performance-traffic.html"
+    },
+    {
+      "name": "eclipse-corona",
+      "title": "Valkey eclipse",
+      "desc": "A total solar eclipse: a hard black disc with the white Valkey hexagon mark at its centre, ringed by a thin brilliant chromosphere, the corona streaming outward all round it in long equatorial lobes and short polar plumes, with four coral prominences looping off the limb.",
+      "loop": 5,
+      "fps": 24,
+      "animated": "motion/eclipse-corona.webp",
+      "poster": "motion/eclipse-corona-poster.webp",
+      "source": "html/eclipse-corona.html"
     }
   ]
 }

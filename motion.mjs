@@ -655,97 +655,107 @@ function blackholeDraw(g, t, u, s, R) {
   R.mark(s.cx, s.cy, s.markH);
 }
 
-// -- Cluster gossip. Shards on a tilted ring around a slot ring, trading messages. The plane
-// is tilted rather than flat so the ring reads as a ring, and so the lowest shards stay above
-// the caption slot; a flat circle wide enough to be legible puts a node behind the blocks.
+// -- Cluster gossip. Shards trading messages around a hexagon. The layout is the Valkey mark
+// at scale: pointy-top, and the mark's own width-to-height ratio, so the ring echoes the mark
+// at its centre rather than contradicting it. An ellipse was tried first and it fought the
+// brand for no gain.
 function gossipSetup(R) {
-  const cx = 960, cy = 460;
-  const rx = 520, ry = 328;              // the shard ellipse
-  const n = 7;                           // odd, so no two shards are ever mirror images
+  const cx = 960, cy = 500;
+  // A pointy-top hexagon: a vertex top and bottom, and the four corners of two vertical
+  // sides. 0.855 is the mark's own half-width over half-height, which is a regular hexagon to
+  // within a percent; taking it from the mark rather than from cos(30) keeps them in step if
+  // the logo ever moves.
+  const A = 330, hw = A * 0.855;
+  const verts = [[0, -A], [hw, -A / 2], [hw, A / 2], [0, A], [-hw, A / 2], [-hw, -A / 2]];
+  const shards = verts.map(([dx, dy]) => ({ x: cx + dx, y: cy + dy, a: Math.atan2(dy, dx) }));
+
   const r = R.rand(31337);
-  const shards = [];
-  for (let i = 0; i < n; i++) {
-    const a = -Math.PI / 2 + (i / n) * R.TAU;
-    shards.push({ x: cx + rx * Math.cos(a), y: cy + ry * Math.sin(a), a, replicas: 2 });
-  }
-  // Every ordered pair gossips, which is what a full mesh is. Each edge carries its own
-  // whole number of messages per loop so its traffic closes.
+  // Every pair gossips except the three that are diametrically opposite, whose edges would run
+  // straight through the mark. One focal element: nothing crosses it.
   const edges = [];
-  for (let i = 0; i < n; i++) {
-    for (let k = i + 1; k < n; k++) {
-      const trips = 1 + ((r() * 3) | 0);
-      edges.push({ a: i, b: k, trips, phase: r(), dir: r() < 0.5 ? 1 : -1, tint: r() < 0.25 ? R.C.mint : R.C.cyanLt });
+  for (let i = 0; i < 6; i++) {
+    for (let k = i + 1; k < 6; k++) {
+      if (k - i === 3) continue;
+      const rim = k - i === 1 || (i === 0 && k === 5);
+      edges.push({ a: i, b: k, rim, trips: 1 + ((r() * 3) | 0), phase: r(), dir: r() < 0.5 ? 1 : -1, tint: r() < 0.25 ? R.C.mint : R.C.cyanLt });
     }
   }
-  return { cx, cy, rx, ry, shards, edges, markH: 210, slotRx: 300, slotRy: 189, slots: 128 };
+
+  // The slot ring is a hexagon too, ticks laid along its perimeter rather than round a circle.
+  const S = 200, shw = S * 0.855;
+  const sv = [[0, -S], [shw, -S / 2], [shw, S / 2], [0, S], [-shw, S / 2], [-shw, -S / 2]];
+  const perEdge = 21, slots = [];
+  for (let e = 0; e < 6; e++) {
+    const P = sv[e], Q = sv[(e + 1) % 6];
+    // Outward normal of this edge. The sign is settled against the edge midpoint rather than
+    // assumed from the winding, so reordering the vertices cannot flip the ticks inward.
+    let nx = Q[1] - P[1], ny = -(Q[0] - P[0]);
+    const nl = Math.hypot(nx, ny) || 1;
+    nx /= nl; ny /= nl;
+    if (nx * (P[0] + Q[0]) + ny * (P[1] + Q[1]) < 0) { nx = -nx; ny = -ny; }
+    for (let i = 0; i < perEdge; i++) {
+      const f = i / perEdge;
+      slots.push({ x: cx + R.lerp(P[0], Q[0], f), y: cy + R.lerp(P[1], Q[1], f), nx, ny });
+    }
+  }
+  return { cx, cy, shards, edges, slots, markH: 210 };
 }
 
 function gossipDraw(g, t, u, s, R) {
   const TAU = R.TAU;
 
-  // The slot ring: 128 ticks on the same tilted plane, with one highlight sweeping round per
-  // loop. The sweep is the only thing that says which way the ring turns. Brightness only --
-  // the first pass grew the lit ticks as well, and a run of longer ticks on a tilted ellipse
-  // reads as a torn edge rather than as a highlight.
-  // Ticks run a fixed 15px along the ellipse's outward normal. Stepping a fixed *fraction* of
-  // the radius instead makes them 14px wide at the sides and 9px tall at the top, and the
-  // ring reads as sloppy rather than as tilted.
+  // The slot hexagon, with one highlight sweeping round its perimeter per loop. The sweep is
+  // the only thing that says which way the ring turns. Brightness only, and a fixed tick
+  // length along each edge's own normal: varying either reads as a torn edge.
   g.lineWidth = 3;
-  for (let i = 0; i < s.slots; i++) {
-    const a = (i / s.slots) * TAU;
-    const lit = 1 - R.smooth(0, 0.2, ((i / s.slots - u) % 1 + 1) % 1);
-    const c = Math.cos(a), sn = Math.sin(a);
-    const x = s.cx + s.slotRx * c, y = s.cy + s.slotRy * sn;
-    const nx = s.slotRy * c, ny = s.slotRx * sn, nl = Math.hypot(nx, ny) || 1;
-    g.strokeStyle = 'rgba(204,241,255,' + (0.09 + 0.62 * lit).toFixed(3) + ')';
+  for (let i = 0; i < s.slots.length; i++) {
+    const sl = s.slots[i];
+    const lit = 1 - R.smooth(0, 0.2, ((i / s.slots.length - u) % 1 + 1) % 1);
+    g.strokeStyle = 'rgba(204,241,255,' + (0.17 + 0.6 * lit).toFixed(3) + ')';
     g.beginPath();
-    g.moveTo(x, y);
-    g.lineTo(x + (nx / nl) * 15, y + (ny / nl) * 15);
+    g.moveTo(sl.x, sl.y);
+    g.lineTo(sl.x + sl.nx * 15, sl.y + sl.ny * 15);
     g.stroke();
   }
 
   // The mesh, held faintly so the message paths are legible when nothing is on them.
-  g.lineWidth = 1.3;
-  g.strokeStyle = 'rgba(70,189,233,0.13)';
   for (const e of s.edges) {
     const A = s.shards[e.a], B = s.shards[e.b];
+    g.lineWidth = e.rim ? 1.8 : 1.1;
+    g.strokeStyle = e.rim ? 'rgba(70,189,233,0.3)' : 'rgba(70,189,233,0.1)';
     g.beginPath();
     g.moveTo(A.x, A.y);
     g.lineTo(B.x, B.y);
     g.stroke();
   }
 
-  // Messages, and the arrival flash each one triggers. Both are closed-form in the loop
-  // phase, so a shard's pulse is exactly as periodic as the traffic causing it.
+  // Messages, and the arrival flash each one triggers. Both are closed-form in the loop phase,
+  // so a shard's pulse is exactly as periodic as the traffic causing it.
   const flash = new Float64Array(s.shards.length);
   R.additive(() => {
-    for (let ei = 0; ei < s.edges.length; ei++) {
-      const e = s.edges[ei];
+    for (const e of s.edges) {
       const A = s.shards[e.a], B = s.shards[e.b];
       const from = e.dir > 0 ? A : B, to = e.dir > 0 ? B : A;
       const toIdx = e.dir > 0 ? e.b : e.a;
       for (let k = 0; k < e.trips; k++) {
         const p = ((u * e.trips - e.phase - k) % 1 + 1) % 1;
-        const x = R.lerp(from.x, to.x, p), y = R.lerp(from.y, to.y, p);
         const fade = R.smooth(0, 0.08, p) * (1 - R.smooth(0.9, 1, p));
-        R.stamp(x, y, 30, 13, 0.5 * fade, e.tint);
+        R.stamp(R.lerp(from.x, to.x, p), R.lerp(from.y, to.y, p), 30, 13, 0.5 * fade, e.tint);
         // The last stretch of the run is the arrival; charge the destination with it.
         flash[toIdx] += 0.9 * R.smooth(0.86, 1, p) * (1 - R.smooth(0.999, 1, p));
       }
     }
   });
 
-  // Shards. A bright core with its replicas trailing outward, so the picture says shard and
-  // not just node. Drawn after the messages so an arrival lands behind the thing it hits.
+  // Shards at the vertices, replicas stacked outward. Drawn after the messages so an arrival
+  // lands behind the thing it hits.
   R.additive(() => {
     for (let i = 0; i < s.shards.length; i++) {
       const sh = s.shards[i], f = Math.min(1.6, flash[i]);
       R.stamp(sh.x, sh.y, 46 + 40 * f, 46 + 40 * f, 0.5 + 0.4 * f, R.C.ice);
-      // Two replicas, stacked outward from the primary. Same count on every shard: a varying
-      // count read as stray dots rather than as structure.
-      for (let k = 1; k <= sh.replicas; k++) {
-        const d = 26 * k;
-        R.stamp(sh.x + d * Math.cos(sh.a), sh.y + d * Math.sin(sh.a) * 0.63, 19, 19, 0.24 + 0.18 * f, R.C.cyanLt);
+      for (let k = 1; k <= 2; k++) {
+        const d = 28 * k;
+        R.stamp(sh.x + d * Math.cos(sh.a), sh.y + d * Math.sin(sh.a), 19, 19, 0.24 + 0.18 * f, R.C.cyanLt);
       }
     }
   });
@@ -822,6 +832,158 @@ function trafficDraw(g, t, u, s, R) {
   R.mark(s.cx, s.cy, s.markH);
 }
 
+// -- Total eclipse. A black lunar disc over the sun, the corona streaming outward around it.
+// The corona is the case additive compositing exists for: tens of thousands of overlapping glows
+// that have to sum into a continuous veil and taper into nothing. An SVG blur halo cannot do it,
+// which is why there is no static eclipse in the set.
+function eclipseSetup(R) {
+  const cx = 960, cy = 496, rm = 268;                     // the moon
+  const r = R.rand(60606);
+
+  // Angular density of the corona. A real corona is not radially even: helmet streamers bunch
+  // along the magnetic equator and short plumes cover the poles. Three fixed harmonics on a
+  // tilted axis give that without modelling any of the physics. This one function also decides
+  // how far the streamers reach, so it does most of the composition.
+  const tilt = -0.46, p1 = r() * R.TAU, p2 = r() * R.TAU;
+  const dens = (a) =>
+    R.clamp(0.26 + 1.24 * Math.pow(Math.abs(Math.cos(a - tilt)), 2.2) + 0.22 * Math.cos(3 * a + p1) + 0.13 * Math.cos(5 * a + p2), 0.06, 1.55);
+
+  // Particles go into ray bundles rather than spreading evenly round the limb. Uniform angles
+  // gave a fuzzy annulus no matter how the brightness was weighted: a corona reads as a corona
+  // because it has distinct rays, and rays need particles clustered in angle, not just lit
+  // unevenly. Bundle angles are rejection-sampled against dens, so the lobes get most of them.
+  const bundles = [];
+  for (let guard = 0; bundles.length < 46 && guard < 6000; guard++) {
+    const a = r() * R.TAU;
+    if (r() > dens(a) / 1.55) continue;
+    bundles.push({ a, width: 0.022 + r() * 0.05, reach: 0.62 + r() * 0.62 });
+  }
+
+  const N = 21000, parts = [];
+  for (let i = 0; i < N; i++) {
+    // A fifth sit at a free angle, so the gaps between rays are veiled rather than empty.
+    const loose = r() < 0.2;
+    const b = bundles[(r() * bundles.length) | 0];
+    // Two uniforms summed and centred: a cheap bell, so a bundle has a dense spine and soft edges.
+    const off = (r() + r() - 1) * b.width;
+    parts.push({
+      a0: loose ? r() * R.TAU : b.a + off,
+      reach: loose ? 0.5 : b.reach,
+      curl: (r() - 0.5) * 0.4,
+      sf: 0.7 + r() * 0.6,
+      wob: r(),
+      tint: r() < 0.16 ? R.C.gold : R.C.ice,
+    });
+  }
+
+  // Prominences: chromospheric loops at the limb, the one place coral belongs on this theme.
+  const proms = [];
+  for (let i = 0; i < 4; i++) proms.push({ a: r() * R.TAU, span: 0.12 + r() * 0.1, h: 34 + r() * 30, phase: r(), beats: 2 + ((r() * 2) | 0) });
+
+  // The diffuse veil the rays sit in, computed once per pixel into an offscreen canvas.
+  //
+  // Three constructions were tried. Concentric shells of stamps banded into visible rings. One
+  // radial gradient per one-degree wedge fixed that but left 360 seams: adjacent additive fills
+  // either double-count where they overlap, giving bright spokes, or leave an antialiased
+  // hairline where they do not, giving dark ones. Evaluating the field itself has neither
+  // problem, and since the veil does not move it costs one drawImage a frame. The rays carry the
+  // motion; a corona does not visibly change in five seconds anyway.
+  const reach = rm * 3.4;
+  const veil = document.createElement('canvas');
+  const VN = 760;                                          // texture resolution, upscaled at draw
+  veil.width = veil.height = VN;
+  const vg = veil.getContext('2d');
+  const img = vg.createImageData(VN, VN), d8 = img.data;
+  for (let py = 0; py < VN; py++) {
+    for (let px = 0; px < VN; px++) {
+      const x = ((px + 0.5) / VN * 2 - 1) * reach;
+      const y = ((py + 0.5) / VN * 2 - 1) * reach;
+      const rr = Math.hypot(x, y);
+      const i4 = (py * VN + px) * 4;
+      d8[i4] = 204; d8[i4 + 1] = 241; d8[i4 + 2] = 255;     // C.ice
+      if (rr < rm || rr > reach) continue;
+      const dn = dens(Math.atan2(y, x));
+      // The exponential still has a percent or so left at the cutoff, which shows up as a faint
+      // circular edge, so the last quarter is windowed to nothing.
+      const edge = 1 - R.smooth(0.74, 1, rr / reach);
+      const a255 = 0.3 * Math.pow(dn, 1.2) * Math.exp(-((rr - rm) / rm) / (0.62 * dn)) * edge * 255;
+      d8[i4 + 3] = a255 > 255 ? 255 : a255 < 0 ? 0 : a255;
+    }
+  }
+  vg.putImageData(img, 0, 0);
+
+  return { cx, cy, rm, reach, veil, dens, parts, proms, markH: 205, life: 3, v0: 190, acc: 130 };
+}
+
+function eclipseDraw(g, t, u, s, R) {
+  const TAU = R.TAU, T = R.T, N = s.parts.length;
+
+  // The veil, one draw. Built per pixel in setup, so it has neither the rings that shells gave
+  // nor the spokes that wedges gave.
+  R.additive(() => {
+    g.globalAlpha = 1;
+    g.drawImage(s.veil, s.cx - s.reach, s.cy - s.reach, s.reach * 2, s.reach * 2);
+  });
+
+  // The streamers. Particles drift outward on slightly leaning paths and taper off at a distance
+  // set by their bundle and the local density, so the equatorial lobes reach far off the frame
+  // and the polar plumes stay short.
+  R.additive(() => {
+    for (let i = 0; i < N; i++) {
+      const k = s.parts[i];
+      const age = ((t - (i * T) / N) % T + T) % T;
+      if (age > s.life) continue;
+      const d = k.sf * (s.v0 * age + 0.5 * s.acc * age * age);
+      const a = k.a0 + k.curl * (d / s.rm) * 0.3;
+      const dens = s.dens(a);
+      // A travelling brightness wave round the limb, two cycles per loop. It keeps the veil alive
+      // between the slow radial drift; the integer harmonic is what keeps it looping.
+      const shimmer = 1 + 0.22 * Math.sin(6 * a + TAU * 2 * u);
+      const taper = Math.exp(-d / (0.5 * s.rm * dens * k.reach));
+      const alpha = 0.17 * taper * Math.pow(dens, 1.1) * shimmer * R.smooth(0, 0.08, age / s.life);
+      if (alpha <= 0.004) continue;
+      const rr = s.rm + d;
+      g.save();
+      g.translate(s.cx + rr * Math.cos(a), s.cy + rr * Math.sin(a));
+      g.rotate(a);
+      R.stamp(0, 0, 30 + d * 0.14, 9 + 6 * k.wob, alpha, k.tint, true);   // elongated along the radius
+      g.restore();
+    }
+  });
+
+  // The moon. Pure black and hard edged, drawn over the corona's inner bleed.
+  g.fillStyle = '#000000';
+  g.beginPath();
+  g.arc(s.cx, s.cy, s.rm, 0, TAU);
+  g.fill();
+
+  // The chromosphere: a thin brilliant line right on the limb, and the brightest thing in the
+  // frame. It has to punch all the way to white or it reads as a soft lavender halo.
+  R.additive(() => {
+    const rr = s.rm * 1.014;
+    for (let i = 0; i < 560; i++) {
+      const a = (i / 560) * TAU;
+      R.stamp(s.cx + rr * Math.cos(a), s.cy + rr * Math.sin(a), 12, 12, 0.24 + 0.1 * s.dens(a), '#FFFFFF');
+    }
+  });
+
+  // Prominences, each pulsing on its own beat.
+  R.additive(() => {
+    for (const pr of s.proms) {
+      const beat = 0.5 + 0.5 * Math.sin(TAU * (u * pr.beats + pr.phase));
+      for (let i = 0; i <= 22; i++) {
+        const f = i / 22;
+        const a = pr.a + (f - 0.5) * pr.span;
+        // A loop: out from the limb and back, so it arcs rather than sticking out.
+        const rr = s.rm * 1.012 + Math.sin(f * Math.PI) * pr.h * (0.45 + 0.55 * beat);
+        R.stamp(s.cx + rr * Math.cos(a), s.cy + rr * Math.sin(a), 34, 34, 0.11 + 0.1 * beat, R.C.coral, true);
+      }
+    }
+  });
+
+  R.mark(s.cx, s.cy, s.markH);
+}
+
 const THEMES = [
   {
     name: 'client-streams',
@@ -857,11 +1019,11 @@ const THEMES = [
     seed: 31337,
     loop: 4.8,
     fps: 24,
-    zoom: 1.14,
+    zoom: 1.12,
     center: [960, 500],
     poster: 2,
     title: 'Valkey cluster gossip',
-    desc: 'Seven shards on a tilted ring around a slot ring and the white Valkey mark, trading messages along a full mesh, each arriving message flashing the shard it reaches, with a highlight sweeping once round the slot ring.',
+    desc: 'Six shards at the corners of a hexagon around a hexagonal slot ring and the white Valkey mark, trading messages across a mesh, each arriving message flashing the shard it reaches, with a highlight sweeping once round the slot ring.',
     setup: gossipSetup,
     draw: gossipDraw,
   },
@@ -875,6 +1037,20 @@ const THEMES = [
     desc: 'Command traffic warping inward from every direction to a vanishing point at the white Valkey mark, each streak curving as it accelerates and stretching into a dash before it is swallowed at the horizon.',
     setup: trafficSetup,
     draw: trafficDraw,
+  },
+  {
+    name: 'eclipse-corona',
+    seed: 60606,
+    loop: 5,
+    fps: 24,
+    space: true,
+    zoom: 1.02,
+    center: [960, 512],
+    poster: 2.1,
+    title: 'Valkey eclipse',
+    desc: 'A total solar eclipse: a hard black disc with the white Valkey hexagon mark at its centre, ringed by a thin brilliant chromosphere, the corona streaming outward all round it in long equatorial lobes and short polar plumes, with four coral prominences looping off the limb.',
+    setup: eclipseSetup,
+    draw: eclipseDraw,
   },
 ];
 
