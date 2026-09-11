@@ -1294,8 +1294,10 @@ mkdirSync(HTML_DIR, { recursive: true });
 mkdirSync(MOTION_DIR, { recursive: true });
 
 const sha = (v) => createHash('sha256').update(v).digest('hex').slice(0, 16);
+// --force ignores the cache for freshness, but the cache is still loaded and carried forward.
+// Returning {} here instead dropped the entries for every theme not named in the run, so the
+// next full build re-rendered all of them: `motion.mjs one --force` cost eight minutes later.
 const cache = (() => {
-  if (flags.force) return {};
   try {
     return JSON.parse(readFileSync(CACHE_FILE, 'utf8'));
   } catch {
