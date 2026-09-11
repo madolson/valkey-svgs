@@ -248,7 +248,29 @@ function bloom(cx, cy, r, alpha, hex) {
   g.globalCompositeOperation = prev;
 }
 
-const R = { W, H, TAU, C, rand, hash, lerp, clamp, smooth, stamp, additive, mark, scrim, bloom, sprite, T: THEME.loop, frame: FRAME };
+// The mark as an outline rather than a fill. Same path, so it carries the hexagon, the keyhole
+// and the partial circle around it: everything that makes the shape read as the logo.
+function markOutline(cx, cy, height, opts) {
+  const o = opts || {};
+  const sc = height / MARK_VH;
+  g.save();
+  g.translate(cx - (MARK_VW * sc) / 2, cy - height / 2);
+  g.scale(sc, sc);
+  // Stroke widths and dashes are given in output units and divided back out, so a dash stays
+  // the same size on screen whatever height the outline is drawn at.
+  g.lineWidth = (o.lineWidth || 3) / sc;
+  g.strokeStyle = o.stroke || '#CCF1FF';
+  g.lineJoin = 'round';
+  if (o.dash) {
+    g.setLineDash(o.dash.map((d) => d / sc));
+    g.lineDashOffset = (o.dashOffset || 0) / sc;
+  }
+  g.stroke(MARK_PATH);
+  g.setLineDash([]);
+  g.restore();
+}
+
+const R = { W, H, TAU, C, rand, hash, lerp, clamp, smooth, stamp, additive, mark, markOutline, scrim, bloom, sprite, T: THEME.loop, frame: FRAME };
 
 // ------------------------------------------------------------- atmosphere
 
@@ -569,7 +591,7 @@ function blackholeSetup(R) {
     // Particles per band scale with the radius, so the spacing along a band is the same
     // everywhere. A fixed count leaves the outer bands with gaps between stamps, which is
     // what turns a disk into a dotted lattice.
-    const m = Math.round(R.clamp(105 * (rad / rIn), 105, 520));
+    const m = Math.round(R.clamp(140 * (rad / rIn), 140, 680));
     // Keplerian: revolutions per loop fall off as r^-1.5, quantised to whole slots so the
     // band lands back on itself at the end of the loop. With m in the hundreds the quantum
     // is a fraction of a percent of a revolution, so the shear reads as continuous.
@@ -622,7 +644,7 @@ function blackholeDraw(g, t, u, s, R) {
         // the particles that cross in front of the shadow, which is the one part of the disk
         // that has to stay legible.
         const edgeOn = 0.62 + 0.38 * Math.abs(cs);
-        R.stamp(s.cx + b.r * cs, project(b.r, sn), size, sizeY, 0.03 * fall * edgeOn * (far ? 0.85 : 1), tint, true);
+        R.stamp(s.cx + b.r * cs, project(b.r, sn), size * (far ? 1.45 : 1), sizeY * (far ? 1.45 : 1), 0.023 * fall * edgeOn * (far ? 0.55 : 1), tint, true);
       }
     }
   };
@@ -643,7 +665,33 @@ function blackholeDraw(g, t, u, s, R) {
     const rp = s.rs * 1.035;
     for (let i = 0; i < 360; i++) {
       const th = (i / 360) * TAU;
-      R.stamp(s.cx + rp * Math.cos(th), s.cy + rp * Math.sin(th), 20, 20, 0.05 + 0.05 * Math.abs(Math.cos(th)), '#FFFFFF');
+      R.stamp(s.cx + rp * Math.cos(th), s.cy + rp * Math.sin(th), 17, 17, 0.1 + 0.07 * Math.abs(Math.cos(th)), '#FFFFFF');
+    }
+  });
+
+  // The secondary image: light from the near side of the disk that loops right round the hole and
+  // comes back underneath it. Without this the shadow is wrapped over the top and across the
+  // middle but bare below, and the thing that makes the Interstellar picture read is that the
+  // ring closes all the way round. The lift decays with radius, so only the inner disk forms the
+  // tight arc and the outer bands melt back into the flat band.
+  R.additive(() => {
+    for (const b of s.bands) {
+      if (b.r > s.rIn * 3.2) continue;
+      const q = (b.r - s.rIn) / (s.rOut - s.rIn);
+      const tint = q < 0.3 ? '#FFFFFF' : R.C.gold;
+      const lift = s.rs * 1.22 * Math.exp(-(b.r - s.rIn) / (1.4 * s.rIn));
+      const fall = Math.pow(s.rIn / b.r, 1.3);
+      const size = R.lerp(34, 60, q);
+      const step = TAU / b.m;
+      const spin = b.phase + (TAU * b.j * u) / b.m;
+      for (let k = 0; k < b.m; k++) {
+        const th = spin + k * step;
+        const sn = Math.sin(th);
+        if (sn > 0) continue;
+        const an = Math.abs(sn);
+        const y = s.cy + (lift + an * b.r * s.cosI * 0.3) * Math.pow(an, 0.5);
+        R.stamp(s.cx + b.r * Math.cos(th), y, size, size * 0.5, 0.011 * fall * (0.45 + 0.55 * an), tint, true);
+      }
     }
   });
 
@@ -681,42 +729,23 @@ function gossipSetup(R) {
     }
   }
 
-  // The slot ring is a hexagon too, ticks laid along its perimeter rather than round a circle.
-  const S = 200, shw = S * 0.855;
-  const sv = [[0, -S], [shw, -S / 2], [shw, S / 2], [0, S], [-shw, S / 2], [-shw, -S / 2]];
-  const perEdge = 21, slots = [];
-  for (let e = 0; e < 6; e++) {
-    const P = sv[e], Q = sv[(e + 1) % 6];
-    // Outward normal of this edge. The sign is settled against the edge midpoint rather than
-    // assumed from the winding, so reordering the vertices cannot flip the ticks inward.
-    let nx = Q[1] - P[1], ny = -(Q[0] - P[0]);
-    const nl = Math.hypot(nx, ny) || 1;
-    nx /= nl; ny /= nl;
-    if (nx * (P[0] + Q[0]) + ny * (P[1] + Q[1]) < 0) { nx = -nx; ny = -ny; }
-    for (let i = 0; i < perEdge; i++) {
-      const f = i / perEdge;
-      slots.push({ x: cx + R.lerp(P[0], Q[0], f), y: cy + R.lerp(P[1], Q[1], f), nx, ny });
-    }
-  }
-  return { cx, cy, shards, edges, slots, markH: 210 };
+  return { cx, cy, shards, edges, markH: 440 };
 }
 
 function gossipDraw(g, t, u, s, R) {
   const TAU = R.TAU;
 
-  // The slot hexagon, with one highlight sweeping round its perimeter per loop. The sweep is
-  // the only thing that says which way the ring turns. Brightness only, and a fixed tick
-  // length along each edge's own normal: varying either reads as a torn edge.
-  g.lineWidth = 3;
-  for (let i = 0; i < s.slots.length; i++) {
-    const sl = s.slots[i];
-    const lit = 1 - R.smooth(0, 0.2, ((i / s.slots.length - u) % 1 + 1) % 1);
-    g.strokeStyle = 'rgba(204,241,255,' + (0.17 + 0.6 * lit).toFixed(3) + ')';
-    g.beginPath();
-    g.moveTo(sl.x, sl.y);
-    g.lineTo(sl.x + sl.nx * 15, sl.y + sl.ny * 15);
-    g.stroke();
-  }
+  // The interior traces the logo. Same path the solid mark uses, stroked instead of filled, so
+  // the hexagon, the keyhole and the partial circle around it are all in it. It replaces both the
+  // tick ring that used to sit here and the solid mark that used to sit inside that: an outline
+  // is still the mark, and drawing a filled one inside it would say Valkey twice.
+  //
+  // The dash marches round the path once per loop. Periodicity is why the advance is a whole
+  // number of dash periods: the pattern is 11 + 15, so a loop moves it 26 * 9 units and lands
+  // exactly where it started.
+  // Continuous and faint, so the shape is legible as the logo. A dashed line at this scale broke
+  // the keyhole and the partial circle into a scribble and the whole thing read as a maze.
+  R.markOutline(s.cx, s.cy, s.markH, { lineWidth: 3, stroke: 'rgba(204,241,255,0.3)' });
 
   // The mesh, held faintly so the message paths are legible when nothing is on them.
   for (const e of s.edges) {
@@ -768,68 +797,17 @@ function gossipDraw(g, t, u, s, R) {
     g.stroke();
   }
 
-  R.scrim(s.cx, s.cy, s.markH * 1.3, 0.55);
-  R.mark(s.cx, s.cy, s.markH);
-}
-
-// -- Performance traffic. Commands warping in to a vanishing point at the mark. The inbound
-// counterpart to client-streams: same additive dots, opposite direction, and a curve on the
-// inflow so it reads as flow rather than as an explosion played backwards.
-function trafficSetup(R) {
-  const cx = 960, cy = 486, markH = 274;
-  const r = R.rand(24007), streaks = [];
-  // 800 streaks with a lifetime a bit over a third of the loop puts about 280 on screen at
-  // once, which is the density the static performance banner uses. The first pass had 300 and
-  // most of their life happened outside the frame, so a dozen were ever visible.
-  for (let i = 0; i < 800; i++) {
-    streaks.push({
-      a0: r() * R.TAU,
-      r0: 1010 + r() * 130,                                   // just past the frame corner
-      swirl: (r() < 0.5 ? -1 : 1) * (0.3 + r() * 0.34),
-      // Mostly Open Sky, a fifth coloured, matching the static set's restraint.
-      tint: r() < 0.2 ? [R.C.gold, R.C.mint, R.C.coral, R.C.violet][(r() * 4) | 0] : R.C.cyanLt,
-      wob: r(),
-    });
-  }
-  return { cx, cy, markH, streaks, rStop: markH * 0.56, life: 1.45, squash: 0.86 };
-}
-
-function trafficDraw(g, t, u, s, R) {
-  const T = R.T, N = s.streaks.length;
-
+  // A sparse bright dash marching round the same path: the motion, laid over a shape that is
+  // already readable without it. Periodicity is why the advance is a whole number of dash
+  // periods -- the pattern sums to 128, so a loop moves it 128 * 4 and lands where it started.
   R.additive(() => {
-    for (let i = 0; i < N; i++) {
-      const k = s.streaks[i];
-      const a = ((t - (i * T) / N) % T + T) % T;
-      if (a > s.life) continue;
-      const p = a / s.life;
-      // (1-p)^0.62 falls slowly at first and steeply at the end, so the radial speed grows
-      // the whole way in: the streak accelerates into the mark rather than coasting into it.
-      const span = k.r0 - s.rStop;
-      const rad = s.rStop + span * Math.pow(1 - p, 0.62);
-      // Speed is the derivative of that, which is what sets the streak's length. Deriving it
-      // rather than guessing from the radius keeps the motion blur honest at any lifetime.
-      const speed = (0.62 * span * Math.pow(Math.max(1 - p, 1e-4), -0.38)) / s.life;
-      const len = R.clamp(speed * 0.1, 24, 210);
-      // Curved inflow: the closer in, the more it has wound round. A pure radial dive is a
-      // starburst, and a starburst says nothing about traffic.
-      const ang = k.a0 + k.swirl * Math.log(k.r0 / rad);
-      const c = Math.cos(ang), sn = Math.sin(ang) * s.squash;
-      // Held almost to the end of the run. Fading out at 0.88 sounded harmless and left a
-      // dead ring 400px across where every streak had already vanished before reaching the
-      // mark, which read as a hole punched in the middle of the field.
-      const alpha = 0.42 * R.smooth(0, 0.1, p) * (1 - R.smooth(0.97, 1, p));
-      g.save();
-      g.translate(s.cx + rad * c, s.cy + rad * sn);
-      g.rotate(Math.atan2(sn, c));
-      R.stamp(len / 2, 0, len, 7 + 4 * k.wob, alpha, k.tint);   // the trail extends outward
-      g.restore();
-    }
+    R.markOutline(s.cx, s.cy, s.markH, {
+      lineWidth: 5,
+      stroke: 'rgba(255,255,255,0.55)',
+      dash: [9, 119],
+      dashOffset: -u * 128 * 4,
+    });
   });
-
-  // The mark is the vanishing point, so it is also the brightest thing in the frame.
-  R.bloom(s.cx, s.cy, s.markH * 1.15, 0.34, R.C.cyanLt);
-  R.mark(s.cx, s.cy, s.markH);
 }
 
 // -- Total eclipse. A black lunar disc over the sun, the corona streaming outward around it.
@@ -859,26 +837,28 @@ function eclipseSetup(R) {
     bundles.push({ a, width: 0.022 + r() * 0.05, reach: 0.62 + r() * 0.62 });
   }
 
+  // Particles sit still. They used to be emitted at the limb and flung outward, and the result
+  // read as an ejection: a corona does not do that, it hangs there and shimmers. So position is
+  // fixed and only brightness moves.
+  //
+  // Radius is sampled from the exponential the taper used to apply, so the falloff now lives in
+  // where the particles are rather than in how bright they are.
   const N = 21000, parts = [];
   for (let i = 0; i < N; i++) {
     // A fifth sit at a free angle, so the gaps between rays are veiled rather than empty.
     const loose = r() < 0.2;
     const b = bundles[(r() * bundles.length) | 0];
     // Two uniforms summed and centred: a cheap bell, so a bundle has a dense spine and soft edges.
-    const off = (r() + r() - 1) * b.width;
-    parts.push({
-      a0: loose ? r() * R.TAU : b.a + off,
-      reach: loose ? 0.5 : b.reach,
-      curl: (r() - 0.5) * 0.4,
-      sf: 0.7 + r() * 0.6,
-      wob: r(),
-      tint: r() < 0.16 ? R.C.gold : R.C.ice,
-    });
+    const a = loose ? r() * R.TAU : b.a + (r() + r() - 1) * b.width;
+    const scale = 0.34 * rm * dens(a) * (loose ? 0.5 : b.reach);
+    const d = -Math.log(1 - r() * 0.995) * scale;
+    if (d > rm * 3.1) { i--; continue; }
+    parts.push({ a, d, wob: r(), tw: r(), beats: 2 + ((r() * 3) | 0), tint: r() < 0.16 ? R.C.gold : R.C.ice });
   }
 
   // Prominences: chromospheric loops at the limb, the one place coral belongs on this theme.
   const proms = [];
-  for (let i = 0; i < 4; i++) proms.push({ a: r() * R.TAU, span: 0.12 + r() * 0.1, h: 34 + r() * 30, phase: r(), beats: 2 + ((r() * 2) | 0) });
+  for (let i = 0; i < 4; i++) proms.push({ a: r() * R.TAU, span: 0.11 + r() * 0.09, h: 22 + r() * 20, phase: r(), beats: 2 + ((r() * 2) | 0) });
 
   // The diffuse veil the rays sit in, computed once per pixel into an offscreen canvas.
   //
@@ -912,11 +892,11 @@ function eclipseSetup(R) {
   }
   vg.putImageData(img, 0, 0);
 
-  return { cx, cy, rm, reach, veil, dens, parts, proms, markH: 205, life: 3, v0: 190, acc: 130 };
+  return { cx, cy, rm, reach, veil, dens, parts, proms, markH: 205 };
 }
 
 function eclipseDraw(g, t, u, s, R) {
-  const TAU = R.TAU, T = R.T, N = s.parts.length;
+  const TAU = R.TAU, N = s.parts.length;
 
   // The veil, one draw. Built per pixel in setup, so it has neither the rings that shells gave
   // nor the spokes that wedges gave.
@@ -925,28 +905,27 @@ function eclipseDraw(g, t, u, s, R) {
     g.drawImage(s.veil, s.cx - s.reach, s.cy - s.reach, s.reach * 2, s.reach * 2);
   });
 
-  // The streamers. Particles drift outward on slightly leaning paths and taper off at a distance
-  // set by their bundle and the local density, so the equatorial lobes reach far off the frame
-  // and the polar plumes stay short.
+  // The rays, shimmering in place. Every term below is an integer harmonic of the loop, which is
+  // what lets the whole field flicker and still close: two travelling waves round the limb in
+  // opposite directions, a radial ripple, and a per-particle twinkle on its own beat.
   R.additive(() => {
+    const breathe = 1 + 0.05 * Math.sin(TAU * u);
     for (let i = 0; i < N; i++) {
       const k = s.parts[i];
-      const age = ((t - (i * T) / N) % T + T) % T;
-      if (age > s.life) continue;
-      const d = k.sf * (s.v0 * age + 0.5 * s.acc * age * age);
-      const a = k.a0 + k.curl * (d / s.rm) * 0.3;
-      const dens = s.dens(a);
-      // A travelling brightness wave round the limb, two cycles per loop. It keeps the veil alive
-      // between the slow radial drift; the integer harmonic is what keeps it looping.
-      const shimmer = 1 + 0.22 * Math.sin(6 * a + TAU * 2 * u);
-      const taper = Math.exp(-d / (0.5 * s.rm * dens * k.reach));
-      const alpha = 0.17 * taper * Math.pow(dens, 1.1) * shimmer * R.smooth(0, 0.08, age / s.life);
+      const wave =
+        1 +
+        0.3 * Math.sin(7 * k.a + TAU * 2 * u) +
+        0.22 * Math.sin(4 * k.a - TAU * 3 * u) +
+        0.18 * Math.sin(k.d * 0.03 + TAU * 2 * u);
+      const twinkle = 0.62 + 0.38 * Math.sin(TAU * (k.tw + u * k.beats));
+      const taper = Math.exp(-k.d / (0.85 * s.rm * s.dens(k.a)));
+      const alpha = 0.055 * taper * Math.max(0.12, wave) * twinkle * breathe;
       if (alpha <= 0.004) continue;
-      const rr = s.rm + d;
+      const rr = s.rm + k.d;
       g.save();
-      g.translate(s.cx + rr * Math.cos(a), s.cy + rr * Math.sin(a));
-      g.rotate(a);
-      R.stamp(0, 0, 30 + d * 0.14, 9 + 6 * k.wob, alpha, k.tint, true);   // elongated along the radius
+      g.translate(s.cx + rr * Math.cos(k.a), s.cy + rr * Math.sin(k.a));
+      g.rotate(k.a);
+      R.stamp(0, 0, 30 + k.d * 0.14, 9 + 6 * k.wob, alpha, k.tint, true);   // elongated along the radius
       g.restore();
     }
   });
@@ -963,7 +942,7 @@ function eclipseDraw(g, t, u, s, R) {
     const rr = s.rm * 1.014;
     for (let i = 0; i < 560; i++) {
       const a = (i / 560) * TAU;
-      R.stamp(s.cx + rr * Math.cos(a), s.cy + rr * Math.sin(a), 12, 12, 0.24 + 0.1 * s.dens(a), '#FFFFFF');
+      R.stamp(s.cx + rr * Math.cos(a), s.cy + rr * Math.sin(a), 12, 12, 0.15 + 0.07 * s.dens(a), '#FFFFFF');
     }
   });
 
@@ -976,7 +955,7 @@ function eclipseDraw(g, t, u, s, R) {
         const a = pr.a + (f - 0.5) * pr.span;
         // A loop: out from the limb and back, so it arcs rather than sticking out.
         const rr = s.rm * 1.012 + Math.sin(f * Math.PI) * pr.h * (0.45 + 0.55 * beat);
-        R.stamp(s.cx + rr * Math.cos(a), s.cy + rr * Math.sin(a), 34, 34, 0.11 + 0.1 * beat, R.C.coral, true);
+        R.stamp(s.cx + rr * Math.cos(a), s.cy + rr * Math.sin(a), 30, 30, 0.05 + 0.05 * beat, R.C.coral, true);
       }
     }
   });
@@ -1003,7 +982,7 @@ const THEMES = [
   {
     name: 'blackhole-particles',
     seed: 52041,
-    loop: 6,
+    loop: 5,
     fps: 20,
     space: true,
     zoom: 1.04,
@@ -1028,17 +1007,6 @@ const THEMES = [
     draw: gossipDraw,
   },
   {
-    name: 'performance-traffic',
-    seed: 24007,
-    loop: 4,
-    fps: 24,
-    poster: 2,
-    title: 'Valkey throughput',
-    desc: 'Command traffic warping inward from every direction to a vanishing point at the white Valkey mark, each streak curving as it accelerates and stretching into a dash before it is swallowed at the horizon.',
-    setup: trafficSetup,
-    draw: trafficDraw,
-  },
-  {
     name: 'eclipse-corona',
     seed: 60606,
     loop: 5,
@@ -1048,7 +1016,7 @@ const THEMES = [
     center: [960, 512],
     poster: 2.1,
     title: 'Valkey eclipse',
-    desc: 'A total solar eclipse: a hard black disc with the white Valkey hexagon mark at its centre, ringed by a thin brilliant chromosphere, the corona streaming outward all round it in long equatorial lobes and short polar plumes, with four coral prominences looping off the limb.',
+    desc: 'A total solar eclipse: a hard black disc with the white Valkey hexagon mark at its centre, ringed by a thin brilliant chromosphere, the corona hanging all round it in long equatorial lobes and short polar plumes and shimmering in place, with four coral prominences looping off the limb.',
     setup: eclipseSetup,
     draw: eclipseDraw,
   },

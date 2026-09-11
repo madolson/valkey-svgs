@@ -44,41 +44,22 @@ const SETUP = function gossipSetup(R) {
     }
   }
 
-  // The slot ring is a hexagon too, ticks laid along its perimeter rather than round a circle.
-  const S = 200, shw = S * 0.855;
-  const sv = [[0, -S], [shw, -S / 2], [shw, S / 2], [0, S], [-shw, S / 2], [-shw, -S / 2]];
-  const perEdge = 21, slots = [];
-  for (let e = 0; e < 6; e++) {
-    const P = sv[e], Q = sv[(e + 1) % 6];
-    // Outward normal of this edge. The sign is settled against the edge midpoint rather than
-    // assumed from the winding, so reordering the vertices cannot flip the ticks inward.
-    let nx = Q[1] - P[1], ny = -(Q[0] - P[0]);
-    const nl = Math.hypot(nx, ny) || 1;
-    nx /= nl; ny /= nl;
-    if (nx * (P[0] + Q[0]) + ny * (P[1] + Q[1]) < 0) { nx = -nx; ny = -ny; }
-    for (let i = 0; i < perEdge; i++) {
-      const f = i / perEdge;
-      slots.push({ x: cx + R.lerp(P[0], Q[0], f), y: cy + R.lerp(P[1], Q[1], f), nx, ny });
-    }
-  }
-  return { cx, cy, shards, edges, slots, markH: 210 };
+  return { cx, cy, shards, edges, markH: 440 };
 };
 const DRAW = function gossipDraw(g, t, u, s, R) {
   const TAU = R.TAU;
 
-  // The slot hexagon, with one highlight sweeping round its perimeter per loop. The sweep is
-  // the only thing that says which way the ring turns. Brightness only, and a fixed tick
-  // length along each edge's own normal: varying either reads as a torn edge.
-  g.lineWidth = 3;
-  for (let i = 0; i < s.slots.length; i++) {
-    const sl = s.slots[i];
-    const lit = 1 - R.smooth(0, 0.2, ((i / s.slots.length - u) % 1 + 1) % 1);
-    g.strokeStyle = 'rgba(204,241,255,' + (0.17 + 0.6 * lit).toFixed(3) + ')';
-    g.beginPath();
-    g.moveTo(sl.x, sl.y);
-    g.lineTo(sl.x + sl.nx * 15, sl.y + sl.ny * 15);
-    g.stroke();
-  }
+  // The interior traces the logo. Same path the solid mark uses, stroked instead of filled, so
+  // the hexagon, the keyhole and the partial circle around it are all in it. It replaces both the
+  // tick ring that used to sit here and the solid mark that used to sit inside that: an outline
+  // is still the mark, and drawing a filled one inside it would say Valkey twice.
+  //
+  // The dash marches round the path once per loop. Periodicity is why the advance is a whole
+  // number of dash periods: the pattern is 11 + 15, so a loop moves it 26 * 9 units and lands
+  // exactly where it started.
+  // Continuous and faint, so the shape is legible as the logo. A dashed line at this scale broke
+  // the keyhole and the partial circle into a scribble and the whole thing read as a maze.
+  R.markOutline(s.cx, s.cy, s.markH, { lineWidth: 3, stroke: 'rgba(204,241,255,0.3)' });
 
   // The mesh, held faintly so the message paths are legible when nothing is on them.
   for (const e of s.edges) {
@@ -130,8 +111,17 @@ const DRAW = function gossipDraw(g, t, u, s, R) {
     g.stroke();
   }
 
-  R.scrim(s.cx, s.cy, s.markH * 1.3, 0.55);
-  R.mark(s.cx, s.cy, s.markH);
+  // A sparse bright dash marching round the same path: the motion, laid over a shape that is
+  // already readable without it. Periodicity is why the advance is a whole number of dash
+  // periods -- the pattern sums to 128, so a loop moves it 128 * 4 and lands where it started.
+  R.additive(() => {
+    R.markOutline(s.cx, s.cy, s.markH, {
+      lineWidth: 5,
+      stroke: 'rgba(255,255,255,0.55)',
+      dash: [9, 119],
+      dashOffset: -u * 128 * 4,
+    });
+  });
 };
 
 const W = 1920, H = 1080;
@@ -281,7 +271,29 @@ function bloom(cx, cy, r, alpha, hex) {
   g.globalCompositeOperation = prev;
 }
 
-const R = { W, H, TAU, C, rand, hash, lerp, clamp, smooth, stamp, additive, mark, scrim, bloom, sprite, T: THEME.loop, frame: FRAME };
+// The mark as an outline rather than a fill. Same path, so it carries the hexagon, the keyhole
+// and the partial circle around it: everything that makes the shape read as the logo.
+function markOutline(cx, cy, height, opts) {
+  const o = opts || {};
+  const sc = height / MARK_VH;
+  g.save();
+  g.translate(cx - (MARK_VW * sc) / 2, cy - height / 2);
+  g.scale(sc, sc);
+  // Stroke widths and dashes are given in output units and divided back out, so a dash stays
+  // the same size on screen whatever height the outline is drawn at.
+  g.lineWidth = (o.lineWidth || 3) / sc;
+  g.strokeStyle = o.stroke || '#CCF1FF';
+  g.lineJoin = 'round';
+  if (o.dash) {
+    g.setLineDash(o.dash.map((d) => d / sc));
+    g.lineDashOffset = (o.dashOffset || 0) / sc;
+  }
+  g.stroke(MARK_PATH);
+  g.setLineDash([]);
+  g.restore();
+}
+
+const R = { W, H, TAU, C, rand, hash, lerp, clamp, smooth, stamp, additive, mark, markOutline, scrim, bloom, sprite, T: THEME.loop, frame: FRAME };
 
 // ------------------------------------------------------------- atmosphere
 

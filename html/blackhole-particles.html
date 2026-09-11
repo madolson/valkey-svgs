@@ -17,7 +17,7 @@
 <body>
 <canvas id="art" role="img" aria-label="A black hole with its accretion disk drawn as thousands of orbiting points of light: a hard black shadow ringed by a thin bright photon ring, the far side of the disk lensed up over the top and the near side crossing in front below, white hot at the inner edge through gold to red at the rim, all of it turning, with the white Valkey hexagon mark at the centre."></canvas>
 <script>
-const THEME = {"name":"blackhole-particles","loop":6,"zoom":1.04,"center":[960,520],"space":true,"seed":52041,"caption":"Valkey black hole","renderWidth":1280};
+const THEME = {"name":"blackhole-particles","loop":5,"zoom":1.04,"center":[960,520],"space":true,"seed":52041,"caption":"Valkey black hole","renderWidth":1280};
 const C = {"ink":"#060A24","mid":"#171043","deep":"#301868","cyan":"#00A3E0","cyanLt":"#46BDE9","ice":"#CCF1FF","mint":"#2CD5C4","coral":"#F65275","violet":"#963CBD","gold":"#FFB81C"};
 const FONT = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 const MARK_D = "M 13.482285 60.694962 L 0.998384 52.884399 L 0.998384 19.502914 L 31.527868 2.001205 L 61.317604 19.532024 L 61.317604 54.64489 L 31.054855 71.68927 L 20.548372 65.115807 L 20.548372 51.041328 L 20.548372 49.119896 L 14.851504 45.555508 L 14.851504 27.453159 L 31.346497 17.99712 L 47.464485 27.482262 L 47.464485 46.451157 L 34.703495 53.638138 L 34.703495 45.998573 C 38.52874 44.52552 41.274452 40.739189 41.274452 36.270489 C 41.274452 30.510658 36.712814 25.88438 31.158138 25.88438 C 25.603172 25.88438 21.041817 30.510658 21.041817 36.270489 C 21.041817 40.739189 23.787249 44.52552 27.612494 45.998573 L 27.612494 60.473576 L 31.261133 62.756348 L 53.635483 50.15464 L 53.635483 23.924595 L 31.477489 10.884869 L 8.680504 23.953705 L 8.680504 48.628967 L 13.482285 51.633297 L 13.482285 60.694962 Z M 31.158138 31.498383 C 33.671822 31.498383 35.660439 33.664162 35.660439 36.270489 C 35.660439 38.876804 33.671822 41.042587 31.158138 41.042587 C 28.644447 41.042587 26.655558 38.876804 26.655558 36.270489 C 26.655558 33.664162 28.644447 31.498383 31.158138 31.498383 Z", MARK_VW = 64, MARK_VH = 73;
@@ -39,7 +39,7 @@ const SETUP = function blackholeSetup(R) {
     // Particles per band scale with the radius, so the spacing along a band is the same
     // everywhere. A fixed count leaves the outer bands with gaps between stamps, which is
     // what turns a disk into a dotted lattice.
-    const m = Math.round(R.clamp(105 * (rad / rIn), 105, 520));
+    const m = Math.round(R.clamp(140 * (rad / rIn), 140, 680));
     // Keplerian: revolutions per loop fall off as r^-1.5, quantised to whole slots so the
     // band lands back on itself at the end of the loop. With m in the hundreds the quantum
     // is a fraction of a percent of a revolution, so the shear reads as continuous.
@@ -91,7 +91,7 @@ const DRAW = function blackholeDraw(g, t, u, s, R) {
         // the particles that cross in front of the shadow, which is the one part of the disk
         // that has to stay legible.
         const edgeOn = 0.62 + 0.38 * Math.abs(cs);
-        R.stamp(s.cx + b.r * cs, project(b.r, sn), size, sizeY, 0.03 * fall * edgeOn * (far ? 0.85 : 1), tint, true);
+        R.stamp(s.cx + b.r * cs, project(b.r, sn), size * (far ? 1.45 : 1), sizeY * (far ? 1.45 : 1), 0.023 * fall * edgeOn * (far ? 0.55 : 1), tint, true);
       }
     }
   };
@@ -112,7 +112,33 @@ const DRAW = function blackholeDraw(g, t, u, s, R) {
     const rp = s.rs * 1.035;
     for (let i = 0; i < 360; i++) {
       const th = (i / 360) * TAU;
-      R.stamp(s.cx + rp * Math.cos(th), s.cy + rp * Math.sin(th), 20, 20, 0.05 + 0.05 * Math.abs(Math.cos(th)), '#FFFFFF');
+      R.stamp(s.cx + rp * Math.cos(th), s.cy + rp * Math.sin(th), 17, 17, 0.1 + 0.07 * Math.abs(Math.cos(th)), '#FFFFFF');
+    }
+  });
+
+  // The secondary image: light from the near side of the disk that loops right round the hole and
+  // comes back underneath it. Without this the shadow is wrapped over the top and across the
+  // middle but bare below, and the thing that makes the Interstellar picture read is that the
+  // ring closes all the way round. The lift decays with radius, so only the inner disk forms the
+  // tight arc and the outer bands melt back into the flat band.
+  R.additive(() => {
+    for (const b of s.bands) {
+      if (b.r > s.rIn * 3.2) continue;
+      const q = (b.r - s.rIn) / (s.rOut - s.rIn);
+      const tint = q < 0.3 ? '#FFFFFF' : R.C.gold;
+      const lift = s.rs * 1.22 * Math.exp(-(b.r - s.rIn) / (1.4 * s.rIn));
+      const fall = Math.pow(s.rIn / b.r, 1.3);
+      const size = R.lerp(34, 60, q);
+      const step = TAU / b.m;
+      const spin = b.phase + (TAU * b.j * u) / b.m;
+      for (let k = 0; k < b.m; k++) {
+        const th = spin + k * step;
+        const sn = Math.sin(th);
+        if (sn > 0) continue;
+        const an = Math.abs(sn);
+        const y = s.cy + (lift + an * b.r * s.cosI * 0.3) * Math.pow(an, 0.5);
+        R.stamp(s.cx + b.r * Math.cos(th), y, size, size * 0.5, 0.011 * fall * (0.45 + 0.55 * an), tint, true);
+      }
     }
   });
 
@@ -271,7 +297,29 @@ function bloom(cx, cy, r, alpha, hex) {
   g.globalCompositeOperation = prev;
 }
 
-const R = { W, H, TAU, C, rand, hash, lerp, clamp, smooth, stamp, additive, mark, scrim, bloom, sprite, T: THEME.loop, frame: FRAME };
+// The mark as an outline rather than a fill. Same path, so it carries the hexagon, the keyhole
+// and the partial circle around it: everything that makes the shape read as the logo.
+function markOutline(cx, cy, height, opts) {
+  const o = opts || {};
+  const sc = height / MARK_VH;
+  g.save();
+  g.translate(cx - (MARK_VW * sc) / 2, cy - height / 2);
+  g.scale(sc, sc);
+  // Stroke widths and dashes are given in output units and divided back out, so a dash stays
+  // the same size on screen whatever height the outline is drawn at.
+  g.lineWidth = (o.lineWidth || 3) / sc;
+  g.strokeStyle = o.stroke || '#CCF1FF';
+  g.lineJoin = 'round';
+  if (o.dash) {
+    g.setLineDash(o.dash.map((d) => d / sc));
+    g.lineDashOffset = (o.dashOffset || 0) / sc;
+  }
+  g.stroke(MARK_PATH);
+  g.setLineDash([]);
+  g.restore();
+}
+
+const R = { W, H, TAU, C, rand, hash, lerp, clamp, smooth, stamp, additive, mark, markOutline, scrim, bloom, sprite, T: THEME.loop, frame: FRAME };
 
 // ------------------------------------------------------------- atmosphere
 

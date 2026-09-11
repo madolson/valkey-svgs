@@ -17,7 +17,7 @@
       "name": "blackhole-particles",
       "title": "Valkey black hole",
       "desc": "A black hole with its accretion disk drawn as thousands of orbiting points of light: a hard black shadow ringed by a thin bright photon ring, the far side of the disk lensed up over the top and the near side crossing in front below, white hot at the inner edge through gold to red at the rim, all of it turning, with the white Valkey hexagon mark at the centre.",
-      "loop": 6,
+      "loop": 5,
       "fps": 20,
       "animated": "motion/blackhole-particles.webp",
       "poster": "motion/blackhole-particles-poster.webp",
@@ -34,19 +34,9 @@
       "source": "html/cluster-gossip.html"
     },
     {
-      "name": "performance-traffic",
-      "title": "Valkey throughput",
-      "desc": "Command traffic warping inward from every direction to a vanishing point at the white Valkey mark, each streak curving as it accelerates and stretching into a dash before it is swallowed at the horizon.",
-      "loop": 4,
-      "fps": 24,
-      "animated": "motion/performance-traffic.webp",
-      "poster": "motion/performance-traffic-poster.webp",
-      "source": "html/performance-traffic.html"
-    },
-    {
       "name": "eclipse-corona",
       "title": "Valkey eclipse",
-      "desc": "A total solar eclipse: a hard black disc with the white Valkey hexagon mark at its centre, ringed by a thin brilliant chromosphere, the corona streaming outward all round it in long equatorial lobes and short polar plumes, with four coral prominences looping off the limb.",
+      "desc": "A total solar eclipse: a hard black disc with the white Valkey hexagon mark at its centre, ringed by a thin brilliant chromosphere, the corona hanging all round it in long equatorial lobes and short polar plumes and shimmering in place, with four coral prominences looping off the limb.",
       "loop": 5,
       "fps": 24,
       "animated": "motion/eclipse-corona.webp",
