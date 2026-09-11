@@ -1,0 +1,47 @@
+{
+  "generated": "motion.mjs",
+  "width": 1280,
+  "height": 720,
+  "themes": [
+    {
+      "name": "client-streams",
+      "title": "Valkey serving clients",
+      "desc": "Twenty-eight client connections held from both edges of the frame onto a hexagonal ring of ports around the white Valkey mark, with streams of glowing dots pouring outward along every one of them and the ports twinkling as they work.",
+      "loop": 4,
+      "fps": 24,
+      "animated": "motion/client-streams.webp",
+      "poster": "motion/client-streams-poster.webp",
+      "source": "html/client-streams.html"
+    },
+    {
+      "name": "blackhole-particles",
+      "title": "Valkey black hole",
+      "desc": "A black hole with its accretion disk drawn as thousands of orbiting points of light: a hard black shadow ringed by a thin bright photon ring, the far side of the disk lensed up over the top and the near side crossing in front below, white hot at the inner edge through gold to red at the rim, all of it turning, with the white Valkey hexagon mark at the centre.",
+      "loop": 6,
+      "fps": 20,
+      "animated": "motion/blackhole-particles.webp",
+      "poster": "motion/blackhole-particles-poster.webp",
+      "source": "html/blackhole-particles.html"
+    },
+    {
+      "name": "cluster-gossip",
+      "title": "Valkey cluster gossip",
+      "desc": "Seven shards on a tilted ring around a slot ring and the white Valkey mark, trading messages along a full mesh, each arriving message flashing the shard it reaches, with a highlight sweeping once round the slot ring.",
+      "loop": 4.8,
+      "fps": 24,
+      "animated": "motion/cluster-gossip.webp",
+      "poster": "motion/cluster-gossip-poster.webp",
+      "source": "html/cluster-gossip.html"
+    },
+    {
+      "name": "performance-traffic",
+      "title": "Valkey throughput",
+      "desc": "Command traffic warping inward from every direction to a vanishing point at the white Valkey mark, each streak curving as it accelerates and stretching into a dash before it is swallowed at the horizon.",
+      "loop": 4,
+      "fps": 24,
+      "animated": "motion/performance-traffic.webp",
+      "poster": "motion/performance-traffic-poster.webp",
+      "source": "html/performance-traffic.html"
+    }
+  ]
+}
