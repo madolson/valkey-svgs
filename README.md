@@ -267,8 +267,8 @@ from thousands of overlapping glows and taper into nothing, and SVG cannot build
 | --- | --- | --- |
 | `client-streams` | Clients docked on a hexagon of ports around the mark, glowing dots pouring outward down every connection | Serving traffic, connections, clients, throughput on a page hero |
 | `blackhole-particles` | The accretion disk as thousands of orbiting points of light, the lensed ring closing all the way round the shadow | Talks, keynotes, anything that wants one striking abstract image |
-| `cluster-gossip` | Six shards at the corners of a hexagon trading messages across a mesh, the logo traced in outline at the centre | Cluster mode, gossip, replication, membership |
-| `eclipse-corona` | A black disc over the sun, the corona hanging in long equatorial lobes and short polar plumes and shimmering in place | Talks, keynotes, launches, anything wanting one striking abstract image |
+| `cluster-gossip` | Six shards at the corners of a hexagon trading messages across a mesh, enclosing the mark in silhouette | Cluster mode, gossip, replication, membership |
+| `eclipse-corona` | The moon's ragged edge over the sun, Baily's beads flickering in its valleys, the corona hanging in equatorial lobes and shimmering in place | Talks, keynotes, launches, anything wanting one striking abstract image |
 
 Each one produces three files:
 
@@ -292,10 +292,15 @@ node motion.mjs --width 960 --quality 68 # smaller files
 ```
 
 A full rebuild is about eight minutes, nearly all of it in `blackhole-particles`, which stamps
-roughly a hundred thousand sprites per frame. Frames come out of one Chrome over the DevTools
-protocol rather than one `--screenshot` per frame; a hundred Chrome launches is two minutes of
-process spawning and nothing else. Node 22 has a WebSocket client built in, so this still
-needs no npm dependency, and the same Chrome and Pillow the static set needs.
+roughly a hundred thousand sprites per frame. Frames come out of Chrome over the DevTools protocol
+rather than one `--screenshot` per frame; a hundred Chrome launches is two minutes of process
+spawning and nothing else. Node 22 has a WebSocket client built in, so this still needs no npm
+dependency, and the same Chrome and Pillow the static set needs.
+
+One Chrome per theme, not one per run. Sharing a renderer across several hundred heavy canvas
+frames eventually gets `Page.captureScreenshot` to stop answering: two themes rendered fine and the
+third died on a timeout. A launch costs about a second, which is nothing against minutes of
+rendering, and it bounds whatever is accumulating.
 
 ### The rule: every frame is a pure function of time
 
@@ -369,6 +374,18 @@ reads as heat.
 **Grain must be static.** It is generated once and re-drawn identically every frame. Animated
 grain flickers, and worse, it makes every frame differ everywhere and destroys the encoder's
 interframe compression.
+
+**Model the cause, not the effect.** The eclipse edge sparkles because the moon is not a circle:
+peaks and crater rims let the photosphere through in the valleys between them. So the limb is a
+radius profile rather than an `arc`, Baily's beads are read off that profile's deepest local
+minima, and each bead's brightness is how deep its valley is. Scattering bright dots round a
+circle would have been a tenth of the code and would not have looked like anything.
+
+Two things that profile taught. It is a sum of sinusoids on **integer** frequencies, which is what
+makes it close on itself; the same trick as the orbits. And the frequencies have to start high:
+including n = 3 through 8 gave the moon big smooth lobes and it came out as a potato, because the
+real limb is a circle to within a rounding error with fine notches cut into it. Two slow envelopes
+then scale the deviation round the limb, or the notching is a uniform scallop and reads as a cog.
 
 **Not all motion is translation.** The eclipse's corona originally emitted particles at the limb
 and flung them outward. It looped correctly and it was wrong: it read as an ejection, and a corona

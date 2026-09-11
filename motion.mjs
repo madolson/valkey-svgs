@@ -248,29 +248,7 @@ function bloom(cx, cy, r, alpha, hex) {
   g.globalCompositeOperation = prev;
 }
 
-// The mark as an outline rather than a fill. Same path, so it carries the hexagon, the keyhole
-// and the partial circle around it: everything that makes the shape read as the logo.
-function markOutline(cx, cy, height, opts) {
-  const o = opts || {};
-  const sc = height / MARK_VH;
-  g.save();
-  g.translate(cx - (MARK_VW * sc) / 2, cy - height / 2);
-  g.scale(sc, sc);
-  // Stroke widths and dashes are given in output units and divided back out, so a dash stays
-  // the same size on screen whatever height the outline is drawn at.
-  g.lineWidth = (o.lineWidth || 3) / sc;
-  g.strokeStyle = o.stroke || '#CCF1FF';
-  g.lineJoin = 'round';
-  if (o.dash) {
-    g.setLineDash(o.dash.map((d) => d / sc));
-    g.lineDashOffset = (o.dashOffset || 0) / sc;
-  }
-  g.stroke(MARK_PATH);
-  g.setLineDash([]);
-  g.restore();
-}
-
-const R = { W, H, TAU, C, rand, hash, lerp, clamp, smooth, stamp, additive, mark, markOutline, scrim, bloom, sprite, T: THEME.loop, frame: FRAME };
+const R = { W, H, TAU, C, rand, hash, lerp, clamp, smooth, stamp, additive, mark, scrim, bloom, sprite, T: THEME.loop, frame: FRAME };
 
 // ------------------------------------------------------------- atmosphere
 
@@ -729,29 +707,17 @@ function gossipSetup(R) {
     }
   }
 
-  return { cx, cy, shards, edges, markH: 440 };
+  return { cx, cy, shards, edges, markH: 288 };
 }
 
 function gossipDraw(g, t, u, s, R) {
   const TAU = R.TAU;
 
-  // The interior traces the logo. Same path the solid mark uses, stroked instead of filled, so
-  // the hexagon, the keyhole and the partial circle around it are all in it. It replaces both the
-  // tick ring that used to sit here and the solid mark that used to sit inside that: an outline
-  // is still the mark, and drawing a filled one inside it would say Valkey twice.
-  //
-  // The dash marches round the path once per loop. Periodicity is why the advance is a whole
-  // number of dash periods: the pattern is 11 + 15, so a loop moves it 26 * 9 units and lands
-  // exactly where it started.
-  // Continuous and faint, so the shape is legible as the logo. A dashed line at this scale broke
-  // the keyhole and the partial circle into a scribble and the whole thing read as a maze.
-  R.markOutline(s.cx, s.cy, s.markH, { lineWidth: 3, stroke: 'rgba(204,241,255,0.3)' });
-
   // The mesh, held faintly so the message paths are legible when nothing is on them.
   for (const e of s.edges) {
     const A = s.shards[e.a], B = s.shards[e.b];
-    g.lineWidth = e.rim ? 1.8 : 1.1;
-    g.strokeStyle = e.rim ? 'rgba(70,189,233,0.3)' : 'rgba(70,189,233,0.1)';
+    g.lineWidth = e.rim ? 2.2 : 1.2;
+    g.strokeStyle = e.rim ? 'rgba(70,189,233,0.46)' : 'rgba(70,189,233,0.14)';
     g.beginPath();
     g.moveTo(A.x, A.y);
     g.lineTo(B.x, B.y);
@@ -781,7 +747,7 @@ function gossipDraw(g, t, u, s, R) {
   R.additive(() => {
     for (let i = 0; i < s.shards.length; i++) {
       const sh = s.shards[i], f = Math.min(1.6, flash[i]);
-      R.stamp(sh.x, sh.y, 46 + 40 * f, 46 + 40 * f, 0.5 + 0.4 * f, R.C.ice);
+      R.stamp(sh.x, sh.y, 52 + 44 * f, 52 + 44 * f, 0.6 + 0.4 * f, R.C.ice);
       for (let k = 1; k <= 2; k++) {
         const d = 28 * k;
         R.stamp(sh.x + d * Math.cos(sh.a), sh.y + d * Math.sin(sh.a), 19, 19, 0.24 + 0.18 * f, R.C.cyanLt);
@@ -789,25 +755,19 @@ function gossipDraw(g, t, u, s, R) {
     }
   });
 
-  g.lineWidth = 2;
-  g.strokeStyle = 'rgba(204,241,255,0.5)';
+  g.lineWidth = 2.4;
+  g.strokeStyle = 'rgba(204,241,255,0.72)';
   for (const sh of s.shards) {
     g.beginPath();
     g.arc(sh.x, sh.y, 15, 0, TAU);
     g.stroke();
   }
 
-  // A sparse bright dash marching round the same path: the motion, laid over a shape that is
-  // already readable without it. Periodicity is why the advance is a whole number of dash
-  // periods -- the pattern sums to 128, so a loop moves it 128 * 4 and lands where it started.
-  R.additive(() => {
-    R.markOutline(s.cx, s.cy, s.markH, {
-      lineWidth: 5,
-      stroke: 'rgba(255,255,255,0.55)',
-      dash: [9, 119],
-      dashOffset: -u * 128 * 4,
-    });
-  });
+  // The interior is a silhouette. The six vertices are the cluster; the shape they surround is
+  // the mark, filled. An outline was tried here and it turned the middle into line art competing
+  // with the mesh, when what the composition wants is one solid thing for the ring to enclose.
+  R.scrim(s.cx, s.cy, s.markH * 1.15, 0.6);
+  R.mark(s.cx, s.cy, s.markH);
 }
 
 // -- Total eclipse. A black lunar disc over the sun, the corona streaming outward around it.
@@ -856,6 +816,63 @@ function eclipseSetup(R) {
     parts.push({ a, d, wob: r(), tw: r(), beats: 2 + ((r() * 3) | 0), tint: r() < 0.16 ? R.C.gold : R.C.ice });
   }
 
+  // The moon is not a circle, and that is the whole reason an eclipse edge sparkles. Mountains
+  // and crater rims stand a few kilometres off a 1700 km radius, so in truth the limb is ragged
+  // by a tenth of a percent, which at this size is a fifth of a pixel. Exaggerated to about
+  // three percent: enough that the edge is visibly uneven and the beads have somewhere to sit.
+  //
+  // The profile is a sum of sinusoids on INTEGER frequencies, which is what makes it close on
+  // itself. Amplitudes fall as 1/n, so it has a few big lobes and a lot of fine detail.
+  // The frequencies start high on purpose. Including n = 3 through 8 gave the moon big smooth
+  // lobes and it came out as a potato: the real limb is a circle to within a rounding error, with
+  // fine notches cut into it. Detail lives at n = 24 and up, and the total amplitude is about
+  // one and a half percent, which is a few pixels here.
+  const LIMB_N = 2048;
+  const harmonics = [];
+  for (let k = 0; k < 30; k++) {
+    const n = 24 + Math.round(Math.pow(k / 29, 1.3) * 166);
+    harmonics.push({ n, amp: 0.0035 / (1 + n * 0.015), ph: r() * R.TAU });
+  }
+  // Raggedness is not even round the limb. Two slow envelopes on integer frequencies scale the
+  // deviation, so some arcs come out nearly smooth and others heavily notched. Without this the
+  // edge is a uniform scallop the whole way round and reads as a cog.
+  const e1 = r() * R.TAU, e2 = r() * R.TAU;
+  const limb = new Float64Array(LIMB_N);
+  for (let i = 0; i < LIMB_N; i++) {
+    const a = (i / LIMB_N) * R.TAU;
+    let v = 0;
+    for (const h of harmonics) v += h.amp * Math.sin(h.n * a + h.ph);
+    const env = (0.3 + 0.7 * (0.5 + 0.5 * Math.sin(3 * a + e1))) * (0.55 + 0.45 * Math.sin(7 * a + e2));
+    limb[i] = 1 + v * env * 1.7;
+  }
+  const limbAt = (a) => {
+    const f = ((((a / R.TAU) % 1) + 1) % 1) * LIMB_N;
+    const i0 = Math.floor(f);
+    return R.lerp(limb[i0 % LIMB_N], limb[(i0 + 1) % LIMB_N], f - i0);
+  };
+
+  // The silhouette, as a path rather than an arc. Built once: it never changes.
+  const moonPath = new Path2D();
+  for (let i = 0; i <= LIMB_N; i++) {
+    const a = (i / LIMB_N) * R.TAU;
+    const rr = rm * limb[i % LIMB_N];
+    const x = cx + rr * Math.cos(a), y = cy + rr * Math.sin(a);
+    if (i === 0) moonPath.moveTo(x, y);
+    else moonPath.lineTo(x, y);
+  }
+  moonPath.closePath();
+
+  // Baily's beads are not decoration placed on the edge: they are the photosphere still visible
+  // through the valleys between lunar peaks. So they are read off the profile's deepest local
+  // minima rather than scattered, and their brightness is how deep the valley is.
+  const mins = [];
+  for (let i = 0; i < LIMB_N; i++) {
+    const prev = limb[(i - 1 + LIMB_N) % LIMB_N], cur = limb[i], next = limb[(i + 1) % LIMB_N];
+    if (cur < prev && cur <= next) mins.push({ a: (i / LIMB_N) * R.TAU, depth: 1 - cur });
+  }
+  mins.sort((x, y) => y.depth - x.depth);
+  const beads = mins.slice(0, 14).map((b) => ({ a: b.a, depth: b.depth, tw: r(), beats: 2 + ((r() * 4) | 0) }));
+
   // Prominences: chromospheric loops at the limb, the one place coral belongs on this theme.
   const proms = [];
   for (let i = 0; i < 4; i++) proms.push({ a: r() * R.TAU, span: 0.11 + r() * 0.09, h: 22 + r() * 20, phase: r(), beats: 2 + ((r() * 2) | 0) });
@@ -892,7 +909,7 @@ function eclipseSetup(R) {
   }
   vg.putImageData(img, 0, 0);
 
-  return { cx, cy, rm, reach, veil, dens, parts, proms, markH: 205 };
+  return { cx, cy, rm, reach, veil, dens, limbAt, moonPath, beads, parts, proms, markH: 205 };
 }
 
 function eclipseDraw(g, t, u, s, R) {
@@ -921,7 +938,7 @@ function eclipseDraw(g, t, u, s, R) {
       const taper = Math.exp(-k.d / (0.85 * s.rm * s.dens(k.a)));
       const alpha = 0.055 * taper * Math.max(0.12, wave) * twinkle * breathe;
       if (alpha <= 0.004) continue;
-      const rr = s.rm + k.d;
+      const rr = s.rm * s.limbAt(k.a) + k.d;
       g.save();
       g.translate(s.cx + rr * Math.cos(k.a), s.cy + rr * Math.sin(k.a));
       g.rotate(k.a);
@@ -930,19 +947,33 @@ function eclipseDraw(g, t, u, s, R) {
     }
   });
 
-  // The moon. Pure black and hard edged, drawn over the corona's inner bleed.
+  // The moon. Pure black and hard edged, drawn over the corona's inner bleed, and following the
+  // ragged profile rather than a circle: the unevenness of this edge is the subject.
   g.fillStyle = '#000000';
-  g.beginPath();
-  g.arc(s.cx, s.cy, s.rm, 0, TAU);
-  g.fill();
+  g.fill(s.moonPath);
 
-  // The chromosphere: a thin brilliant line right on the limb, and the brightest thing in the
-  // frame. It has to punch all the way to white or it reads as a soft lavender halo.
+  // The chromosphere, tracking the ragged limb instead of a circle, and brightening where the
+  // limb dips: a valley is a place the photosphere still shines through, so it is brighter there.
   R.additive(() => {
-    const rr = s.rm * 1.014;
-    for (let i = 0; i < 560; i++) {
-      const a = (i / 560) * TAU;
-      R.stamp(s.cx + rr * Math.cos(a), s.cy + rr * Math.sin(a), 12, 12, 0.15 + 0.07 * s.dens(a), '#FFFFFF');
+    for (let i = 0; i < 900; i++) {
+      const a = (i / 900) * TAU;
+      const local = s.limbAt(a);
+      const dip = R.clamp((1 - local) / 0.009, 0, 1);
+      const rr = s.rm * local * 1.004;
+      R.stamp(s.cx + rr * Math.cos(a), s.cy + rr * Math.sin(a), 11, 11, (0.1 + 0.05 * s.dens(a)) * (1 + 1.1 * dip), '#FFFFFF');
+    }
+  });
+
+  // Baily's beads. Each sits in one of the limb's deepest valleys and flickers on its own whole
+  // number of beats per loop, which is the shimmer you actually see round the edge at totality.
+  R.additive(() => {
+    for (const b of s.beads) {
+      const tw = 0.35 + 0.65 * Math.pow(0.5 + 0.5 * Math.sin(TAU * (b.tw + u * b.beats)), 1.7);
+      const w = R.clamp(b.depth / 0.011, 0, 1.3);
+      const rr = s.rm * s.limbAt(b.a) * 1.008;
+      const x = s.cx + rr * Math.cos(b.a), y = s.cy + rr * Math.sin(b.a);
+      R.stamp(x, y, 22 + 46 * w * tw, 22 + 46 * w * tw, 0.4 * w * tw, '#FFFFFF');
+      R.stamp(x, y, 6 + 7 * w, 6 + 7 * w, 0.85 * tw, '#FFFFFF');
     }
   });
 
@@ -954,7 +985,7 @@ function eclipseDraw(g, t, u, s, R) {
         const f = i / 22;
         const a = pr.a + (f - 0.5) * pr.span;
         // A loop: out from the limb and back, so it arcs rather than sticking out.
-        const rr = s.rm * 1.012 + Math.sin(f * Math.PI) * pr.h * (0.45 + 0.55 * beat);
+        const rr = s.rm * s.limbAt(a) * 1.012 + Math.sin(f * Math.PI) * pr.h * (0.45 + 0.55 * beat);
         R.stamp(s.cx + rr * Math.cos(a), s.cy + rr * Math.sin(a), 30, 30, 0.05 + 0.05 * beat, R.C.coral, true);
       }
     }
@@ -1002,7 +1033,7 @@ const THEMES = [
     center: [960, 500],
     poster: 2,
     title: 'Valkey cluster gossip',
-    desc: 'Six shards at the corners of a hexagon around a hexagonal slot ring and the white Valkey mark, trading messages across a mesh, each arriving message flashing the shard it reaches, with a highlight sweeping once round the slot ring.',
+    desc: 'Six shards at the corners of a hexagon enclosing the white Valkey mark in silhouette, trading messages across a mesh, each arriving message flashing the shard it reaches.',
     setup: gossipSetup,
     draw: gossipDraw,
   },
@@ -1016,7 +1047,7 @@ const THEMES = [
     center: [960, 512],
     poster: 2.1,
     title: 'Valkey eclipse',
-    desc: 'A total solar eclipse: a hard black disc with the white Valkey hexagon mark at its centre, ringed by a thin brilliant chromosphere, the corona hanging all round it in long equatorial lobes and short polar plumes and shimmering in place, with four coral prominences looping off the limb.',
+    desc: "A total solar eclipse: the moon as a hard black silhouette with a visibly ragged edge and the white Valkey hexagon mark at its centre, a thin brilliant chromosphere tracking that edge and flaring into Baily's beads where the lunar valleys dip, the corona hanging all round in long equatorial lobes and short polar plumes and shimmering in place, with four coral prominences looping off the limb.",
     setup: eclipseSetup,
     draw: eclipseDraw,
   },
@@ -1089,7 +1120,20 @@ function findChrome() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+async function closeSession(sess) {
+  if (!sess) return;
+  try {
+    sess.ws.close();
+  } catch {}
+  sess.proc.kill();
+  // Chrome is still flushing its profile when the signal lands, so removing the scratch
+  // directory underneath it fails with ENOTEMPTY. Wait for it to actually be gone.
+  await Promise.race([new Promise((r) => sess.proc.once('exit', r)), sleep(5000)]);
+}
+
+let launchCount = 0;
 async function launch(chrome, dir) {
+  const profile = join(dir, `ud-${++launchCount}`);
   const proc = spawn(
     chrome,
     [
@@ -1099,14 +1143,14 @@ async function launch(chrome, dir) {
       '--no-first-run',
       '--no-default-browser-check',
       '--remote-debugging-port=0',
-      `--user-data-dir=${join(dir, 'ud')}`,
+      `--user-data-dir=${profile}`,
       'about:blank',
     ],
     { stdio: ['ignore', 'ignore', 'ignore'] }
   );
 
   // Chrome writes the port it actually bound to into the profile directory.
-  const portFile = join(dir, 'ud', 'DevToolsActivePort');
+  const portFile = join(profile, 'DevToolsActivePort');
   let port;
   for (let i = 0; i < 200; i++) {
     if (existsSync(portFile)) {
@@ -1142,7 +1186,7 @@ async function launch(chrome, dir) {
   });
   // Every call is bounded. A lost response used to hang the run forever, which is a
   // miserable way to find out Chrome refused a viewport size.
-  const send = (method, params = {}, timeout = 30000) =>
+  const send = (method, params = {}, timeout = 90000) =>
     new Promise((res, rej) => {
       const i = ++id;
       const timer = setTimeout(() => {
@@ -1298,7 +1342,7 @@ try {
       continue;
     }
 
-    if (!sess) sess = await launch(chrome, scratch);
+    sess = await launch(chrome, scratch);
 
     const times = Array.from({ length: frames }, (_, i) => +((i * theme.loop) / frames).toFixed(6));
     const pngs = await capture(sess, htmlPath, scratch, theme.name, times);
@@ -1316,6 +1360,8 @@ try {
 
     for (const p of pngs) rmSync(p, { force: true });
     rmSync(posterPng, { force: true });
+    await closeSession(sess);
+    sess = null;
 
     cache[theme.name] = key;
     rendered++;
@@ -1350,13 +1396,7 @@ try {
     )}\n`
   );
 } finally {
-  if (sess) {
-    sess.ws.close();
-    sess.proc.kill();
-    // Chrome is still flushing its profile when the signal lands, so removing the scratch
-    // directory underneath it fails with ENOTEMPTY. Wait for it to actually be gone.
-    await Promise.race([new Promise((r) => sess.proc.once('exit', r)), sleep(5000)]);
-  }
+  await closeSession(sess);
   rmSync(scratch, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   writeFileSync(CACHE_FILE, `${JSON.stringify(cache, null, 2)}\n`);
 }

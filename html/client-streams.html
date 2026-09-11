@@ -267,29 +267,7 @@ function bloom(cx, cy, r, alpha, hex) {
   g.globalCompositeOperation = prev;
 }
 
-// The mark as an outline rather than a fill. Same path, so it carries the hexagon, the keyhole
-// and the partial circle around it: everything that makes the shape read as the logo.
-function markOutline(cx, cy, height, opts) {
-  const o = opts || {};
-  const sc = height / MARK_VH;
-  g.save();
-  g.translate(cx - (MARK_VW * sc) / 2, cy - height / 2);
-  g.scale(sc, sc);
-  // Stroke widths and dashes are given in output units and divided back out, so a dash stays
-  // the same size on screen whatever height the outline is drawn at.
-  g.lineWidth = (o.lineWidth || 3) / sc;
-  g.strokeStyle = o.stroke || '#CCF1FF';
-  g.lineJoin = 'round';
-  if (o.dash) {
-    g.setLineDash(o.dash.map((d) => d / sc));
-    g.lineDashOffset = (o.dashOffset || 0) / sc;
-  }
-  g.stroke(MARK_PATH);
-  g.setLineDash([]);
-  g.restore();
-}
-
-const R = { W, H, TAU, C, rand, hash, lerp, clamp, smooth, stamp, additive, mark, markOutline, scrim, bloom, sprite, T: THEME.loop, frame: FRAME };
+const R = { W, H, TAU, C, rand, hash, lerp, clamp, smooth, stamp, additive, mark, scrim, bloom, sprite, T: THEME.loop, frame: FRAME };
 
 // ------------------------------------------------------------- atmosphere
 
