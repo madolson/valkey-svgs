@@ -80,6 +80,9 @@ can't drift, and regenerating is a no-op diff.
 | `fbtree-fanout-slab` | A scattered field of pointer-topped member blocks over one wide node holding the same members packed in order | Sorted sets on fbtree, index overhead, one allocation instead of many |
 | `fbtree-fanout-tiers` | A tall spindly seven-level tree beside a short broad two-level one, same members at the leaves | High fanout, tree depth, fewer fetches per lookup |
 | `fbtree-fanout-leafwalk` | Scattered blocks joined by climbing arcs above a chain of packed leaves with one straight run through it | Ordered range reads, linked leaves, cache-friendly traversal |
+| `fake-in-process-enclosure` | One process wall holding the test, the server and its keys, with the port on that wall unplugged | Test doubles, fakes, testing without a server or a container |
+| `fake-in-process-parity` | Two identical reply columns under one caliper, one from a fake inside the test and one from a real server | Compatibility between a fake and the server, differential testing |
+| `fake-in-process-dropin` | A socket with an in-process server seated in it and the remote one held out, still trailing its network | A drop-in test double, replacing a client with a fake |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -306,6 +309,13 @@ Both were attempts to show permitted commands passing *through* a gap. At banner
 broken vertical line stops being a boundary at all. The shipped version leaves the bar
 unbroken and draws the lanes over it, which reads as crossing and keeps the boundary solid
 where the write meets it.
+
+```
+fake-in-process-parity / two rows       — replies in two horizontal rows: the gap between them is dead space and the dashed ties between pairs disappear at crop size
+```
+
+Shipped as two columns side by side instead. The caption owns the lower left, so a comparison
+has more height to work with standing up than lying down.
 
 ## Licence
 
