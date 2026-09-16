@@ -3822,6 +3822,243 @@ function planetRing(r) {
   ].join('\n');
 }
 
+// ------------------------------------------------ an in-process test double
+//
+// The claim in the FakeValkey post is that the server's behaviour runs inside the
+// test process: no container, no port and no network in the test run, with the
+// keys living in the caller's own memory. Three candidates, one sentence each.
+// `fake-in-process-enclosure` is containment: test and server inside one wall.
+// `fake-in-process-parity` is why it can be trusted: the fake and a real server
+// answer the same assertion identically.
+// `fake-in-process-dropin` is substitution: the fake seats in the socket the
+// real server used to fill.
+
+// Containment: one process wall holding the test and the whole server, with the
+// outward port on that wall left unplugged.
+// Idea: the server the test talks to runs inside the test process, so nothing
+// crosses the process boundary.
+// Focal: the process wall, with the server and its keys enclosed by it.
+function fakeInProcessEnclosure(r) {
+  const x0 = 490;
+  const x1 = 1400;
+  const y0 = 196;
+  const y1 = 836;
+  const mx = 1165;
+  const my = 406;
+
+  // The test: a card of assertion lines, quiet, inside the wall on the left.
+  const cx0 = 545;
+  const cw = 240;
+  const cardTop = 296;
+  const lines = [];
+  for (let i = 0; i < 9; i++) {
+    const ly = cardTop + 36 + i * 42;
+    lines.push(
+      `<rect x="${n(cx0 + 26)}" y="${n(ly)}" width="${n(58 + r() * (cw - 116))}" height="12" rx="6" ` +
+        `fill="${C.ice}" opacity="${n(0.28 + r() * 0.2)}"/>`
+    );
+  }
+  const card =
+    `<rect x="${cx0}" y="${cardTop}" width="${cw}" height="420" rx="18" fill="${C.cyan}" fill-opacity="0.1" ` +
+    `stroke="${C.cyanLt}" stroke-width="2.4" opacity="0.7"/>${lines.join('')}`;
+
+  // The keyspace, in the caller's own memory: field and value pairs under the mark.
+  const kx = 1015;
+  const keys = [0, 1, 2, 3]
+    .map((i) => {
+      const ky = 572 + i * 58;
+      return (
+        `<rect x="${kx}" y="${n(ky)}" width="104" height="26" rx="13" fill="${C.cyanLt}" opacity="0.75"/>` +
+        `<rect x="${kx + 120}" y="${n(ky)}" width="${n(92 + r() * 84)}" height="26" rx="13" fill="${C.cyan}" opacity="0.5"/>`
+      );
+    })
+    .join('');
+
+  // Command and reply, drawn as three lanes that never reach the wall.
+  const lanes = [336, 456, 576].map((y) => `M 785 ${y} C 900 ${y} 990 ${my} 1078 ${my}`).join(' ');
+  const riders = [336, 456, 576]
+    .map((y) => dot(940, y + (my - y) * 0.46, 6, C.cyanLt, 'cyan', 0.7, 3))
+    .join('');
+
+  // The one thing outside the wall: the port this test does not open. Violet is
+  // the retired state, and the lead past it ends in an unplugged connector.
+  const port =
+    `<rect x="${x1 - 22}" y="${my - 52}" width="44" height="104" rx="20" fill="${C.ink}" fill-opacity="0.5" ` +
+      `stroke="${C.violet}" stroke-width="4.5" opacity="0.6"/>` +
+    `<line x1="${x1 + 30}" y1="${my}" x2="1506" y2="${my}" stroke="${C.violet}" stroke-width="3.4" ` +
+      `stroke-dasharray="14 16" opacity="0.42"/>` +
+    `<circle cx="1530" cy="${my}" r="17" fill="none" stroke="${C.violet}" stroke-width="3.4" opacity="0.42"/>`;
+
+  return [
+    `  <circle cx="945" cy="${n((y0 + y1) / 2)}" r="560" fill="url(#h-cyan)" opacity="0.12"/>`,
+    `  <rect x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" rx="30" fill="${C.ink}" fill-opacity="0.32"/>`,
+    `  <rect x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" rx="30" fill="none" stroke="${C.ice}" ` +
+      `stroke-width="15" opacity="0.26" filter="url(#blur8)"/>`,
+    `  <rect x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" rx="30" fill="none" stroke="${C.ice}" ` +
+      `stroke-width="5" opacity="0.9"/>`,
+    `  <g stroke="${C.cyanLt}" stroke-width="13" fill="none" opacity="0.16" filter="url(#blur8)"><path d="${lanes}"/></g>`,
+    `  <g stroke="${C.cyanLt}" stroke-width="3.4" fill="none" opacity="0.6"><path d="${lanes}"/></g>`,
+    `  <g>${riders}</g>`,
+    `  <g>${card}</g>`,
+    `  <g>${keys}</g>`,
+    `  <g>${mark(mx, my, 168)}</g>`,
+    `  <g>${port}</g>`,
+  ].join('\n');
+}
+
+// Parity: one reply, drawn twice side by side, once from the fake inside the test
+// and once from a real server over a connection, with a caliper under both.
+// Idea: the fake can be trusted because the same assertion gets the same reply
+// from it and from a real Valkey server.
+// Focal: the two identical columns of replies.
+function fakeInProcessParity(r) {
+  const capH = 48;
+  const rowsY = [398, 488, 578, 668, 758];
+  const ax = 640; // the fake's replies
+  const bx = 1030; // the real server's replies
+  const boxW = 180;
+  const boxH = 130;
+  const boxTop = 210;
+  const ay = boxTop + boxH / 2;
+
+  // One reply, drawn twice: same widths, same colours, same order, because that
+  // is the whole statement. Left-aligned columns, so unequal widths would show.
+  const widths = [176, 240, 128, 196, 152];
+  const colors = widths.map(() => weighted(r, [[C.cyanLt, 5], [C.cyan, 3], [C.ice, 2]]));
+  const column = (x) =>
+    rowsY
+      .map(
+        (y, i) =>
+          `<rect x="${x}" y="${n(y - capH / 2)}" width="${widths[i]}" height="${capH}" rx="${capH / 2}" ` +
+          `fill="${colors[i]}" opacity="0.32" filter="url(#blur8)"/>` +
+          `<rect x="${x}" y="${n(y - capH / 2)}" width="${widths[i]}" height="${capH}" rx="${capH / 2}" ` +
+          `fill="${colors[i]}" opacity="0.92"/>`
+      )
+      .join('');
+
+  // The fake: the mark sitting inside the test itself.
+  const inProc =
+    `<rect x="${ax + 5}" y="${boxTop}" width="${boxW}" height="${boxH}" rx="18" fill="${C.cyan}" fill-opacity="0.1" ` +
+      `stroke="${C.ice}" stroke-width="3.6" stroke-dasharray="14 12" opacity="0.65"/>` +
+    [0, 1]
+      .map(
+        (i) =>
+          `<rect x="${ax + 31}" y="${boxTop + 22 + i * 24}" width="${n(64 + r() * 46)}" height="10" rx="5" ` +
+          `fill="${C.ice}" opacity="0.32"/>`
+      )
+      .join('') +
+    `<g opacity="0.62">${mark(ax + 5 + boxW / 2, boxTop + 88, 66)}</g>`;
+
+  // The real server: the same mark, reached through a port on a connection that
+  // runs out of the frame.
+  const real =
+    `<rect x="${bx + 5}" y="${boxTop}" width="${boxW}" height="${boxH}" rx="18" fill="${C.ink}" fill-opacity="0.4" ` +
+      `stroke="${C.ice}" stroke-width="3.6" opacity="0.65"/>` +
+    `<g opacity="0.62">${mark(bx + 5 + boxW / 2, ay, 78)}</g>` +
+    `<rect x="${bx + boxW - 17}" y="${n(ay - 32)}" width="44" height="64" rx="18" fill="${C.ink}" ` +
+      `fill-opacity="0.5" stroke="${C.ice}" stroke-width="4.5" opacity="0.7"/>` +
+    `<line x1="${bx + boxW + 27}" y1="${n(ay)}" x2="1560" y2="${n(ay)}" stroke="${C.cyanLt}" ` +
+      `stroke-width="5" opacity="0.5"/>`;
+
+  // The assertion: one caliper holding both columns.
+  // No stem under it: the caption block owns the corner it would land in.
+  const cy0 = 812;
+  const cxr = bx + widths[1];
+  const caliper =
+    `<path d="M ${ax} ${cy0 - 26} L ${ax} ${cy0} L ${cxr} ${cy0} L ${cxr} ${cy0 - 26}" fill="none" ` +
+      `stroke="${C.ice}" stroke-width="4.5" stroke-linecap="round" opacity="0.85"/>`;
+
+  return [
+    `  <circle cx="${n(ax + 120)}" cy="578" r="330" fill="url(#h-cyan)" opacity="0.16"/>`,
+    `  <circle cx="${n(bx + 120)}" cy="578" r="330" fill="url(#h-cyan)" opacity="0.16"/>`,
+    `  <g>${inProc}</g>`,
+    `  <g>${real}</g>`,
+    `  ${caliper}`,
+    `  <g>${column(ax)}</g>`,
+    `  <g>${column(bx)}</g>`,
+  ].join('\n');
+}
+
+// Substitution: the client's socket, with the in-process fake seated in it and
+// the server it replaced held out of the socket, still trailing its network.
+// Idea: the test double seats in the same socket the real server plugs into, so
+// the call never leaves the process.
+// Focal: the mint fake seated in the socket.
+function fakeInProcessDropin() {
+  const sx0 = 730;
+  const sx1 = 890;
+  const sy0 = 430;
+  const sy1 = 730;
+  const pinA = 510;
+  const pinB = 650;
+  const mx = 1105;
+  const my = 580;
+
+  // The call, arriving from the code under test off the lower left.
+  const lane = `M 400 890 C 600 890 660 590 ${sx0} ${my}`;
+  const riders = [0.36, 0.58, 0.8]
+    .map((t) => {
+      // Sampled on the same cubic, so the capsules sit on the lane rather than near it.
+      const p0 = [400, 890];
+      const p1 = [600, 890];
+      const p2 = [660, 590];
+      const p3 = [sx0, my];
+      const u = 1 - t;
+      const bx = u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0];
+      const by = u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1];
+      return dot(bx, by, 7, C.cyanLt, 'cyan', 0.7, 3);
+    })
+    .join('');
+
+  // The socket: open on the right, two contacts, and nothing about it changes
+  // whichever end is in it.
+  const socket =
+    `<path d="M ${sx1} ${sy0} L ${sx0} ${sy0} L ${sx0} ${sy1} L ${sx1} ${sy1}" fill="none" stroke="${C.ice}" ` +
+      `stroke-width="6" stroke-linejoin="round" opacity="0.9"/>` +
+    [pinA, pinB]
+      .map(
+        (y) =>
+          `<rect x="${sx0 + 34}" y="${n(y - 11)}" width="66" height="22" rx="11" fill="${C.ice}" opacity="0.85"/>`
+      )
+      .join('');
+
+  // Seated: the fake, mint because it is the end that arrived.
+  const seated =
+    [pinA, pinB]
+      .map(
+        (y) =>
+          `<rect x="${sx0 + 90}" y="${n(y - 11)}" width="120" height="22" rx="11" fill="${C.mint}" opacity="0.9"/>`
+      )
+      .join('') +
+    `<rect x="910" y="405" width="390" height="350" rx="30" fill="${C.mint}" fill-opacity="0.14" ` +
+      `stroke="${C.mint}" stroke-width="5" opacity="0.95"/>` +
+    `<g>${mark(mx, my, 190)}</g>`;
+
+  // Unseated: the same server, violet because it is the end this replaced, its
+  // connection still running out of the frame.
+  const unseated =
+    `<path d="M 1130 252 C 1290 248 1420 214 1760 204" fill="none" stroke="${C.violet}" stroke-width="4.5" opacity="0.4"/>` +
+    [262, 324]
+      .map(
+        (y) =>
+          `<rect x="826" y="${y - 10}" width="80" height="20" rx="10" fill="${C.violet}" opacity="0.5"/>`
+      )
+      .join('') +
+    `<rect x="900" y="218" width="230" height="150" rx="24" fill="${C.violet}" fill-opacity="0.12" ` +
+      `stroke="${C.violet}" stroke-width="4" opacity="0.55"/>` +
+    `<g opacity="0.5">${mark(1015, 293, 84)}</g>`;
+
+  return [
+    `  <circle cx="${mx}" cy="${my}" r="310" fill="url(#h-mint)" opacity="0.28"/>`,
+    `  <g stroke="${C.cyanLt}" stroke-width="16" fill="none" opacity="0.16" filter="url(#blur8)"><path d="${lane}"/></g>`,
+    `  <g stroke="${C.cyanLt}" stroke-width="5" fill="none" opacity="0.6"><path d="${lane}"/></g>`,
+    `  <g>${riders}</g>`,
+    `  <g>${unseated}</g>`,
+    `  <g>${socket}</g>`,
+    `  <g>${seated}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -3880,6 +4117,9 @@ const BASE_THEMES = [
   // spends it: the columns get 24 more units between them and the panel-to-shard span gets
   // the rest. It is not a dramatic stretch, because the frame is the frame.
   { name: 'key-size-card-flat', seed: 43049, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three widely spaced shard enclosures of servers drawn as the white Valkey hexagon mark, the whole chart sitting in a shallow band clear above the title blocks.', art: keySizeCard({ scale: 0.8, spread: 62, colPitch: 168, clearY: 748 }) },
+  { name: 'fake-in-process-enclosure', seed: 47011, zoom: 1.22, center: [960, 540], title: 'Valkey inside the test process', desc: 'One rounded process boundary containing a card of test lines on the left, three lanes running from it to the white Valkey hexagon mark on the right, and a short list of key and value pairs under that mark, with the only port on the wall drawn in dim purple and its lead ending in an unplugged connector outside, representing a Valkey server whose behaviour runs inside the test process.', art: fakeInProcessEnclosure },
+  { name: 'fake-in-process-parity', seed: 47021, zoom: 1.28, center: [960, 540], title: 'Valkey fake and real, same reply', desc: 'Two identical columns of five reply capsules standing side by side, matched row for row in width and colour, with one pale caliper bracketing both from below; above the left column a dashed test card holds the white Valkey hexagon mark, and above the right the same mark sits in a solid server box with a port capsule and a connection running out of the frame, representing a fake inside the test process and a real Valkey server answering one assertion identically.', art: fakeInProcessParity },
+  { name: 'fake-in-process-dropin', seed: 47031, zoom: 1.3, center: [960, 540], title: 'Valkey test double, dropped in', desc: 'A pale socket at the centre with two contacts, a green in-process server carrying the white Valkey hexagon mark seated in it on matching pins, a dim purple server carrying the same mark held out of the socket above with its network connection trailing off the frame, and a call arriving on a blue lane from the lower left, representing an in-memory test double dropped into the socket a real server used to fill.', art: fakeInProcessDropin },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

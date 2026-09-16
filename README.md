@@ -53,6 +53,9 @@ can't drift, and regenerating is a no-op diff.
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
+| `fake-in-process-enclosure` | One process wall holding the test, the server and its keys, with the port on that wall unplugged | Test doubles, fakes, testing without a server or a container |
+| `fake-in-process-parity` | Two identical reply columns under one caliper, one from a fake inside the test and one from a real server | Compatibility between a fake and the server, differential testing |
+| `fake-in-process-dropin` | A socket with an in-process server seated in it and the remote one held out, still trailing its network | A drop-in test double, replacing a client with a fake |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -260,6 +263,13 @@ security-shield / hex-high              — both faults at once
 
 All five lost to `security-shield-clean` on the same judgement: the shipped proportions are
 better than any of them, and the shield's silhouette is not a knob worth turning.
+
+```
+fake-in-process-parity / two rows       — replies in two horizontal rows: the gap between them is dead space and the dashed ties between pairs disappear at crop size
+```
+
+Shipped as two columns side by side instead. The caption owns the lower left, so a comparison
+has more height to work with standing up than lying down.
 
 ## Licence
 
