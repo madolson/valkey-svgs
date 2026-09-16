@@ -6240,6 +6240,100 @@ function fbtreeTowerAndTree(r) {
   ].join('\n');
 }
 
+// ------------------------------------------------- large values and the tail
+//
+// The post: 10 req/s of 10MB GETs wrecks the p99.9 of 100K req/s of 1KB GETs,
+// because before 9.0 the main thread copied the whole 10MB into a reply buffer
+// before it could go back to serving anything else. Valkey 9 hands the I/O
+// threads a reference instead, so the payload never crosses that thread.
+//
+// In both of these the small requests are one repeated shape on one even pitch,
+// and the large value is the only coral object and the only thing that breaks the
+// pitch. What differs is what it breaks: a run of waits, or a queue.
+//
+// `large-object-tail-*` failed by putting a big translucent coral box beside a
+// field of small pills, which reads as "one item is bigger". The value is solid
+// here, and in both themes it is in contact with the thing it is holding up.
+//
+// A third candidate, the 9.0 fix, was drawn three times and dropped: see the
+// rejected list in the README. A large coral mass anywhere near a row of small
+// requests is read as blocking them, whichever way the picture is arranged.
+
+// The large value. Solid rather than the translucent outline the earlier
+// candidates used, which read as an empty glass panel instead of a heavy object.
+function bvlPayload(x, y, w, h, rx = 12) {
+  const box = `x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${rx}"`;
+  // Fully opaque: at 0.9 the halo behind it showed through as a faint oval, which
+  // a blind read called out as decoration inside the object.
+  return `<rect ${box} fill="${C.coral}"/><rect ${box} fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.35"/>`;
+}
+
+function bvlCopyBlock(r) {
+  // Idea: the one big copy owns the thread for as long as it takes, and the small
+  // requests underneath it wait exactly that long.
+  // Focal: the coral block of occupied thread time.
+  const axis = 400;
+  const pitch = 74;
+  const big = { x: 760, w: 390, h: 180 };
+
+  // Every small request's wait, hanging off the thread's own timeline at the rate
+  // they arrive. An even row of stubs is the workload behaving.
+  const waits = [];
+  const wait = (x, depth) =>
+    `<rect x="${n(x)}" y="${n(axis + 14)}" width="30" height="${n(depth)}" rx="15" fill="${C.cyan}" opacity="0.6"/>`;
+
+  for (let x = 240; x < 1720; x += pitch) {
+    if (x + 30 > big.x && x < big.x + big.w) continue;
+    waits.push(wait(x, 58 + r() * 16));
+  }
+
+  // The requests that arrive while the copy runs. The first one waits out the
+  // whole copy, the last one almost none of it, so the wedge is deepest against
+  // the block's leading edge and its span is the block's span.
+  // A clean ramp, not a jittered one: a blind read called the varying heights
+  // inside the wedge arbitrary, and the ramp is the whole point.
+  for (let i = 0; i < 5; i++) {
+    waits.push(wait(big.x + 12 + i * pitch, 390 - i * 76));
+  }
+
+  return [
+    `  <ellipse cx="${n(big.x + big.w / 2)}" cy="${n(axis - big.h / 2)}" rx="420" ry="290" fill="url(#h-coral)" opacity="0.2"/>`,
+    `  <g>${waits.join('')}</g>`,
+    `  <line x1="200" y1="${axis}" x2="1720" y2="${axis}" stroke="${C.ice}" stroke-width="10" opacity="0.75"/>`,
+    `  <g>${bvlPayload(big.x, axis - big.h, big.w, big.h)}</g>`,
+  ].join('\n');
+}
+
+function bvlStalledQueue() {
+  // Idea: there is one channel out of the server, and while the large value is in
+  // it nothing else moves through.
+  // Focal: the coral value filling the channel.
+  const lanes = [330, 540, 750];
+  const bh = 96;
+  const bw = 80;
+  const plug = { x: 1000, w: 370, y: 236, h: 608 };
+
+  // One fill for every request. A blind read read the two-tone version as shading
+  // for its own sake, and nothing here differs in kind.
+  const block = (x, cy) =>
+    `<rect x="${n(x)}" y="${n(cy - bh / 2)}" width="${bw}" height="${bh}" rx="20" ` +
+    `fill="${C.cyan}" opacity="0.55"/>`;
+
+  // Held: single file, packed nose to tail back from the value's near face. The
+  // run ends inside the frame rather than bleeding, so the queue has a visible
+  // tail and the narrow crop is not cutting a column in half.
+  const held = [];
+  for (const cy of lanes) {
+    for (let x = plug.x - 8 - bw; x > 470; x -= bw + 14) held.push(block(x, cy));
+  }
+
+  return [
+    `  <ellipse cx="${n(plug.x + plug.w / 2)}" cy="540" rx="330" ry="420" fill="url(#h-coral)" opacity="0.2"/>`,
+    `  <g>${held.join('')}</g>`,
+    `  <g>${bvlPayload(plug.x, plug.y, plug.w, plug.h, 8)}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -6330,6 +6424,8 @@ const BASE_THEMES = [
   { name: 'fake-in-process-dropin', seed: 47031, zoom: 1.3, center: [960, 540], title: 'Valkey test double, dropped in', desc: 'A pale socket at the centre with two contacts, a green in-process server carrying the white Valkey hexagon mark seated in it on matching pins, a dim purple server carrying the same mark held out of the socket above with its network connection trailing off the frame, and a call arriving on a blue lane from the lower left, representing an in-memory test double dropped into the socket a real server used to fill.', art: fakeInProcessDropin },
   { name: 'fbtree-wide-root', seed: 66601, zoom: 1.48, center: [960, 505], title: 'Valkey sorted sets on a B+ tree', desc: 'One wide green root node holding a row of four large child slots divided by three narrow green separator bars that span the node from top to bottom, a thin green pointer dropping from each slot through the wall of the node onto one of four green leaf nodes below, every leaf holding three blue member entries packed side by side with their scores capped brighter at the top, and each pair of leaves joined by a short thick green bar overlapping both of their walls, representing the ordered index behind a large sorted set as a high-fanout B+ tree two levels deep.', art: fbtreeWideRoot },
   { name: 'fbtree-tower-and-tree', seed: 66613, zoom: 1.5, center: [960, 505], title: 'Valkey sorted sets change shape', desc: 'Above, twelve blue member cells spaced far apart along a row, each a separate allocation carrying its own tower of purple forward-pointer cells with purple links skipping between towers at every level; below, the same twelve cells shoulder to shoulder in groups of three inside four green leaf nodes joined by thick green sibling links, with one wide green root node of four child slots divided by full-height separator bars fanning down onto them, representing a skiplist replaced by a high-fanout B+ tree.', art: fbtreeTowerAndTree },
+  { name: 'big-value-latency-copy-block', seed: 67101, zoom: 1.38, center: [960, 540], title: 'Valkey one big copy holds the thread', desc: 'One bright pale timeline with a solid red block sitting on it, and under the line a run of short identical blue bars at an even pitch that, along the span the red block covers, lengthen into a deep wedge deepest against the block\'s leading edge, representing small requests waiting exactly as long as one large value occupies the main thread.', art: bvlCopyBlock },
+  { name: 'big-value-latency-stalled-queue', seed: 67111, zoom: 1.34, center: [923, 540], title: 'Valkey one big value blocks the rest', desc: 'A tall solid red value standing across three lanes, with identical blue request blocks packed nose to tail behind it in every lane and nothing at all beyond it, representing every small request held up while one large value occupies the only path out.', art: bvlStalledQueue },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
