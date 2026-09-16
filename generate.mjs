@@ -3948,9 +3948,9 @@ const bopUnit = (c, r, opacity) => {
 //
 // These three are the same structure in `dataStructures`' register: structural
 // strokes 1.2 to 1.8px at 0.14 to 0.6 and varied per element, hollow nodes over
-// fill-opacity 0.12, 40x24 entries, and the accent mixed by weight across a field
-// rather than a region filled with one colour. What carries the sentence is the
-// shape of the whole, so no single node has to.
+// fill-opacity 0.12, entries 24 tall and 36 to 44 wide, and the accent mixed by weight
+// across a field rather than a region filled with one colour. What carries the sentence
+// is the shape of the whole, so no single node has to.
 //
 //   fbtreeSoftWideTree     the shape: one wide node of separator keys over packed leaves
 //   fbtreeSoftOrderedWalk  the read: an ordered scan runs along the leaf level itself
@@ -3960,14 +3960,14 @@ const bopUnit = (c, r, opacity) => {
 // the fbtree's nodes are `mint` as the state arrived at, and the skiplist's pointer
 // and span overhead is `violet` as the thing retired.
 
-// One packed entry: small, low and hollow of detail, because fifteen of them in a row
-// are a mass and not fifteen readable things (DESIGN.md 14). The mix is by weight, so
+// One packed entry: small, low and hollow of detail, because a dozen of them in a row
+// are a mass and not a dozen readable things (DESIGN.md 14). The mix is by weight, so
 // the run has tonal variation without colour being asked to tell entries apart.
 //
 // `dataStructures` mixes cyan 6, mint 3, violet 2, and the first pass copied that. It
 // gets away with a hue mix because it has 35 of these spread over 12 ragged chains, so no
-// one of them is the odd one out. Here there are 15 in five tidy leaves, and every blind
-// read named the single off-hue cell as the thing its eye went to first — DESIGN.md 6's
+// one of them is the odd one out. Here there are 9 to 12 in three or four tidy leaves, and
+// every blind read named the single off-hue cell as the thing its eye went to first — DESIGN.md 6's
 // exception-in-a-uniform-field working against the picture. So the mix is two tones of
 // the one colour that means content at rest, and the variation is carried by opacity.
 // Violet is out for a second reason: it is this set's accent for the thing retired, and
@@ -4017,16 +4017,28 @@ function fbsInner(x, y, w, h, slots, stroke, opacity) {
 function fbtreeSoftWideTree(r) {
   // Idea: the ordered index behind a large sorted set is one wide node of separator keys over a single row of leaves holding their members packed side by side and linked to their neighbours.
   // Focal: the two-level shape itself, per DESIGN.md 15 — nothing in it is drawn at focal weight.
-  const LEAVES = 5;
+  // Four leaves, not five, and the row 640 grid units wide rather than 900. Framing was
+  // exhausted at zoom 1.401, and the next move is DESIGN.md 12 step 2: a narrower drawing
+  // takes more zoom and says the same thing. Four leaves of three entries is still a
+  // fanout no binary tree has.
+  //
+  // Only ratios matter here, because the zoom is then set to put the row's edges on
+  // 0.17/0.83 whatever `SPAN` is: every element renders at `0.66 * w / SPAN` of the framed
+  // width, and the height the drawing fills is `450.6 / SPAN`. So `SPAN` alone buys the
+  // fill, and the grid sizes below are chosen to hold each leaf and each gap at the share
+  // of the row they already had. The entries are still 36 wide on the grid and land 41%
+  // larger in frame; growing them in grid units would have bought the same pixels and
+  // spent the zoom that pays for them.
+  const LEAVES = 4;
   const ENTRIES = 3;
   const EW = 36;
   const EH = 24;
   const EPITCH = 42;
-  const PAD = 14;
+  const PAD = 9;
   const LEAF_W = PAD * 2 + (ENTRIES - 1) * EPITCH + EW;
   const LEAF_H = 64;
   const LEAF_Y = 620;
-  const SPAN = 900;
+  const SPAN = 640;
   const GAP = (SPAN - LEAVES * LEAF_W) / (LEAVES - 1);
   const X0 = 960 - SPAN / 2;
   const leafX = [];
@@ -4037,7 +4049,7 @@ function fbtreeSoftWideTree(r) {
   // the same weight as the leaves, because the shape and not the node is the subject.
   const ROOT_Y = 300;
   const ROOT_H = 72;
-  const SLOT = 112;
+  const SLOT = 100;
   const ROOT_W = LEAVES * SLOT;
   const ROOT_X = 960 - ROOT_W / 2;
   const slotCx = [];
@@ -4081,8 +4093,12 @@ function fbtreeSoftWideTree(r) {
   // deletion test took it out with nothing lost — the blind read had been attaching the
   // root's importance to "the brightest part of the background glow" rather than to the
   // node, which is DESIGN.md 3's ambient wash earning its ban.
+  //
+  // The remaining one shrinks with the drawing. At r="430" and the new zoom it reached
+  // past every edge of the frame, which turns a glow behind the motif into the wash the
+  // same rule bans; 305 keeps the footprint it had at zoom 1.401.
   return [
-    `  <circle cx="960" cy="${LEAF_Y + LEAF_H / 2}" r="430" fill="url(#h-cyan)" opacity="0.18"/>`,
+    `  <circle cx="960" cy="${LEAF_Y + LEAF_H / 2}" r="305" fill="url(#h-cyan)" opacity="0.18"/>`,
     `  <g>${links}</g>`,
     `  <g>${leaves}</g>`,
     `  <g>${chain}</g>`,
@@ -4093,16 +4109,26 @@ function fbtreeSoftWideTree(r) {
 function fbtreeSoftOrderedWalk(r) {
   // Idea: an ordered read of a large sorted set runs along the leaf level itself, from one leaf into the next, instead of climbing back into the tree between members.
   // Focal: the rail through the leaf row, the one element above 0.6 opacity and the only one with a halo.
-  const LEAVES = 4;
+  // Three leaves, for the reason `fbtreeSoftWideTree` drops to four: DESIGN.md 12 step 2,
+  // a narrower drawing takes more zoom. The rail is the subject and it wants length at
+  // scale, not more leaves to pass through. Three is still a row, and the entries go from
+  // 40 to 44 on the grid inside a frame zoomed in by a further third, so each one lands
+  // 47% larger and the packing reads where it used to be implied.
+  //
+  // Here the drawn width is the rail and its arrowhead, not the leaf row: it overhangs by
+  // 20 on the left (the round cap) and 41 on the right (the tip), so the zoom is set from
+  // `SPAN + 61`. The overhangs shrank with everything else to hold the share of the width
+  // they had, which keeps the tip's lead past the last leaf at the length it read at.
+  const LEAVES = 3;
   const ENTRIES = 3;
-  const EW = 40;
+  const EW = 44;
   const EH = 24;
-  const EPITCH = 46;
-  const PAD = 14;
+  const EPITCH = 52;
+  const PAD = 13;
   const LEAF_W = PAD * 2 + (ENTRIES - 1) * EPITCH + EW;
   const LEAF_H = 64;
   const LEAF_Y = 620;
-  const SPAN = 820;
+  const SPAN = 612;
   const GAP = (SPAN - LEAVES * LEAF_W) / (LEAVES - 1);
   const X0 = 960 - SPAN / 2;
   const leafX = [];
@@ -4136,13 +4162,15 @@ function fbtreeSoftOrderedWalk(r) {
     })
     .join('');
 
-  // The rail: one continuous path at the leaf level, running through every leaf and
-  // out the far side behind a single arrowhead. 24 units is about 6px in the narrow
-  // crop, so the one element carrying the sentence clears DESIGN.md 4's floor.
+  // The rail: one continuous path at the leaf level, running through every leaf and out
+  // the far side behind a single arrowhead. Still 24 units, which is 8px in the narrow crop
+  // at this zoom rather than the 6px it was: the number is a floor in DESIGN.md 4, and
+  // thinning it to hold 6px would have made the one focal element the only thing in the
+  // picture that did not get crisper.
   const railY = LEAF_Y + LEAF_H;
-  const railX0 = leafX[0] - 14;
-  const railX1 = leafX[LEAVES - 1] + LEAF_W + 14;
-  const tip = railX1 + 40;
+  const railX0 = leafX[0] - 8;
+  const railX1 = leafX[LEAVES - 1] + LEAF_W + 8;
+  const tip = railX1 + 33;
   const rail =
     `<line x1="${n(railX0)}" y1="${n(railY)}" x2="${n(railX1)}" y2="${n(railY)}" stroke="${C.mint}" ` +
     `stroke-width="24" stroke-linecap="round" opacity="0.78"/>` +
@@ -4150,7 +4178,9 @@ function fbtreeSoftOrderedWalk(r) {
     `${n(railY + 26)} Z" fill="${C.mint}" opacity="0.9"/>`;
 
   return [
-    `  <circle cx="960" cy="${n(railY)}" r="430" fill="url(#h-mint)" opacity="0.19"/>`,
+    // Shrunk with the drawing, for the reason given in `fbtreeSoftWideTree`: at r="430"
+    // the new zoom pushes the glow past every edge and it becomes an ambient wash.
+    `  <circle cx="960" cy="${n(railY)}" r="315" fill="url(#h-mint)" opacity="0.19"/>`,
     `  <g>${links}</g>`,
     `  ${fbsInner(ROOT_X, ROOT_Y, ROOT_W, ROOT_H, LEAVES, 1.3, 0.3)}`,
     `  <g>${rail}</g>`,
@@ -4322,8 +4352,8 @@ const BASE_THEMES = [
   { name: 'client-compression-twin-sends', seed: 48121, zoom: 1.4, center: [1010, 530], title: 'Valkey a third of the bytes on the wire', desc: 'Two pale capsule-shaped wires of equal length, one above the other, each ending in a chevron: the upper wire holds six narrow bright green fields filling a quarter of its length, and the lower holds the same six fields in dim purple filling most of it, representing the same value crossing the network at a fraction of the size once the client compresses it.', art: clientCompressionTwinSends },
   { name: 'scan-cursor-pages', seed: 67501, zoom: 1.35, center: [960, 544], title: 'Valkey scan by page', desc: 'A field of key pills on an even pitch, grouped into five stacked pages, with the middle page lit in gold and the other four blue at rest, representing a scan that hands back one bounded page of the keyspace at a time.', art: scanCursorPages },
   { name: 'agent-context-recall-arc', seed: 51021, zoom: 1.54, center: [944, 421], title: 'Valkey recalling an older turn', desc: 'A tall single column of twelve rounded bars standing for the turns of an agent conversation, newest at the top, most of them short and dim blue, the three newest and one much older turn far down the column drawn taller and solid green, and a single thick green band running out of that older turn, up the outside of the column and into the newest bar behind an arrowhead, representing an agent conversation held in Valkey out of which an older turn is loaded back into the next context window.', art: agentContextRecallArc },
-  { name: 'fbtree-soft-two-levels', seed: 66627, zoom: 1.401, center: [960, 553], title: 'Valkey sorted sets in one wide tree', desc: 'One wide hollow green node at the top, divided by four thin vertical separator lines into five child slots each holding a small green routing bar, a thin green pointer fanning out of every slot onto one of five small hollow green leaf nodes in a row below, every leaf holding three small blue entries packed side by side, and each pair of neighbouring leaves joined by a short green link, representing the ordered index behind a large sorted set as a high-fanout B+ tree two levels deep.', art: fbtreeSoftWideTree },
-  { name: 'fbtree-soft-leaf-rail', seed: 66631, zoom: 1.377, center: [960, 566], title: 'Valkey reading a sorted set in order', desc: 'A faint wide green node of four child slots at the top, each slot holding a small green routing bar, with barely visible pointers fanning down to four small hollow green leaf nodes in a row below, each holding three small blue entries, and one thick bright green rail running horizontally through all four leaves and out past the last of them behind a single arrowhead, representing an ordered read of a large sorted set walking along the linked leaves instead of climbing back into the tree between members.', art: fbtreeSoftOrderedWalk },
+  { name: 'fbtree-soft-two-levels', seed: 66627, zoom: 1.98, center: [960, 518], title: 'Valkey sorted sets in one wide tree', desc: 'One wide hollow green node at the top, divided by three thin vertical separator lines into four child slots each holding a small green routing bar, a thin green pointer fanning out of every slot onto one of four small hollow green leaf nodes in a row below, every leaf holding three blue entries packed side by side, and each pair of neighbouring leaves joined by a short green link, representing the ordered index behind a large sorted set as a high-fanout B+ tree two levels deep.', art: fbtreeSoftWideTree },
+  { name: 'fbtree-soft-leaf-rail', seed: 66631, zoom: 1.883, center: [970, 532], title: 'Valkey reading a sorted set in order', desc: 'A faint wide green node of three child slots at the top, each slot holding a small green routing bar, with barely visible pointers fanning down to three small hollow green leaf nodes in a row below, each holding three blue entries, and one thick bright green rail running horizontally through all three leaves and out past the last of them behind a single arrowhead, representing an ordered read of a large sorted set walking along the linked leaves instead of climbing back into the tree between members.', art: fbtreeSoftOrderedWalk },
   { name: 'fbtree-soft-scatter-run', seed: 66643, zoom: 1.461, center: [960, 524], title: 'Valkey the same members, fewer nodes', desc: 'Above, twelve small blue member cells spread far apart along a row with gaps between them, each carrying a short stack of purple forward-pointer cells with thin purple links skipping between the stacks at every level; below, unconnected to it, the same twelve cells three to a leaf inside four small hollow green leaf nodes joined by short green links, under one wide hollow green node divided into four child slots, each holding a small green routing bar and dropping a thin pointer onto one leaf, representing the ordered index moving from one allocation per member to a few wide nodes that hold them packed.', art: fbtreeSoftScatterRun },
 ];
 
