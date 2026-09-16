@@ -6647,6 +6647,101 @@ function agentContextRecallArc() {
   ].join('\n');
 }
 
+// --------------------------------------------------- primitives, and what is built
+//
+// One lattice at one pitch, and one block on it: every unit in the picture is the
+// same rect at the same size, so the only difference between the three structures is
+// how the blocks are arranged. The pitch is 96x100 with a 12px gap both ways, and
+// every structure stands on the same bottom row, which is what makes three unlike
+// silhouettes read as three things built out of one part rather than as three drawings.
+const BOP = { w: 84, h: 88, px: 96, py: 100, x0: 480, baseY: 840 };
+
+const bopCell = (c, r) => [BOP.x0 + c * BOP.px, BOP.baseY - r * BOP.py];
+
+const bopUnit = (c, r, opacity) => {
+  const [x, y] = bopCell(c, r);
+  return (
+    `<rect x="${n(x - BOP.w / 2)}" y="${n(y - BOP.h / 2)}" width="${BOP.w}" height="${BOP.h}" rx="14" ` +
+    `fill="${C.cyanLt}" fill-opacity="0.34" stroke="${C.cyanLt}" stroke-width="3.4" opacity="${opacity}"/>`
+  );
+};
+
+// The silhouette of a set of lattice cells. Every cell contributes its four edges
+// wound the same way, the pairs that cancel are the shared ones, and what is left
+// chains into one loop. Hand-writing these paths is what leaves a stray notch in a
+// structure's outline.
+function bopSilhouette(cells) {
+  const edges = new Map();
+  for (const [c, r] of cells) {
+    for (const [a0, b0, a1, b1] of [
+      [c, r, c + 1, r],
+      [c + 1, r, c + 1, r + 1],
+      [c + 1, r + 1, c, r + 1],
+      [c, r + 1, c, r],
+    ]) {
+      const back = `${a1},${b1}|${a0},${b0}`;
+      if (edges.has(back)) edges.delete(back);
+      else edges.set(`${a0},${b0}|${a1},${b1}`, `${a1},${b1}`);
+    }
+  }
+  const step = new Map();
+  for (const [k, to] of edges) step.set(k.split('|')[0], to);
+  const first = edges.keys().next().value.split('|')[0];
+  const loop = [first];
+  for (let i = 0; i < edges.size; i++) {
+    const to = step.get(loop[loop.length - 1]);
+    if (!to || to === first) break;
+    loop.push(to);
+  }
+  const pt = (corner) => {
+    const [a, b] = corner.split(',').map(Number);
+    return `${n(BOP.x0 + a * BOP.px - BOP.px / 2)} ${n(BOP.baseY - b * BOP.py + BOP.py / 2)}`;
+  };
+  return `M ${loop.map(pt).join(' L ')} Z`;
+}
+
+// Idea: Valkey ships one small set of identical primitives, and the tools people
+// actually run are unlike structures assembled out of that same block.
+// Focal: the tall hollow arch, the largest thing built and the only one at full weight.
+//
+// The silhouettes are architectural on purpose: a flight of steps, a portal, a tower on
+// a plinth. Loose polyominoes of three or four blocks read as Tetris pieces, which says
+// puzzle-fitting rather than composition, so every structure here is nine blocks or more
+// and stands on the same bottom row.
+function builtOnPrimitivesOneBrick() {
+  // A flight of steps rising towards the arch.
+  const steps = [
+    [0, 0], [1, 0], [2, 0],
+    [0, 1], [1, 1], [2, 1],
+    [1, 2], [2, 2],
+    [2, 3],
+  ];
+  // The portal: two legs and a course across the top, the tallest thing here.
+  const arch = [
+    ...[0, 1, 2, 3, 4, 5].map((r) => [4, r]),
+    ...[0, 1, 2, 3, 4, 5].map((r) => [6, r]),
+    [4, 6], [5, 6], [6, 6],
+  ];
+  // A tower standing on a plinth that oversails it on one side.
+  const tower = [
+    [8, 0], [9, 0], [10, 0],
+    ...[1, 2, 3, 4, 5].flatMap((r) => [[9, r], [10, r]]),
+  ];
+
+  // The mint outline is what makes a run of blocks read as one object; cyan is the
+  // block, mint is the thing composed out of it, everywhere in the picture.
+  const built = (cells, focal) =>
+    `<path d="${bopSilhouette(cells)}" fill="none" stroke="${C.mint}" ` +
+    `stroke-width="${focal ? 12 : 7}" stroke-linejoin="round" opacity="${focal ? 0.95 : 0.55}"/>` +
+    cells.map(([c, r]) => bopUnit(c, r, focal ? 1 : 0.6)).join('');
+
+  return [
+    `  <g>${built(steps, false)}</g>`,
+    `  <g>${built(tower, false)}</g>`,
+    `  <g>${built(arch, true)}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -6745,6 +6840,7 @@ const BASE_THEMES = [
   { name: 'scan-cursor-pages', seed: 67501, zoom: 1.35, center: [960, 544], title: 'Valkey scan by page', desc: 'A field of key pills on an even pitch, grouped into five stacked pages, with the middle page lit in gold and the other four blue at rest, representing a scan that hands back one bounded page of the keyspace at a time.', art: scanCursorPages },
   { name: 'agent-context-lit-transcript', seed: 51011, zoom: 1.54, center: [950, 421], title: 'Valkey agent context window', desc: 'A tall transcript of twelve speech bubbles on one even pitch, alternating between a wide left lane and a narrow right lane with each bubble tailed towards its own side, most of them dim blue, with the three newest at the top and two isolated older ones further down drawn taller and solid green, representing an agent conversation kept in Valkey where only the recent turns and a few recalled older ones are loaded back into the context window.', art: agentContextLitTranscript },
   { name: 'agent-context-recall-arc', seed: 51021, zoom: 1.54, center: [944, 421], title: 'Valkey recalling an older turn', desc: 'A tall single column of twelve rounded bars standing for the turns of an agent conversation, newest at the top, most of them short and dim blue, the three newest and one much older turn far down the column drawn taller and solid green, and a single thick green band running out of that older turn, up the outside of the column and into the newest bar behind an arrowhead, representing an agent conversation held in Valkey out of which an older turn is loaded back into the next context window.', art: agentContextRecallArc },
+  { name: 'built-on-primitives-one-brick', seed: 67011, zoom: 1.2, center: [960, 540], title: 'Valkey primitives, composed', desc: 'Three unlike structures standing on one baseline, each built out of copies of the same identical blue block: a flight of steps rising to the right, a tall hollow portal in the middle outlined in bright green, and a tower on a wider plinth on the right, representing the tools people run being assembled out of the few primitives the server ships.', art: builtOnPrimitivesOneBrick },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

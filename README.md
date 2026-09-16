@@ -93,6 +93,7 @@ can't drift, and regenerating is a no-op diff.
 | `scan-cursor-pages` | Five stacked pages of keys tiling a keyspace, exactly one of them lit | `SCAN`, cursors, iterating a keyspace without holding it all at once |
 | `agent-context-lit-transcript` | A two-lane chat transcript with the newest three turns and two isolated older ones lit | Agent memory, chat history, context windows, selective recall |
 | `agent-context-recall-arc` | A dim column of turns with the newest lit, and one thick band carrying an older turn back up into them | Agent memory, recall, fetching an older turn back into the context window |
+| `built-on-primitives-one-brick` | Three unlike structures on one baseline, all built out of copies of the same block | Server primitives, what gets built on them, extensibility |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -400,6 +401,17 @@ agent-context / recall-field             — turns as an even grid with a few ce
 Both lost the word the subject turns on. A conversation is a sequence of turns between two
 sides, and neither a second column of selected items nor a grid of cells carries that. The two
 shipped versions keep one column of turns and change only which of them are lit.
+
+```
+built-on-primitives / alphabet          — three runs spelled out of a three-glyph alphabet: a run of
+                                          three to seven glyphs caps each glyph at about 120px, which
+                                          is too small to give a square, a circle and a chevron any
+                                          identity, so the primitives read as decoration (principle 4)
+```
+
+The blind read got the sentence but said the three glyphs were interchangeable. Giving them
+identity needs internal detail, detail needs about 48px of feature, and there is no run length
+that affords both.
 
 ## Licence
 
