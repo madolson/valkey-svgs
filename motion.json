@@ -1,0 +1,47 @@
+{
+  "generated": "motion.mjs",
+  "width": 1280,
+  "height": 720,
+  "themes": [
+    {
+      "name": "client-streams",
+      "title": "Valkey serving clients",
+      "desc": "Twenty-eight client connections held from both edges of the frame onto a hexagonal ring of ports around the white Valkey mark, with streams of glowing dots pouring outward along every one of them and the ports twinkling as they work.",
+      "loop": 4,
+      "fps": 24,
+      "animated": "motion/client-streams.webp",
+      "poster": "motion/client-streams-poster.webp",
+      "source": "html/client-streams.html"
+    },
+    {
+      "name": "blackhole-particles",
+      "title": "Valkey black hole",
+      "desc": "A black hole with its accretion disk drawn as thousands of orbiting points of light: a hard black shadow ringed by a thin bright photon ring, the far side of the disk lensed up over the top and the near side crossing in front below, white hot at the inner edge through gold to red at the rim, all of it turning, with the white Valkey hexagon mark at the centre.",
+      "loop": 5,
+      "fps": 20,
+      "animated": "motion/blackhole-particles.webp",
+      "poster": "motion/blackhole-particles-poster.webp",
+      "source": "html/blackhole-particles.html"
+    },
+    {
+      "name": "cluster-gossip",
+      "title": "Valkey cluster gossip",
+      "desc": "Six shards at the corners of a hexagon enclosing the white Valkey mark in silhouette, trading messages across a mesh, each arriving message flashing the shard it reaches.",
+      "loop": 4.8,
+      "fps": 24,
+      "animated": "motion/cluster-gossip.webp",
+      "poster": "motion/cluster-gossip-poster.webp",
+      "source": "html/cluster-gossip.html"
+    },
+    {
+      "name": "eclipse-corona",
+      "title": "Valkey eclipse",
+      "desc": "A total solar eclipse: the moon as a hard black silhouette with a visibly ragged edge and the white Valkey hexagon mark at its centre, a thin brilliant chromosphere tracking that edge and flaring into Baily's beads where the lunar valleys dip, the corona hanging all round in long equatorial lobes and short polar plumes and shimmering in place, with four coral prominences looping off the limb.",
+      "loop": 5,
+      "fps": 24,
+      "animated": "motion/eclipse-corona.webp",
+      "poster": "motion/eclipse-corona-poster.webp",
+      "source": "html/eclipse-corona.html"
+    }
+  ]
+}
