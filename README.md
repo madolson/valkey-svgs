@@ -83,6 +83,7 @@ can't drift, and regenerating is a no-op diff.
 | `fake-in-process-enclosure` | One process wall holding the test, the server and its keys, with the port on that wall unplugged | Test doubles, fakes, testing without a server or a container |
 | `fake-in-process-parity` | Two identical reply columns under one caliper, one from a fake inside the test and one from a real server | Compatibility between a fake and the server, differential testing |
 | `fake-in-process-dropin` | A socket with an in-process server seated in it and the remote one held out, still trailing its network | A drop-in test double, replacing a client with a fake |
+| `built-on-primitives-one-brick` | Three unlike structures on one baseline, all built out of copies of the same block | Server primitives, what gets built on them, extensibility |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -322,6 +323,17 @@ fake-in-process-parity / two rows       — replies in two horizontal rows: the 
 
 Shipped as two columns side by side instead. The caption owns the lower left, so a comparison
 has more height to work with standing up than lying down.
+
+```
+built-on-primitives / alphabet          — three runs spelled out of a three-glyph alphabet: a run of
+                                          three to seven glyphs caps each glyph at about 120px, which
+                                          is too small to give a square, a circle and a chevron any
+                                          identity, so the primitives read as decoration (principle 4)
+```
+
+The blind read got the sentence but said the three glyphs were interchangeable. Giving them
+identity needs internal detail, detail needs about 48px of feature, and there is no run length
+that affords both.
 
 ## Licence
 

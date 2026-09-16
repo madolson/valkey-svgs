@@ -5962,6 +5962,101 @@ function fakeInProcessDropin() {
   ].join('\n');
 }
 
+// --------------------------------------------------- primitives, and what is built
+//
+// One lattice at one pitch, and one block on it: every unit in the picture is the
+// same rect at the same size, so the only difference between the three structures is
+// how the blocks are arranged. The pitch is 96x100 with a 12px gap both ways, and
+// every structure stands on the same bottom row, which is what makes three unlike
+// silhouettes read as three things built out of one part rather than as three drawings.
+const BOP = { w: 84, h: 88, px: 96, py: 100, x0: 480, baseY: 840 };
+
+const bopCell = (c, r) => [BOP.x0 + c * BOP.px, BOP.baseY - r * BOP.py];
+
+const bopUnit = (c, r, opacity) => {
+  const [x, y] = bopCell(c, r);
+  return (
+    `<rect x="${n(x - BOP.w / 2)}" y="${n(y - BOP.h / 2)}" width="${BOP.w}" height="${BOP.h}" rx="14" ` +
+    `fill="${C.cyanLt}" fill-opacity="0.34" stroke="${C.cyanLt}" stroke-width="3.4" opacity="${opacity}"/>`
+  );
+};
+
+// The silhouette of a set of lattice cells. Every cell contributes its four edges
+// wound the same way, the pairs that cancel are the shared ones, and what is left
+// chains into one loop. Hand-writing these paths is what leaves a stray notch in a
+// structure's outline.
+function bopSilhouette(cells) {
+  const edges = new Map();
+  for (const [c, r] of cells) {
+    for (const [a0, b0, a1, b1] of [
+      [c, r, c + 1, r],
+      [c + 1, r, c + 1, r + 1],
+      [c + 1, r + 1, c, r + 1],
+      [c, r + 1, c, r],
+    ]) {
+      const back = `${a1},${b1}|${a0},${b0}`;
+      if (edges.has(back)) edges.delete(back);
+      else edges.set(`${a0},${b0}|${a1},${b1}`, `${a1},${b1}`);
+    }
+  }
+  const step = new Map();
+  for (const [k, to] of edges) step.set(k.split('|')[0], to);
+  const first = edges.keys().next().value.split('|')[0];
+  const loop = [first];
+  for (let i = 0; i < edges.size; i++) {
+    const to = step.get(loop[loop.length - 1]);
+    if (!to || to === first) break;
+    loop.push(to);
+  }
+  const pt = (corner) => {
+    const [a, b] = corner.split(',').map(Number);
+    return `${n(BOP.x0 + a * BOP.px - BOP.px / 2)} ${n(BOP.baseY - b * BOP.py + BOP.py / 2)}`;
+  };
+  return `M ${loop.map(pt).join(' L ')} Z`;
+}
+
+// Idea: Valkey ships one small set of identical primitives, and the tools people
+// actually run are unlike structures assembled out of that same block.
+// Focal: the tall hollow arch, the largest thing built and the only one at full weight.
+//
+// The silhouettes are architectural on purpose: a flight of steps, a portal, a tower on
+// a plinth. Loose polyominoes of three or four blocks read as Tetris pieces, which says
+// puzzle-fitting rather than composition, so every structure here is nine blocks or more
+// and stands on the same bottom row.
+function builtOnPrimitivesOneBrick() {
+  // A flight of steps rising towards the arch.
+  const steps = [
+    [0, 0], [1, 0], [2, 0],
+    [0, 1], [1, 1], [2, 1],
+    [1, 2], [2, 2],
+    [2, 3],
+  ];
+  // The portal: two legs and a course across the top, the tallest thing here.
+  const arch = [
+    ...[0, 1, 2, 3, 4, 5].map((r) => [4, r]),
+    ...[0, 1, 2, 3, 4, 5].map((r) => [6, r]),
+    [4, 6], [5, 6], [6, 6],
+  ];
+  // A tower standing on a plinth that oversails it on one side.
+  const tower = [
+    [8, 0], [9, 0], [10, 0],
+    ...[1, 2, 3, 4, 5].flatMap((r) => [[9, r], [10, r]]),
+  ];
+
+  // The mint outline is what makes a run of blocks read as one object; cyan is the
+  // block, mint is the thing composed out of it, everywhere in the picture.
+  const built = (cells, focal) =>
+    `<path d="${bopSilhouette(cells)}" fill="none" stroke="${C.mint}" ` +
+    `stroke-width="${focal ? 12 : 7}" stroke-linejoin="round" opacity="${focal ? 0.95 : 0.55}"/>` +
+    cells.map(([c, r]) => bopUnit(c, r, focal ? 1 : 0.6)).join('');
+
+  return [
+    `  <g>${built(steps, false)}</g>`,
+    `  <g>${built(tower, false)}</g>`,
+    `  <g>${built(arch, true)}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -6050,6 +6145,7 @@ const BASE_THEMES = [
   { name: 'fake-in-process-enclosure', seed: 47011, zoom: 1.22, center: [960, 540], title: 'Valkey inside the test process', desc: 'One rounded process boundary containing a card of test lines on the left, three lanes running from it to the white Valkey hexagon mark on the right, and a short list of key and value pairs under that mark, with the only port on the wall drawn in dim purple and its lead ending in an unplugged connector outside, representing a Valkey server whose behaviour runs inside the test process.', art: fakeInProcessEnclosure },
   { name: 'fake-in-process-parity', seed: 47021, zoom: 1.28, center: [960, 540], title: 'Valkey fake and real, same reply', desc: 'Two identical columns of five reply capsules standing side by side, matched row for row in width and colour, with one pale caliper bracketing both from below; above the left column a dashed test card holds the white Valkey hexagon mark, and above the right the same mark sits in a solid server box with a port capsule and a connection running out of the frame, representing a fake inside the test process and a real Valkey server answering one assertion identically.', art: fakeInProcessParity },
   { name: 'fake-in-process-dropin', seed: 47031, zoom: 1.3, center: [960, 540], title: 'Valkey test double, dropped in', desc: 'A pale socket at the centre with two contacts, a green in-process server carrying the white Valkey hexagon mark seated in it on matching pins, a dim purple server carrying the same mark held out of the socket above with its network connection trailing off the frame, and a call arriving on a blue lane from the lower left, representing an in-memory test double dropped into the socket a real server used to fill.', art: fakeInProcessDropin },
+  { name: 'built-on-primitives-one-brick', seed: 67011, zoom: 1.2, center: [960, 540], title: 'Valkey primitives, composed', desc: 'Three unlike structures standing on one baseline, each built out of copies of the same identical blue block: a flight of steps rising to the right, a tall hollow portal in the middle outlined in bright green, and a tower on a wider plinth on the right, representing the tools people run being assembled out of the few primitives the server ships.', art: builtOnPrimitivesOneBrick },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
