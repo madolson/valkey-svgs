@@ -16,11 +16,9 @@ can't drift, and regenerating is a no-op diff.
 | Image | Motif | Use it for |
 | --- | --- | --- |
 | `community` | Constellation graph, best-connected peers drawn as the Valkey mark | Community highlights, contributor spotlights, roundups, governance |
-| `performance` | Command traffic warping into the mark at a vanishing point | Throughput, latency, speed work |
 | `memory-efficiency` | Cell grid, pitted on the left, compacted dense on the right | Memory footprint, encodings, defragmentation |
 | `clustering` | Slot ring around a meshed core, shards joining from outside | Cluster mode, replication, scaling out |
 | `atomic-slot-migration` | Two shard rings, a chevron driving slots between them, magnifier on the stream | Slot migration and rebalancing |
-| `atomic-slot-migration-quiet` | The same two rings and lens, with the lens given the frame | Slot migration when the point is watching it happen |
 | `release` | Valkey chevrons driving into a golden burst | Release and general announcements |
 | `release-version` | The same burst with a caption you set | A specific release. See [Captions](#captions) |
 | `security-shield-clean` | A radiant shield woven from one even lattice, the mark at its centre | Security in general, CVEs, hardening, ACLs, advisories |
@@ -28,7 +26,6 @@ can't drift, and regenerating is a no-op diff.
 | `data-structures` | Hash buckets chaining out beside a skip list | Internals: hash tables, skip lists, new types, modules |
 | `how-to` | Step track with the current step lit | Tutorials, guides, getting started |
 | `large-key` | A field of identical key tiles with one scaled up until it dwarfs them | Large keys, hot keys, uneven key sizes |
-| `key-prefix-groups` | Sampled keys funnelling into prefix rows with count bars | Key naming, prefixes, keyspace browsing and clients |
 | `bloom-bit-array` | Hash nodes fanning out of the mark, lighting a handful of cells in a bit array | Bloom filters, valkey-bloom, probabilistic data structures |
 | `search-vector-nearest` | Query at the centre of an indexed field, its nearest matches lit inside a search radius | Vector similarity search, KNN queries, embeddings |
 | `search-field-index` | Records giving up one field each to a sorted index, a query bracketing the matched run | Secondary indexing on hashes and JSON, FT.CREATE, filters |
@@ -42,7 +39,6 @@ can't drift, and regenerating is a no-op diff.
 | `blackhole-gargantua` | Edge-on relativistic disk, one thin ring closing right round the shadow, even on both sides | Talks, keynotes, anything that wants one striking abstract image |
 | `blackhole-halo` | The same model tilted, the ring opened into a broad white-to-red halo | Same |
 | `blackhole-beamed` | The same model with Doppler beaming left in, so one side blazes | Same, when the physics is the point |
-| `planet-ring` | A wireframe Valkey globe ringed by article cards, one data structure each | Planet Valkey, community blog roundups, the wider ecosystem |
 | `key-size-card-a` | The key-size ranking and shards centred and scaled to clear the corner lockup, title overlapping the panel | The big-keys post; the reference card layout |
 | `key-size-card-flat` | The same card with the artwork short and wide, sitting clear of the title rather than under it | The big-keys post, when the title should not cross the chart |
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
@@ -51,14 +47,10 @@ can't drift, and regenerating is a no-op diff.
 | `llm-kv-cache-new-tail` | One prompt as a run of chunks, most of it loaded from the store below, only the tail fed by the processor above | KV caching for LLM inference, prefix reuse, skipping prefill |
 | `exporter-two-views-many-and-one` | A deck of per-node readout cards beside one cluster-wide card with per-slot counters | Per-pod series versus per-slot series, exporter choice |
 | `keyspace-gui-safe-refusal` | Read lanes crossing the server's boundary, one write turned back at it | ACL users, read-only access, NOPERM, server-side authorisation |
-| `keyspace-gui-safe-readout` | A client window of four read-only panels, each fed by one read from the server | GUI clients, INFO, CLIENT LIST, SLOWLOG, monitoring views |
 | `commands-replace-lua-round-trips` | Four thin messages crossing between caller and server, one thick call below them carrying the condition | Command options that collapse an exchange into one call |
 | `commands-replace-lua-one-line` | A quiet block of script lines giving way to one long command bar with a condition on its end | New command options that replace a Lua script |
-| `ai-advisory-surge-sieve` | A flood of reports narrowing onto a toothed screen, three getting through in red | Report volume, triage load, what counts as a vulnerability |
 | `ai-advisory-surge-reproducer` | Five candidate bugs, four struck out, the survivor dropping into its reproducer | Adversarial audits, LLM-found bugs, verification before a human |
 | `ai-advisory-surge-backport-rails` | Five version rails with one fix node aligned on every one of them | Backports, patch releases, shipping a fix to every supported version |
-| `fbtree-wide-root` | One wide root node of child slots over four linked leaves of packed members | fbtree, B+ trees, the ordered index behind a sorted set |
-| `fbtree-tower-and-tree` | A row of members each under its own tower of pointers, above the same members in one wide node over linked leaves | Replacing the skiplist with fbtree, a change of shape |
 | `big-value-latency-copy-block` | One thread's timeline with a large value sitting on it, and the waits hanging underneath deepening into a wedge exactly across its span | Tail latency, head-of-line blocking, p99.9, one slow operation on a shared thread |
 | `big-value-latency-stalled-queue` | A large value standing across all three lanes out of the server, the small requests packed nose to tail behind it | Noisy neighbours, large values, one path out of the server |
 | `client-compression-packed-run` | One value's eight fields filling a row, then the same eight taking a fifth of it on the way to the server | Client-side compression, when the point is how much smaller the value gets |
@@ -594,6 +586,20 @@ Redraws that still did not carry their sentence, 2026-09-16.
 test-double-empty-rack             — principle 2 inverted: the mark is the largest brightest object and the empty rack that carries the point is a thin outline, so it reads as a logo beside a shelf
 built-on-primitives-one-brick      — reads as Tetris; identical primitives plus the 48px feature floor forces large uniform blocks, and the composition could not escape the connotation
 agent-context-lit-transcript       — legible but strictly weaker than agent-context-recall-arc, which says the same thing with one device instead of a lit/dim split (P1)
+```
+
+Blind-read audit of the pre-gate set, plus the two fbtree banners the quiet-register
+redraw replaced, 2026-09-16.
+
+```
+fbtree-wide-root               — drawn entirely at focal weight: solid fills, 3-4px strokes, 90x70 rects. Replaced by fbtree-soft-two-levels (P15)
+fbtree-tower-and-tree          — same weight fault, and fbtree-soft-scatter-run says the same sentence in the quiet register (P15, P1)
+performance                    — blind read: "the trails read as generic warp speed stock art... the direction is ambiguous, traffic arriving at the logo or emanating from it". The gate's own fail phrase
+planet-ring                    — blind read got clients orbiting a globe, not article cards, and called it "one step above generic abstract tech art" (P1, gate)
+key-prefix-groups              — blind read: "nothing indicates prefixes, shared structure, or which keys grouped with which... the left half reads as generic abstract tech art". Prefixes are the whole sentence
+keyspace-gui-safe-readout      — blind read: "the safely idea is entirely absent from the art... generic abstract tech art with a stock dashboard mockup". keyspace-gui-safe-refusal covers the post
+ai-advisory-surge-sieve        — coral marks the reports that got through, but coral means anomaly or error, so the blind read took the survivors for the rejects and the whole picture for rate limiting (P10)
+atomic-slot-migration-quiet    — the lens is given the frame, which is the exact fault that deleted slot-migration-lens, and it restates atomic-slot-migration (P2, P1)
 ```
 
 ## Licence

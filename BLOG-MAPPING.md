@@ -20,20 +20,20 @@ To use one: copy `images/<theme>.webp` into the site's `static/assets/media/feat
 | `2024-04-16-valkey-7-2-5-out` | `release-version` (caption `7.2.5`) |
 | `2024-04-26-modules-101` | `how-to` |
 | `2024-05-24-may-roundup` | `community` |
-| `2024-07-07-unlock-one-million-rps` | `performance` |
+| `2024-07-07-unlock-one-million-rps` | none, `performance` failed the audit |
 | `2024-07-31-valkey-8-0-0-rc1` | `release-version` (caption `8.0 RC1`) |
 | `2024-08-29-valkey-memory-efficiency-8-0` | `memory-efficiency` |
-| `2024-09-13-unlock-one-million-rps-part2` | `performance` |
+| `2024-09-13-unlock-one-million-rps-part2` | none, `performance` failed the audit |
 | `2024-09-16-valkey-8-ga` | `release-version` (caption `8.0`) |
 | `2025-03-28-new-hash-table` | `data-structures` |
 | `2025-04-02-valkey-8-1-0-ga` | `release-version` (caption `8.1`) |
 | `2025-04-27-valkey-modules-rust-sdk-updates` | `how-to` |
 | `2025-05-14-upgrade-stories-vol1` | `community` |
-| `2025-05-21-performance-optimization-methodology-for-valkey` | `performance` |
+| `2025-05-21-performance-optimization-methodology-for-valkey` | none, `performance` failed the audit |
 | `2025-09-11-valkey-investment-in-open-source` | `community` |
 | `2025-09-30-hash-fields-expiration` | `data-structures` |
 | `2025-10-15-properly-secure-your-valkey-deployment` | `security` |
-| `2025-10-20-1-billion-rps` | `performance` |
+| `2025-10-20-1-billion-rps` | none, `performance` failed the audit |
 | `2025-10-21-introducing-valkey-9` | `release-version` (caption `9.0`) |
 | `2025-10-27-atomic-slot-migration` | `atomic-slot-migration` |
 | `2026-04-23-valkey-at-laracon-india-2026` | `community` |
@@ -85,10 +85,10 @@ someone who did not know the answer.
 | [#633](https://github.com/valkey-io/valkey-io.github.io/pull/633) | Large objects ruin the party | `big-value-latency-copy-block`, `big-value-latency-stalled-queue` |
 | [#642](https://github.com/valkey-io/valkey-io.github.io/pull/642) | KV caching on Valkey | `llm-kv-cache-new-tail` |
 | [#645](https://github.com/valkey-io/valkey-io.github.io/pull/645) | Valkey metrics in Prometheus: two exporters | `exporter-two-views-many-and-one` |
-| [#649](https://github.com/valkey-io/valkey-io.github.io/pull/649) | Browsing a Valkey keyspace safely | `keyspace-gui-safe-refusal`, `keyspace-gui-safe-readout` |
+| [#649](https://github.com/valkey-io/valkey-io.github.io/pull/649) | Browsing a Valkey keyspace safely | `keyspace-gui-safe-refusal` |
 | [#659](https://github.com/valkey-io/valkey-io.github.io/pull/659) | Valkey 9.2: fewer reasons to reach for Lua | `commands-replace-lua-round-trips`, `commands-replace-lua-one-line` |
-| [#664](https://github.com/valkey-io/valkey-io.github.io/pull/664) | Keeping up with AI: Valkey security in 2026 | `ai-advisory-surge-sieve`, `ai-advisory-surge-reproducer`, `ai-advisory-surge-backport-rails` |
-| [#665](https://github.com/valkey-io/valkey-io.github.io/pull/665) | From skiplists to B+ trees | `fbtree-wide-root`, `fbtree-tower-and-tree` |
+| [#664](https://github.com/valkey-io/valkey-io.github.io/pull/664) | Keeping up with AI: Valkey security in 2026 | `ai-advisory-surge-reproducer`, `ai-advisory-surge-backport-rails` |
+| [#665](https://github.com/valkey-io/valkey-io.github.io/pull/665) | From skiplists to B+ trees | `fbtree-soft-two-levels`, `fbtree-soft-leaf-rail`, `fbtree-soft-scatter-run` |
 | [#667](https://github.com/valkey-io/valkey-io.github.io/pull/667) | Testing without a server: FakeValkey | none yet, see the note below |
 
 Two things worth knowing before picking. `big-value-latency-*` both draw the *problem*, because
@@ -111,3 +111,21 @@ building blocks, and the connotation swallows the sentence.
 Both are recorded in README's Rejected section with what was tried. They stay empty rather than
 carrying something that does not work. The next attempt on either should start by proposing a new
 device and adding a principle for it, not by redrawing.
+
+## The audit, and one gap it opened
+
+Every banner that predated the blind-read gate was put through it: forty-two reads, six failures.
+The bar was deliberately high, because a reader grumbling that an element looks decorative is a
+note rather than a death. The six either got a caption saying something other than what the theme
+says, or the reader reached for the gate's own escape phrase, "it reads as generic abstract tech
+art". All six are in README's Rejected section with the read that killed them.
+
+The consequential one is `performance`, which four published posts pointed at and which came back
+as "generic warp speed stock art" with the direction ambiguous. Those four rows now say none. That
+is the deletion most worth arguing about, and reversing it is one `git revert` away.
+
+Three banners share an accuracy fault the audit found and nothing has acted on:
+`key-size-distribution`, `key-size-card-a` and `key-size-card-flat` draw bar lengths that do not
+match their own labels — "3.1 MB looks about a third of 42 MB, not 1/14". That is principle 7, and
+it undercuts the skew those banners exist to show. Worth a fix, but a fix means editing shipped
+themes, so it is recorded here rather than done.

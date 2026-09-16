@@ -143,7 +143,14 @@ Note that the skeleton above does **not** start with `starfield`. See rule 6.
     the same kind of line must be the same width, and repeated features (a keyhole, a cell, a
     tick) must be the same size everywhere they appear. Mixed weights inside one glyph is the
     most common reason a banner looks amateurish rather than wrong.
-11. **Nothing that carries meaning is small.** In the narrow crop, no meaningful element is
+11. **Nothing that carries meaning is small** — *and that is only the layer that carries it.*
+    See DESIGN.md principle 15 before applying this rule to a whole drawing. The floors below bind
+    the element holding the sentence; the structure around it belongs in the quiet register, which
+    is 1.1-1.8px strokes at 0.14-0.6 opacity varied per element, hollow fills at `fill-opacity`
+    0.12, and small nodes around 48x24. `data-structures` is the reference and it breaks every
+    floor below, deliberately: its idea is the shape of the whole, so no single node has to carry
+    it. Drawing every element at focal weight is what makes a banner read as big and blocky.
+    In the narrow crop, no meaningful element is
     thinner than about 6px or smaller than about 3% of the framed width, and a field of marks
     meant to be read as content sits at 0.4 opacity or higher. Below those thresholds the
     element becomes texture and whatever it was carrying is lost. Two data points from this

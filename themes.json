@@ -1,6 +1,6 @@
 {
   "generatedBy": "generate.mjs",
-  "count": 50,
+  "count": 45,
   "themes": [
     {
       "name": "community",
@@ -13,20 +13,6 @@
       "svg": "svg/community.svg",
       "captioned": false,
       "caption": "Community",
-      "space": false,
-      "experimental": false
-    },
-    {
-      "name": "performance",
-      "title": "Valkey performance",
-      "desc": "Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency. The title \"Valkey performance\" is set on solid light blocks in the lower left.",
-      "motif": "Command traffic warping into the mark at a vanishing point",
-      "useFor": "Throughput, latency, speed work",
-      "image": "images/performance.webp",
-      "plain": "images/plain/performance.webp",
-      "svg": "svg/performance.svg",
-      "captioned": false,
-      "caption": "Performance",
       "space": false,
       "experimental": false
     },
@@ -101,20 +87,6 @@
       "experimental": false
     },
     {
-      "name": "atomic-slot-migration-quiet",
-      "title": "Valkey atomic slot migration",
-      "desc": "Two shard slot rings each centred on the white Valkey hexagon mark, the left one showing four contiguous slots vacated in dashed purple and the right one the same four arrived in solid green, a quiet stream of slot segments running between them, a green chevron driving that stream into the destination, and a large magnifier over the middle of the stream resolving the band into separate slots, representing watching one contiguous range migrate atomically. The title \"Valkey atomic slot migration\" is set on solid light blocks in the lower left.",
-      "motif": "The same two rings and lens, with the lens given the frame",
-      "useFor": "Slot migration when the point is watching it happen",
-      "image": "images/atomic-slot-migration-quiet.webp",
-      "plain": "images/plain/atomic-slot-migration-quiet.webp",
-      "svg": "svg/atomic-slot-migration-quiet.svg",
-      "captioned": false,
-      "caption": "Atomic slot migration",
-      "space": false,
-      "experimental": false
-    },
-    {
       "name": "security-shield-clean",
       "title": "Valkey security",
       "desc": "A shield woven from a single even lattice with the white Valkey hexagon mark at its centre and nothing else inside it, representing security and hardening. The title \"Valkey security\" is set on solid light blocks in the lower left.",
@@ -181,20 +153,6 @@
       "svg": "svg/large-key.svg",
       "captioned": false,
       "caption": "Large key",
-      "space": false,
-      "experimental": false
-    },
-    {
-      "name": "key-prefix-groups",
-      "title": "Valkey key prefix groups",
-      "desc": "A scattered cloud of sampled keys on the left funnelling into a short list of prefix rows with count bars on the right, representing a sample of key names grouped into browsable prefixes. The title \"Valkey key prefix groups\" is set on solid light blocks in the lower left.",
-      "motif": "Sampled keys funnelling into prefix rows with count bars",
-      "useFor": "Key naming, prefixes, keyspace browsing and clients",
-      "image": "images/key-prefix-groups.webp",
-      "plain": "images/plain/key-prefix-groups.webp",
-      "svg": "svg/key-prefix-groups.svg",
-      "captioned": false,
-      "caption": "Key prefix groups",
       "space": false,
       "experimental": false
     },
@@ -409,20 +367,6 @@
       "experimental": true
     },
     {
-      "name": "planet-ring",
-      "title": "Planet Valkey",
-      "desc": "A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring. The title \"Planet Valkey\" is set on solid light blocks in the lower left.",
-      "motif": "A wireframe Valkey globe ringed by article cards, one data structure each",
-      "useFor": "Planet Valkey, community blog roundups, the wider ecosystem",
-      "image": "images/planet-ring.webp",
-      "plain": "images/plain/planet-ring.webp",
-      "svg": "svg/planet-ring.svg",
-      "captioned": false,
-      "caption": "Planet Valkey",
-      "space": true,
-      "experimental": false
-    },
-    {
       "name": "key-size-card-a",
       "title": "Finding big keys in a running Valkey cluster with Valkey Admin",
       "desc": "A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame. The title \"Finding big keys in a running Valkey cluster with Valkey Admin\" is set on solid light blocks in the lower left.",
@@ -507,20 +451,6 @@
       "experimental": false
     },
     {
-      "name": "keyspace-gui-safe-readout",
-      "title": "Valkey browsing a keyspace safely",
-      "desc": "The white Valkey hexagon mark on the left with four blue lanes fanning out of it into the left edge of a large client window, which holds four panels of read-only results: a row of counter bars, one large figure, a list of open connections and a list of slow commands with their durations, representing a graphical client that only renders what the server already publishes. The title \"Valkey browsing a keyspace safely\" is set on solid light blocks in the lower left.",
-      "motif": "A client window of four read-only panels, each fed by one read from the server",
-      "useFor": "GUI clients, INFO, CLIENT LIST, SLOWLOG, monitoring views",
-      "image": "images/keyspace-gui-safe-readout.webp",
-      "plain": "images/plain/keyspace-gui-safe-readout.webp",
-      "svg": "svg/keyspace-gui-safe-readout.svg",
-      "captioned": false,
-      "caption": "Browsing a keyspace safely",
-      "space": false,
-      "experimental": false
-    },
-    {
       "name": "commands-replace-lua-round-trips",
       "title": "Valkey one round trip, not four",
       "desc": "A caller on the left and a Valkey server drawn as the white hexagon mark on the right, with four thin purple messages crossing back and forth between them above, and one thick green call below carrying a pale condition chip that holds two unequal values, representing a conditional update that used to take an exchange of messages and now takes one command. The title \"Valkey one round trip, not four\" is set on solid light blocks in the lower left.",
@@ -549,20 +479,6 @@
       "experimental": false
     },
     {
-      "name": "ai-advisory-surge-sieve",
-      "title": "Valkey advisory surge",
-      "desc": "A wide flood of small identical report tokens falling and narrowing onto a row of evenly spaced light teeth, with only three red tokens through the gaps and resting on a short line below, representing far more vulnerability reports arriving than before and only a few of them being real advisories. The title \"Valkey advisory surge\" is set on solid light blocks in the lower left.",
-      "motif": "A flood of reports narrowing onto a toothed screen, three getting through in red",
-      "useFor": "Report volume, triage load, what counts as a vulnerability",
-      "image": "images/ai-advisory-surge-sieve.webp",
-      "plain": "images/plain/ai-advisory-surge-sieve.webp",
-      "svg": "svg/ai-advisory-surge-sieve.svg",
-      "captioned": false,
-      "caption": "Advisory surge",
-      "space": false,
-      "experimental": false
-    },
-    {
       "name": "ai-advisory-surge-reproducer",
       "title": "Valkey security audits",
       "desc": "A row of five identical candidate bug cards, four of them crossed out in red, the middle one lit green and dropping into a large panel holding four pale lines and a red one, representing self-run adversarial audits where a candidate only reaches a person once it comes with a reproducing crash. The title \"Valkey security audits\" is set on solid light blocks in the lower left.",
@@ -587,34 +503,6 @@
       "svg": "svg/ai-advisory-surge-backport-rails.svg",
       "captioned": false,
       "caption": "Backported fixes",
-      "space": false,
-      "experimental": false
-    },
-    {
-      "name": "fbtree-wide-root",
-      "title": "Valkey sorted sets on a B+ tree",
-      "desc": "One wide green root node holding a row of four large child slots divided by three narrow green separator bars that span the node from top to bottom, a thin green pointer dropping from each slot through the wall of the node onto one of four green leaf nodes below, every leaf holding three blue member entries packed side by side with their scores capped brighter at the top, and each pair of leaves joined by a short thick green bar overlapping both of their walls, representing the ordered index behind a large sorted set as a high-fanout B+ tree two levels deep. The title \"Valkey sorted sets on a B+ tree\" is set on solid light blocks in the lower left.",
-      "motif": "One wide root node of child slots over four linked leaves of packed members",
-      "useFor": "fbtree, B+ trees, the ordered index behind a sorted set",
-      "image": "images/fbtree-wide-root.webp",
-      "plain": "images/plain/fbtree-wide-root.webp",
-      "svg": "svg/fbtree-wide-root.svg",
-      "captioned": false,
-      "caption": "Sorted sets on a B+ tree",
-      "space": false,
-      "experimental": false
-    },
-    {
-      "name": "fbtree-tower-and-tree",
-      "title": "Valkey sorted sets change shape",
-      "desc": "Above, twelve blue member cells spaced far apart along a row, each a separate allocation carrying its own tower of purple forward-pointer cells with purple links skipping between towers at every level; below, the same twelve cells shoulder to shoulder in groups of three inside four green leaf nodes joined by thick green sibling links, with one wide green root node of four child slots divided by full-height separator bars fanning down onto them, representing a skiplist replaced by a high-fanout B+ tree. The title \"Valkey sorted sets change shape\" is set on solid light blocks in the lower left.",
-      "motif": "A row of members each under its own tower of pointers, above the same members in one wide node over linked leaves",
-      "useFor": "Replacing the skiplist with fbtree, a change of shape",
-      "image": "images/fbtree-tower-and-tree.webp",
-      "plain": "images/plain/fbtree-tower-and-tree.webp",
-      "svg": "svg/fbtree-tower-and-tree.svg",
-      "captioned": false,
-      "caption": "Sorted sets change shape",
       "space": false,
       "experimental": false
     },
@@ -699,6 +587,48 @@
       "svg": "svg/agent-context-recall-arc.svg",
       "captioned": false,
       "caption": "Recalling an older turn",
+      "space": false,
+      "experimental": false
+    },
+    {
+      "name": "fbtree-soft-two-levels",
+      "title": "Valkey sorted sets in one wide tree",
+      "desc": "One wide hollow green node at the top, divided by four thin vertical separator lines into five child slots each holding a small green routing bar, a thin green pointer fanning out of every slot onto one of five small hollow green leaf nodes in a row below, every leaf holding three small blue entries packed side by side, and each pair of neighbouring leaves joined by a short green link, representing the ordered index behind a large sorted set as a high-fanout B+ tree two levels deep. The title \"Valkey sorted sets in one wide tree\" is set on solid light blocks in the lower left.",
+      "motif": "One wide node of separator keys over a row of linked leaves of packed members, drawn hollow and thin",
+      "useFor": "fbtree, B+ trees, the ordered index behind a sorted set",
+      "image": "images/fbtree-soft-two-levels.webp",
+      "plain": "images/plain/fbtree-soft-two-levels.webp",
+      "svg": "svg/fbtree-soft-two-levels.svg",
+      "captioned": false,
+      "caption": "Sorted sets in one wide tree",
+      "space": false,
+      "experimental": false
+    },
+    {
+      "name": "fbtree-soft-leaf-rail",
+      "title": "Valkey reading a sorted set in order",
+      "desc": "A faint wide green node of four child slots at the top, each slot holding a small green routing bar, with barely visible pointers fanning down to four small hollow green leaf nodes in a row below, each holding three small blue entries, and one thick bright green rail running horizontally through all four leaves and out past the last of them behind a single arrowhead, representing an ordered read of a large sorted set walking along the linked leaves instead of climbing back into the tree between members. The title \"Valkey reading a sorted set in order\" is set on solid light blocks in the lower left.",
+      "motif": "The same tree with one rail running through the leaf row and out past the last leaf",
+      "useFor": "Range reads, `ZRANGE`, linked leaves, walking a sorted set in order",
+      "image": "images/fbtree-soft-leaf-rail.webp",
+      "plain": "images/plain/fbtree-soft-leaf-rail.webp",
+      "svg": "svg/fbtree-soft-leaf-rail.svg",
+      "captioned": false,
+      "caption": "Reading a sorted set in order",
+      "space": false,
+      "experimental": false
+    },
+    {
+      "name": "fbtree-soft-scatter-run",
+      "title": "Valkey the same members, fewer nodes",
+      "desc": "Above, twelve small blue member cells spread far apart along a row with gaps between them, each carrying a short stack of purple forward-pointer cells with thin purple links skipping between the stacks at every level; below, unconnected to it, the same twelve cells three to a leaf inside four small hollow green leaf nodes joined by short green links, under one wide hollow green node divided into four child slots, each holding a small green routing bar and dropping a thin pointer onto one leaf, representing the ordered index moving from one allocation per member to a few wide nodes that hold them packed. The title \"Valkey the same members, fewer nodes\" is set on solid light blocks in the lower left.",
+      "motif": "Members spread out under their own pointer towers, above the same members packed three to a leaf",
+      "useFor": "Replacing the skiplist with fbtree, one allocation per member becoming a few wide nodes",
+      "image": "images/fbtree-soft-scatter-run.webp",
+      "plain": "images/plain/fbtree-soft-scatter-run.webp",
+      "svg": "svg/fbtree-soft-scatter-run.svg",
+      "captioned": false,
+      "caption": "The same members, fewer nodes",
       "space": false,
       "experimental": false
     }
