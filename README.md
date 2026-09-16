@@ -53,6 +53,9 @@ can't drift, and regenerating is a no-op diff.
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
+| `large-object-tail-wake` | An even field of short request bars with one oversized value in it, and the few bars behind it dragged far out | Tail latency, p99.9, a small fraction of requests hurt badly |
+| `large-object-tail-shared-gate` | Six client lanes into one shared window, all of them held up while one oversized value occupies it | Noisy neighbours, multi-tenancy, one client's big objects hurting the rest |
+| `large-object-tail-bypass` | The same oversized value lifted out of the lane onto a dashed route over the top, the small stream below unbroken | Reply copy avoidance, large objects that no longer block the main thread |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -256,6 +259,7 @@ security-shield / broad (700x520)       — low and wide, the glow reaches the n
 security-shield / hex (536x620)         — hexagon silhouette, says Valkey twice with the mark inside it
 security-shield / high (mark up 86)     — empties the lower chamber, the weave becomes the subject
 security-shield / hex-high              — both faults at once
+large-object-tail / jam (lane plug)     — big value in a lane with a queue behind it, blind-read as `large-key`
 ```
 
 All five lost to `security-shield-clean` on the same judgement: the shipped proportions are
