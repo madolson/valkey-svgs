@@ -17,6 +17,13 @@ decoration.
 Run `~/bin/vblind <theme>` for this, or hand the crop to a fresh context. Self-grading a metaphor
 you invented ten minutes ago does not work: you can already see the thing you meant.
 
+**The one thing the gate cannot see is the brand mark.** Every blind read of every banner calls the
+Valkey hexagon decoration, because to a reader with no vocabulary that is exactly what a logo is.
+Seven jobs reported this independently. So the mark is exempt: keep it when it is carrying "and the
+server holds it" or "this is the thing being talked about", drop it when it is sitting in empty
+space with nothing arriving at it, and never let the gate argue it out on its own. Every other
+"that looks like decoration" verdict is taken at face value.
+
 Everything below is a way of failing this gate that is worth naming in advance.
 
 ## 1. One idea, and no other banner already says it
@@ -54,6 +61,11 @@ rings, secondary outlines, ambient glow washes, and a second halo anywhere.
 
 Prefer fewer and larger. Four thick lanes read at banner size; forty do not. `tooling-stack` had
 four levels, two ambient glows and a row of 12px pills, and the pills were where the meaning was.
+
+One thing to watch rather than a rule yet: **empty space is a weak carrier.** In
+`client-compression-twin-sends` the unfilled part of the wire *is* the saving, and two independent
+readers called it an unfilled progress bar. If the point of a banner lives in what is missing, the
+absence needs a boundary the eye can measure it against.
 
 ## 4. Nothing that carries meaning is small, thin or dim
 
@@ -143,6 +155,11 @@ Flow gets exactly one device: vacated-and-arrived segments on a ring, *or* lanes
 arrowhead. Not two. If the ring already shows data leaving and landing, streaks and a chevron say
 it twice more and bury the focal element.
 
+**A line between two states claims flow, not replacement.** If the picture is "A was replaced by
+B", connecting them says B is downstream of A instead. `fbtree-tower-and-tree` puts the skiplist
+above and the tree below with nothing joining them, because an arrow would have said the skiplist
+feeds the tree. Sequence and succession come from position, not from a connector.
+
 Within one drawn object, lines meant to read as the same kind of line are the same width, and a
 repeated feature is the same size everywhere it appears. Mixed weights inside one glyph is the
 most common reason a banner looks amateurish rather than wrong.
@@ -158,13 +175,44 @@ The motif fills 75-80% of the framed height, and the left and right margins are 
 of each other. Fix framing with `zoom` and `center`; if the composition is off-centre, move the
 drawing, not the crop.
 
+## 13. One frame cannot say that something used to be worse
+
+A banner shows a state. It cannot show an improvement unless both states are in it, because there
+is nothing for the better one to be better than.
+
+`big-value-latency-off-thread` was the attempt to draw "Valkey 9 took the large payload off the
+thread". Three constructions, three blind reads, and every one came back as "a large payload is
+blocking the thread" — the fix inverted into the problem. A large coral mass in the same frame as a
+row of small requests is read as blocking them however it is arranged, and an unbroken row cannot
+say it used to be broken.
+
+So decide up front which the banner is: the problem, or the pair. Both states in frame costs you
+half the space and half the exaggeration budget, and is often the wrong trade — in which case draw
+the problem honestly and let the post supply the fix.
+
+## 14. You cannot have both many repeated units and units with identity
+
+Arithmetic, checkable before you draw anything. A run of N repeated glyphs across the safe area
+caps each glyph at roughly 800/N framed units. Internal detail that distinguishes one glyph from
+another needs about 48 units of feature. So past about eight units in a run, the units are
+necessarily featureless, and anything you were relying on them to say individually is gone.
+
+Two deletions on exactly this. `built-on-primitives-alphabet` needed three primitives to be
+recognisably different kinds: "nothing distinguishes circle from square from chevron, so the
+primitives have no identity". `scan-cursor-full-turn` closed its pages into a ring, and a
+circumference caps a key at about 57x28 whatever you tune, so keys could only be dashes.
+
+The escape is not a redraw. Either the units are interchangeable and carry meaning only as a mass —
+which is what makes principle 6's exception legible, and is usually the better banner — or there
+are few enough of them to have faces. Pick one at the sketch stage.
+
 ## Review procedure
 
 For a candidate, in this order. Stop at the first failure and fix it before continuing.
 
 1. Render it. Look at both crops. Never judge from the markup.
 2. Blind read (`~/bin/vblind`). Compare with the theme's sentence. Fail here and you redraw.
-3. Walk 1 through 12 and write the verdict for each. "Pass" is not a verdict; name the element
+3. Walk 1 through 14 and write the verdict for each. "Pass" is not a verdict; name the element
    that satisfies the rule.
 4. Cover the focal element and check the sentence dies.
 5. Count elements. Try deleting the one you are least sure about and re-render. If nothing was
