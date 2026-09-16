@@ -5962,6 +5962,82 @@ function fakeInProcessDropin() {
   ].join('\n');
 }
 
+// ------------------------------------------------------- SCAN, page by page
+//
+// One sentence: a scan walks a keyspace a page at a time under a cursor, so a client
+// reads every key without ever asking for all of them at once. `scan-cursor-pages`
+// draws that as a partition. The pages stack up to make the keyspace, so they visibly
+// cover all of it, and exactly one of them is lit.
+//
+// The keys are content here, not texture: they sit on a declared pitch at 0.45 and
+// above, which is what the deleted `keyspace-scan` got wrong by scattering dots
+// under a translucent panel until the field read as a starfield.
+//
+// Two other readings were built and dropped; see README's Rejected section. Both were
+// after the same thing, the bounded reply and the cursor you resume from, and both lost
+// the keys in the process. Lifting pages out of the field needs two pages to say "again"
+// and they can then only differ by colour, and closing the pages into a ring shrinks a
+// key to a dash. The flat partition keeps the keys full size, which is the constraint
+// that matters most here.
+
+// Idea: a scan hands back one bounded page of the keyspace at a time, and the pages
+// together tile the whole of it.
+// Focal: the lit page, one band of gold keys across a field of resting ones.
+function scanCursorPages(r) {
+  const PAGES = 5;
+  const LIT = 2; // the page under the cursor: two pages behind it, two still ahead
+  const ROWS = 2;
+  const left = 480;
+  const right = 1440;
+  const gap = 22;
+  const rowPitch = 50;
+  // The gutter between pages has to beat the 20 gap between rows by a lot, or the
+  // stack reads as one even list rather than as five pages.
+  const pagePitch = 132;
+  const y0 = 240;
+  const keyH = 30; // 30 framed units is ~7px in the narrow crop: content, not texture
+
+  // Keys are laid end to end and wrapped, the way names of different lengths actually
+  // sit in a list. An earlier pass put them on four fixed columns and the blind read
+  // took the columns for page boundaries, which is exactly the wrong reading: a page
+  // here is a contiguous run of keys, not a column of them. Rows share a baseline, a
+  // height and a gap; only the length of a key varies.
+  const keys = [];
+  for (let p = 0; p < PAGES; p++) {
+    for (let row = 0; row < ROWS; row++) {
+      const y = y0 + p * pagePitch + row * rowPitch;
+      let x = left;
+      for (;;) {
+        const w = 96 + r() * 94;
+        if (x + w > right) break;
+        keys.push({ p, x, y, w });
+        x += w + gap;
+      }
+    }
+  }
+
+  const pill = (k, fill, op) =>
+    `<rect x="${n(k.x)}" y="${n(k.y)}" width="${n(k.w)}" height="${keyH}" rx="${keyH / 2}" ` +
+    `fill="${fill}" opacity="${op}"/>`;
+
+  // Every page not under the cursor is drawn the same: data at rest. An earlier pass
+  // coloured the pages above the cursor mint for "already returned", and the blind read
+  // called that split decoration, because a stack of pages is a sequence whether or not
+  // the drawing says which way it runs. One system, one exception.
+  const resting = keys.filter((k) => k.p !== LIT).map((k) => pill(k, C.cyanLt, '0.45'));
+  const held = keys.filter((k) => k.p === LIT);
+
+  const bandY = y0 + LIT * pagePitch;
+  const bandH = rowPitch + keyH;
+
+  return [
+    `  <ellipse cx="960" cy="${n(bandY + bandH / 2)}" rx="600" ry="168" fill="url(#h-gold)" opacity="0.34"/>`,
+    `  <g>${resting.join('')}</g>`,
+    `  <g filter="url(#blur18)" opacity="0.55">${held.map((k) => pill(k, C.gold, '1')).join('')}</g>`,
+    `  <g>${held.map((k) => pill(k, C.gold, '1')).join('')}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -6050,6 +6126,7 @@ const BASE_THEMES = [
   { name: 'fake-in-process-enclosure', seed: 47011, zoom: 1.22, center: [960, 540], title: 'Valkey inside the test process', desc: 'One rounded process boundary containing a card of test lines on the left, three lanes running from it to the white Valkey hexagon mark on the right, and a short list of key and value pairs under that mark, with the only port on the wall drawn in dim purple and its lead ending in an unplugged connector outside, representing a Valkey server whose behaviour runs inside the test process.', art: fakeInProcessEnclosure },
   { name: 'fake-in-process-parity', seed: 47021, zoom: 1.28, center: [960, 540], title: 'Valkey fake and real, same reply', desc: 'Two identical columns of five reply capsules standing side by side, matched row for row in width and colour, with one pale caliper bracketing both from below; above the left column a dashed test card holds the white Valkey hexagon mark, and above the right the same mark sits in a solid server box with a port capsule and a connection running out of the frame, representing a fake inside the test process and a real Valkey server answering one assertion identically.', art: fakeInProcessParity },
   { name: 'fake-in-process-dropin', seed: 47031, zoom: 1.3, center: [960, 540], title: 'Valkey test double, dropped in', desc: 'A pale socket at the centre with two contacts, a green in-process server carrying the white Valkey hexagon mark seated in it on matching pins, a dim purple server carrying the same mark held out of the socket above with its network connection trailing off the frame, and a call arriving on a blue lane from the lower left, representing an in-memory test double dropped into the socket a real server used to fill.', art: fakeInProcessDropin },
+  { name: 'scan-cursor-pages', seed: 67501, zoom: 1.35, center: [960, 544], title: 'Valkey scan by page', desc: 'A field of key pills on an even pitch, grouped into five stacked pages, with the middle page lit in gold and the other four blue at rest, representing a scan that hands back one bounded page of the keyspace at a time.', art: scanCursorPages },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

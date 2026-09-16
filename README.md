@@ -83,6 +83,7 @@ can't drift, and regenerating is a no-op diff.
 | `fake-in-process-enclosure` | One process wall holding the test, the server and its keys, with the port on that wall unplugged | Test doubles, fakes, testing without a server or a container |
 | `fake-in-process-parity` | Two identical reply columns under one caliper, one from a fake inside the test and one from a real server | Compatibility between a fake and the server, differential testing |
 | `fake-in-process-dropin` | A socket with an in-process server seated in it and the remote one held out, still trailing its network | A drop-in test double, replacing a client with a fake |
+| `scan-cursor-pages` | Five stacked pages of keys tiling a keyspace, exactly one of them lit | `SCAN`, cursors, iterating a keyspace without holding it all at once |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -322,6 +323,22 @@ fake-in-process-parity / two rows       — replies in two horizontal rows: the 
 
 Shipped as two columns side by side instead. The caption owns the lower left, so a comparison
 has more height to work with standing up than lying down.
+
+```
+scan-cursor / round-trips   — the keyspace with pages lifted out of it on legs: two pages of the
+                              same shape can only differ by colour, and the blind read said so
+                              ("nothing distinguishes the teal group from the yellow one except
+                              color"), which is principle 10; the field under them kept reading
+                              as wall texture rather than as the thing being walked
+scan-cursor / full-turn     — the pages closed into a ring, one arc lit: the circumference caps
+                              a key at about 57x28 framed units, so the keys can only be dashes,
+                              and the blind read called it "a generic loading spinner"
+```
+
+Both were attempts at the half of the sentence `scan-cursor-pages` carries only implicitly: that
+each call returns one bounded reply, and that the walk terminates. `round-trips` needed two pages
+to say "again" and had no legal way to tell them apart. `full-turn` had the closure but the ring
+costs the keys their size, and the keys are the thing that has to read as content.
 
 ## Licence
 
