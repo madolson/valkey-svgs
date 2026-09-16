@@ -3822,6 +3822,227 @@ function planetRing(r) {
   ].join('\n');
 }
 
+// --------------------------------------- browsing a keyspace safely from a GUI
+//
+// Three readings of one post about pointing a graphical client at a server that
+// is taking traffic. `keyspace-gui-safe-refusal` is the enforcement: the write is
+// turned back by the server, not by a switch in the client. `keyspace-gui-safe-grant`
+// is the grant itself: one slice of the command surface, with the dangerous part
+// taken back out of the middle of it. `keyspace-gui-safe-readout` is what that
+// leaves the client to be: panels, each one read command's reply.
+//
+// `keyspace-scan` already owns the cursor over a key field, so none of the three
+// draws one, and `security-shield-clean` owns the shield.
+
+// Idea: the reads a client sends carry on across the server's boundary, and the
+// write it sends is turned back at that same boundary.
+// Focal: the thick coral write lane, doubling back on itself where it arrives.
+function keyspaceGuiSafeRefusal() {
+  const wall = 1000;
+  const top = 258;
+  const bottom = 866;
+  const mid = 562;
+  const reads = [312, 420, 700, 808];
+  const LANE = 9;
+  const FACE = 14; // half the boundary's thickness
+
+  // The boundary, one unbroken bar the height of the frame. Two earlier passes cut
+  // openings in it where the permitted commands cross, and both read as a dashed
+  // rule at banner size rather than as something a command has to get past. A lane
+  // simply drawn over a solid bar reads as passing through it, which is cheaper and
+  // truer: the boundary is one rule and what happens at it depends on the caller.
+  const barrier = (w, fill, op, filter) =>
+    `<rect x="${n(wall - w / 2)}" y="${top}" width="${n(w)}" height="${bottom - top}" rx="${n(w / 2)}" ` +
+    `fill="${fill}" opacity="${op}"${filter ? ` filter="url(#${filter})"` : ''}/>`;
+
+  // One direction device for the whole image: a chevron at the end of each lane.
+  const chevron = (x, y, dx, wing, color, w, op) =>
+    `<path d="M ${n(x)} ${n(y - wing)} L ${n(x + dx)} ${n(y)} L ${n(x)} ${n(y + wing)}" fill="none" ` +
+    `stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity="${op}"/>`;
+
+  const lanes = reads
+    .map(
+      (y) =>
+        `<line x1="200" y1="${y}" x2="1720" y2="${y}" stroke="${C.cyanLt}" stroke-width="${LANE}" ` +
+        `stroke-linecap="round" opacity="0.5"/>` +
+        chevron(1100, y, 46, 24, C.cyanLt, LANE, '0.5')
+    )
+    .join('');
+
+  // The write. It arrives, the boundary refuses it, and the refusal is what goes
+  // back to the caller: one lane in, the same lane out, tangent to the wall.
+  const inY = mid - 58;
+  const outY = mid + 58;
+  const turn = wall - FACE - 58; // puts the arc's apex on the boundary's near face
+  const write = `M 200 ${inY} L ${turn} ${inY} A 58 58 0 0 1 ${turn} ${outY} L 660 ${outY}`;
+
+  return [
+    `  <circle cx="920" cy="${mid}" r="380" fill="url(#h-coral)" opacity="0.26"/>`,
+    `  ${barrier(FACE * 2 + 22, C.ice, '0.16', 'blur18')}`,
+    `  ${barrier(FACE * 2, C.ice, '0.55')}`,
+    `  <g>${lanes}</g>`,
+    // The boundary lit where it did the refusing.
+    `  <rect x="${n(wall - FACE)}" y="${n(inY - 22)}" width="${FACE * 2}" ` +
+      `height="${n(outY - inY + 44)}" rx="${FACE}" fill="${C.coral}" opacity="0.9"/>`,
+    `  <path d="${write}" fill="none" stroke="${C.coral}" stroke-width="36" opacity="0.32" filter="url(#blur18)"/>`,
+    `  <path d="${write}" fill="none" stroke="${C.coral}" stroke-width="20" stroke-linecap="round"/>`,
+    `  ${chevron(660, outY, -52, 34, C.coral, 20, '1')}`,
+    `  <g opacity="0.6">${mark(1290, mid, 180)}</g>`,
+  ].join('\n');
+}
+
+// Idea: the ACL user is granted one slice of everything the server can be asked
+// to do, and the dangerous commands are taken straight back out of that slice.
+// Focal: the ringed green block of granted commands.
+function keyspaceGuiSafeGrant(r) {
+  const COLS = 6;
+  const ROWS = 8;
+  const pitchX = 156;
+  const pitchY = 76;
+  const TILE_H = 30;
+  const TILE_MAX = 118; // never wider than the pitch, or tiles cross columns
+  const x0 = 520;
+  const y0 = 282;
+  const GRANT = { c0: 1, c1: 4, r0: 2, r1: 5 };
+  // A category grant and a category revocation overlap, so the commands taken
+  // back sit inside the block rather than outside it.
+  const REVOKED = [[1, 2], [3, 3], [2, 5]];
+
+  const tiles = [];
+  const revoked = [];
+  for (let c = 0; c < COLS; c++) {
+    for (let i = 0; i < ROWS; i++) {
+      const x = x0 + c * pitchX;
+      const y = y0 + i * pitchY;
+      const w = 70 + r() * (TILE_MAX - 70);
+      const granted = c >= GRANT.c0 && c <= GRANT.c1 && i >= GRANT.r0 && i <= GRANT.r1;
+      const pill = (fill, op) =>
+        `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${TILE_H}" rx="15" fill="${fill}" opacity="${op}"/>`;
+      if (REVOKED.some(([rc, rr]) => rc === c && rr === i)) {
+        // Still inside the granted block, and struck through: the category put it
+        // there and the revocation took it back.
+        revoked.push(
+          // Lit as brightly as the rest of the block: at 0.45 it dropped back to
+          // looking ungranted, and the strike then read as a stray red dash.
+          pill(C.mint, '0.72'),
+          `<line x1="${n(x - 8)}" y1="${n(y + TILE_H / 2)}" x2="${n(x + w + 8)}" y2="${n(y + TILE_H / 2)}" ` +
+            `stroke="${C.coral}" stroke-width="9" stroke-linecap="round" opacity="0.95"/>`
+        );
+      } else {
+        tiles.push(pill(granted ? C.mint : C.ice, granted ? '0.8' : '0.36'));
+      }
+    }
+  }
+
+  const bx = x0 + GRANT.c0 * pitchX - 26;
+  const bw = (GRANT.c1 - GRANT.c0) * pitchX + TILE_MAX + 52;
+  const by = y0 + GRANT.r0 * pitchY - 26;
+  const bh = (GRANT.r1 - GRANT.r0) * pitchY + TILE_H + 52;
+  const box = (w, op, filter) =>
+    `<rect x="${n(bx)}" y="${n(by)}" width="${n(bw)}" height="${n(bh)}" rx="26" fill="none" ` +
+    `stroke="${C.mint}" stroke-width="${w}" opacity="${op}"${filter ? ` filter="url(#${filter})"` : ''}/>`;
+
+  return [
+    `  <ellipse cx="${n(bx + bw / 2)}" cy="${n(by + bh / 2)}" rx="480" ry="300" fill="url(#h-mint)" opacity="0.24"/>`,
+    `  <g>${tiles.join('')}</g>`,
+    `  ${box(20, '0.3', 'blur18')}`,
+    `  ${box(5, '0.95')}`,
+    `  <g>${revoked.join('')}</g>`,
+  ].join('\n');
+}
+
+// Idea: every panel in a graphical client is one read command's reply set out as
+// a table, so the client is a place to read and not a way in.
+// Focal: the client window, its four panels fed by four reads from the server.
+function keyspaceGuiSafeReadout(r) {
+  const wx = 860;
+  const wy = 268;
+  const ww = 520;
+  const wh = 584;
+  const BAR = 46;
+  const PAD = 26;
+  const GAP = 22;
+  const pw = (ww - PAD * 2 - GAP) / 2;
+  const ph = (wh - BAR - PAD * 2 - GAP) / 2;
+  const cx0 = wx + PAD;
+  const cx1 = cx0 + pw + GAP;
+  const cy0 = wy + BAR + PAD;
+  const cy1 = cy0 + ph + GAP;
+
+  const pill = (x, y, w, h, fill, op) =>
+    `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${n(h / 2)}" fill="${fill}" opacity="${op}"/>`;
+
+  // Each panel is the same object twice over: a bordered box with a heading, and
+  // one reply drawn inside it.
+  const panel = (x, y) =>
+    `<rect x="${n(x)}" y="${n(y)}" width="${n(pw)}" height="${n(ph)}" rx="14" fill="${C.ink}" ` +
+    `fill-opacity="0.34" stroke="${C.ice}" stroke-width="2.4" stroke-opacity="0.3"/>` +
+    pill(x + 18, y + 18, 96, 15, C.ice, '0.5');
+
+  // INFO: a handful of counters.
+  const metrics = [];
+  for (let i = 0; i < 5; i++) {
+    const h = 46 + r() * 84;
+    metrics.push(
+      `<rect x="${n(cx0 + 30 + i * 40)}" y="${n(cy0 + ph - 44 - h)}" width="24" height="${n(h)}" rx="8" ` +
+        `fill="${C.cyanLt}" opacity="0.55"/>`
+    );
+  }
+
+  // DBSIZE: one number for the database you are on.
+  const count =
+    pill(cx1 + 36, cy0 + ph / 2 - 42, 150, 46, C.ice, '0.65') +
+    pill(cx1 + 36, cy0 + ph / 2 + 26, 92, 16, C.ice, '0.4');
+
+  // CLIENT LIST: one row per open connection. SLOWLOG GET: one row per slow
+  // command, with how long it took.
+  const sessions = [];
+  const slow = [];
+  for (let i = 0; i < 4; i++) {
+    const y = cy1 + 62 + i * 44;
+    sessions.push(
+      dot(cx0 + 34, y, 7, C.cyanLt, 'cyan', 0.6, 2.6),
+      pill(cx0 + 58, y - 8, 96, 16, C.ice, '0.5'),
+      pill(cx0 + 168, y - 8, 44, 16, C.ice, '0.3')
+    );
+    slow.push(
+      pill(cx1 + 34, y - 8, 60, 16, C.ice, '0.5'),
+      pill(cx1 + 108, y - 7, 40 + r() * 74, 14, C.cyanLt, '0.5')
+    );
+  }
+
+  // Four reads out of the server, one per panel. The chevrons all point into the
+  // window, which is the only direction anything travels here.
+  const lanes = [400, 500, 630, 730]
+    .map((y) => {
+      const sy = 560 + (y - 560) * 0.5;
+      const ex = wx - 30;
+      const deg = n((Math.atan2(y - sy, ex - 652) * 180) / Math.PI);
+      return (
+        `<line x1="652" y1="${n(sy)}" x2="${n(ex)}" y2="${y}" stroke="${C.cyanLt}" stroke-width="8" ` +
+        `stroke-linecap="round" opacity="0.5"/>` +
+        `<path d="M ${n(ex - 4)} ${n(y - 20)} L ${n(ex + 22)} ${y} L ${n(ex - 4)} ${n(y + 20)}" fill="none" ` +
+        `stroke="${C.cyanLt}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.5" ` +
+        `transform="rotate(${deg} ${n(ex)} ${y})"/>`
+      );
+    })
+    .join('');
+
+  return [
+    `  <ellipse cx="${n(wx + ww / 2)}" cy="560" rx="430" ry="370" fill="url(#h-ice)" opacity="0.16"/>`,
+    `  <g>${lanes}</g>`,
+    `  <g opacity="0.55">${mark(570, 560, 170)}</g>`,
+    `  <rect x="${wx}" y="${wy}" width="${ww}" height="${wh}" rx="26" fill="${C.ink}" fill-opacity="0.45"/>`,
+    `  <line x1="${wx}" y1="${wy + BAR}" x2="${wx + ww}" y2="${wy + BAR}" stroke="${C.ice}" stroke-width="2.4" opacity="0.4"/>`,
+    `  <g fill="${C.ice}" opacity="0.45">` +
+      [0, 1, 2].map((i) => `<circle cx="${wx + 34 + i * 30}" cy="${wy + 23}" r="8"/>`).join('') +
+      `</g>`,
+    `  <g>${panel(cx0, cy0)}${panel(cx1, cy0)}${panel(cx0, cy1)}${panel(cx1, cy1)}</g>`,
+    `  <g>${metrics.join('')}${count}${sessions.join('')}${slow.join('')}</g>`,
+    `  <rect x="${wx}" y="${wy}" width="${ww}" height="${wh}" rx="26" fill="none" stroke="${C.ice}" stroke-width="4.5" opacity="0.95"/>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -3880,6 +4101,9 @@ const BASE_THEMES = [
   // spends it: the columns get 24 more units between them and the panel-to-shard span gets
   // the rest. It is not a dramatic stretch, because the frame is the frame.
   { name: 'key-size-card-flat', seed: 43049, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three widely spaced shard enclosures of servers drawn as the white Valkey hexagon mark, the whole chart sitting in a shallow band clear above the title blocks.', art: keySizeCard({ scale: 0.8, spread: 62, colPitch: 168, clearY: 748 }) },
+  { name: 'keyspace-gui-safe-refusal', seed: 64901, zoom: 1.36, center: [960, 562], title: 'Valkey server-side read-only', desc: 'Four blue command lanes running in from the left, crossing a tall pale boundary bar and carrying on towards the white Valkey hexagon mark on the far side, and one much thicker red lane that reaches the same boundary, turns back on itself and returns the way it came, representing a write refused by the server rather than by a setting in the client.', art: keyspaceGuiSafeRefusal },
+  { name: 'keyspace-gui-safe-grant', seed: 64907, zoom: 1.44, center: [969, 563], title: 'Valkey read-only ACL user', desc: 'A field of forty-eight pale command pills laid out on an even grid, with sixteen of them lit green inside a rounded green boundary and three of those green pills struck through with a red line, representing a user granted the read commands as a category with the dangerous ones taken back out of the same grant.', art: keyspaceGuiSafeGrant },
+  { name: 'keyspace-gui-safe-readout', seed: 64913, zoom: 1.38, center: [938, 560], title: 'Valkey browsing a keyspace safely', desc: 'The white Valkey hexagon mark on the left with four blue lanes fanning out of it into the left edge of a large client window, which holds four panels of read-only results: a row of counter bars, one large figure, a list of open connections and a list of slow commands with their durations, representing a graphical client that only renders what the server already publishes.', art: keyspaceGuiSafeReadout },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

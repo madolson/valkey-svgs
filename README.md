@@ -53,6 +53,9 @@ can't drift, and regenerating is a no-op diff.
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
+| `keyspace-gui-safe-refusal` | Read lanes crossing the server's boundary, one write turned back at it | ACL users, read-only access, NOPERM, server-side authorisation |
+| `keyspace-gui-safe-grant` | A grid of commands with one block granted and the dangerous ones struck out inside it | ACL grants, command categories, least privilege |
+| `keyspace-gui-safe-readout` | A client window of four read-only panels, each fed by one read from the server | GUI clients, INFO, CLIENT LIST, SLOWLOG, monitoring views |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -260,6 +263,16 @@ security-shield / hex-high              — both faults at once
 
 All five lost to `security-shield-clean` on the same judgement: the shipped proportions are
 better than any of them, and the shield's silhouette is not a knob worth turning.
+
+```
+keyspace-gui-safe-refusal / slotted   — boundary cut open where each read crosses, reads as a dashed rule
+keyspace-gui-safe-refusal / banded    — the same openings capped across the thickness, reads as stacked boxes
+```
+
+Both were attempts to show permitted commands passing *through* a gap. At banner size a
+broken vertical line stops being a boundary at all. The shipped version leaves the bar
+unbroken and draws the lanes over it, which reads as crossing and keeps the boundary solid
+where the write meets it.
 
 ## Licence
 
