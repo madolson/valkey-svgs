@@ -5962,6 +5962,110 @@ function fakeInProcessDropin() {
   ].join('\n');
 }
 
+// -------------------------------------------- client-side compression (GLIDE)
+//
+// The visible fact about compression is that the thing gets smaller, so both of
+// these draw the value itself at two sizes and nothing else. The run below is the
+// value's own content: the same number of fields at both sizes, because the content
+// does not change, only how much room each field takes. Equal field counts are what
+// keeps "smaller" from reading as "truncated".
+//
+// A first pass gave each of them a pale bar for the client's edge, horizontal in one
+// and vertical in the other. The blind read called it decoration in one and asked
+// whether it was a timeline axis in the other, so both are gone: a boundary that has
+// to be labelled to be a boundary is furniture, and the size drop says on its own
+// that it happened before the value reached the server.
+function ccRun(cx, cy, fieldW, h, { fields = 8, gap = 4, color, opacity = 1 }) {
+  const pitch = fieldW + gap;
+  const x0 = cx - (fields * pitch - gap) / 2;
+  const rx = Math.min(6, fieldW / 2.6);
+  return Array.from(
+    { length: fields },
+    (_, i) =>
+      `<rect x="${n(x0 + i * pitch)}" y="${n(cy - h / 2)}" width="${n(fieldW)}" height="${n(h)}" ` +
+      `rx="${n(rx)}" fill="${color}" opacity="${n(opacity)}"/>`
+  ).join('');
+}
+
+// Idea: the client shrinks the value before it leaves the application, so what
+// crosses the network and lands in the server is a fraction of what the
+// application holds.
+// Focal: the short dense green run, the value as it now travels.
+//
+// Both rows start at the same x and end at the same x, so the row is the measure and
+// the fill is the message: the top row is the value filling it, the bottom row is the
+// same eight fields taking a fifth of it and the rest of the row is the saving. An
+// earlier pass ran a long lane down from one row to the other; the blind read went to
+// that lane first and took it as one column feeding down rather than the whole value
+// getting narrower, so the lane is gone and the rows moved together instead.
+function clientCompressionPackedRun() {
+  const FIELDS = 8;
+  const H = 220;
+  const appY = 330; // the value as the application holds it
+  const outY = 685; // the value on the wire
+  const wide = FIELDS * 106 - 6;
+  const packed = FIELDS * 30 - 4;
+  const left = 960 - wide / 2;
+  const markX = left + wide - 83;
+
+  // The one direction device: what leaves for the server is the short run.
+  const send =
+    `<line x1="${n(left + packed + 22)}" y1="${outY}" x2="${n(markX - 120)}" y2="${outY}" ` +
+      `stroke="${C.mint}" stroke-width="26" opacity="0.5"/>` +
+    chevronHead(markX - 114, outY, 1, 0, 34, C.mint, 26, 0.5);
+
+  return [
+    `  <ellipse cx="${n(left + packed / 2)}" cy="${outY}" rx="250" ry="200" fill="url(#h-mint)" opacity="0.3"/>`,
+    `  <g>${ccRun(960, appY, 100, H, { fields: FIELDS, gap: 6, color: C.cyanLt, opacity: 0.5 })}</g>`,
+    `  <g>${send}</g>`,
+    `  <g>${ccRun(left + packed / 2, outY, 26, H, { fields: FIELDS, color: C.mint, opacity: 0.95 })}</g>`,
+    `  <g opacity="0.55">${mark(markX, outY, 190)}</g>`,
+  ].join('\n');
+}
+
+// Idea: the same value sent by the same unchanged application code crosses the
+// network at a third of the size once the client compresses it.
+// Focal: the short green send, the one bright thing in the frame.
+//
+// Both sends get the same length of wire, drawn as a pale channel, because the
+// journey is what does not change. An earlier pass drew the wire as a plain arrow
+// per send, and the blind read compared the two arrows instead of the two payloads:
+// equal arrows read as "the same", which is the opposite of the point. As a channel
+// the equal length is the measure and the fill is the message.
+//
+// Both runs use the same gap so the field count can be counted at crop size: a blind
+// read miscounted them at gap 4 and asked whether the point was fewer fields or
+// narrower ones. It is narrower ones, and the equal count is what says so.
+//
+// No hexagon mark in the art. It sat in the empty band between the two channels with
+// nothing arriving at it, and two blind reads in a row called it decoration; the
+// corner lockup already says whose wire this is.
+function clientCompressionTwinSends() {
+  const FIELDS = 6;
+  const H = 150;
+  const left = 600; // both sends start here: the same call site, the same code
+  const wireEnd = 1352; // the chevron tip past this has to stay inside the narrow crop
+  const newY = 340; // what crosses now
+  const oldY = 720; // what used to cross
+
+  const wire = (y) =>
+    `<rect x="${left}" y="${n(y - H / 2)}" width="${wireEnd - left}" height="${H}" rx="${H / 2}" ` +
+    `fill="${C.ice}" opacity="0.1"/>`;
+
+  // Inset from the channel's rounded cap, or the run's square corners poke out of it.
+  const send = (y, fieldW, gap, color, opacity) =>
+    ccRun(left + 14 + (FIELDS * (fieldW + gap) - gap) / 2, y, fieldW, H, { fields: FIELDS, gap, color, opacity }) +
+    chevronHead(wireEnd + 54, y, 1, 0, 44, color, 26, n(opacity * 0.85));
+
+  return [
+    `  <ellipse cx="${left + 120}" cy="${newY}" rx="300" ry="210" fill="url(#h-mint)" opacity="0.3"/>`,
+    `  ${wire(newY)}`,
+    `  ${wire(oldY)}`,
+    `  <g>${send(oldY, 85, 9, C.violet, 0.45)}</g>`,
+    `  <g>${send(newY, 27, 9, C.mint, 0.95)}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -6050,6 +6154,8 @@ const BASE_THEMES = [
   { name: 'fake-in-process-enclosure', seed: 47011, zoom: 1.22, center: [960, 540], title: 'Valkey inside the test process', desc: 'One rounded process boundary containing a card of test lines on the left, three lanes running from it to the white Valkey hexagon mark on the right, and a short list of key and value pairs under that mark, with the only port on the wall drawn in dim purple and its lead ending in an unplugged connector outside, representing a Valkey server whose behaviour runs inside the test process.', art: fakeInProcessEnclosure },
   { name: 'fake-in-process-parity', seed: 47021, zoom: 1.28, center: [960, 540], title: 'Valkey fake and real, same reply', desc: 'Two identical columns of five reply capsules standing side by side, matched row for row in width and colour, with one pale caliper bracketing both from below; above the left column a dashed test card holds the white Valkey hexagon mark, and above the right the same mark sits in a solid server box with a port capsule and a connection running out of the frame, representing a fake inside the test process and a real Valkey server answering one assertion identically.', art: fakeInProcessParity },
   { name: 'fake-in-process-dropin', seed: 47031, zoom: 1.3, center: [960, 540], title: 'Valkey test double, dropped in', desc: 'A pale socket at the centre with two contacts, a green in-process server carrying the white Valkey hexagon mark seated in it on matching pins, a dim purple server carrying the same mark held out of the socket above with its network connection trailing off the frame, and a call arriving on a blue lane from the lower left, representing an in-memory test double dropped into the socket a real server used to fill.', art: fakeInProcessDropin },
+  { name: 'client-compression-packed-run', seed: 48111, zoom: 1.36, center: [960, 540], title: 'Valkey compressed before the wire', desc: 'Two rows of the same eight fields spanning the same width: above, a wide dim blue run filling its row, and below, the same eight fields in bright green taking a fifth of it, with a green arrow crossing the empty remainder to the white Valkey hexagon mark, representing a client library shrinking a value before it leaves the application so the smaller form is what crosses the network and what the server stores.', art: clientCompressionPackedRun },
+  { name: 'client-compression-twin-sends', seed: 48121, zoom: 1.4, center: [1010, 530], title: 'Valkey a third of the bytes on the wire', desc: 'Two pale capsule-shaped wires of equal length, one above the other, each ending in a chevron: the upper wire holds six narrow bright green fields filling a quarter of its length, and the lower holds the same six fields in dim purple filling most of it, representing the same value crossing the network at a fraction of the size once the client compresses it.', art: clientCompressionTwinSends },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

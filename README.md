@@ -83,6 +83,8 @@ can't drift, and regenerating is a no-op diff.
 | `fake-in-process-enclosure` | One process wall holding the test, the server and its keys, with the port on that wall unplugged | Test doubles, fakes, testing without a server or a container |
 | `fake-in-process-parity` | Two identical reply columns under one caliper, one from a fake inside the test and one from a real server | Compatibility between a fake and the server, differential testing |
 | `fake-in-process-dropin` | A socket with an in-process server seated in it and the remote one held out, still trailing its network | A drop-in test double, replacing a client with a fake |
+| `client-compression-packed-run` | One value's eight fields filling a row, then the same eight taking a fifth of it on the way to the server | Client-side compression, when the point is how much smaller the value gets |
+| `client-compression-twin-sends` | The same six-field value on two wires of equal length, filling a quarter of one and most of the other | The same, when the point is how much of the network the value stops using |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -322,6 +324,13 @@ fake-in-process-parity / two rows       — replies in two horizontal rows: the 
 
 Shipped as two columns side by side instead. The caption owns the lower left, so a comparison
 has more height to work with standing up than lying down.
+
+```
+client-compression / round-trip         — the value shrinking on the way out and coming back whole on the way in: two payload pairs, so the focal element was a pair and not one object, and the blind read called the glow and the right-hand gap decoration
+```
+
+It also said the same thing as `client-compression-packed-run` with a return leg added, which
+makes it the second banner for one sentence rather than a second idea.
 
 ## Licence
 
