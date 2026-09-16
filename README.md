@@ -77,6 +77,9 @@ can't drift, and regenerating is a no-op diff.
 | `ai-advisory-surge-sieve` | A flood of reports narrowing onto a toothed screen, three getting through in red | Report volume, triage load, what counts as a vulnerability |
 | `ai-advisory-surge-reproducer` | Five candidate bugs, four struck out, the survivor dropping into its reproducer | Adversarial audits, LLM-found bugs, verification before a human |
 | `ai-advisory-surge-backport-rails` | Five version rails with one fix node aligned on every one of them | Backports, patch releases, shipping a fix to every supported version |
+| `fbtree-fanout-slab` | A scattered field of pointer-topped member blocks over one wide node holding the same members packed in order | Sorted sets on fbtree, index overhead, one allocation instead of many |
+| `fbtree-fanout-tiers` | A tall spindly seven-level tree beside a short broad two-level one, same members at the leaves | High fanout, tree depth, fewer fetches per lookup |
+| `fbtree-fanout-leafwalk` | Scattered blocks joined by climbing arcs above a chain of packed leaves with one straight run through it | Ordered range reads, linked leaves, cache-friendly traversal |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
