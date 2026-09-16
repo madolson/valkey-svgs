@@ -103,6 +103,12 @@ on every run from `THEMES` and the README rows. Consumers read it instead of par
 file; the gallery at [madelynolson.com/valkey-banners](https://madelynolson.com/valkey-banners)
 pulls this repo in as a submodule and renders from it.
 
+## Design principles
+
+[DESIGN.md](DESIGN.md) is the review rubric for every banner here: what the working ones have in
+common, the faults that got others deleted, and the blind read that decides. Read it before adding
+a theme and again before committing one.
+
 ## Regenerating
 
 ```sh
