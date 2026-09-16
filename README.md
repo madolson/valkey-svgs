@@ -83,6 +83,8 @@ can't drift, and regenerating is a no-op diff.
 | `fake-in-process-enclosure` | One process wall holding the test, the server and its keys, with the port on that wall unplugged | Test doubles, fakes, testing without a server or a container |
 | `fake-in-process-parity` | Two identical reply columns under one caliper, one from a fake inside the test and one from a real server | Compatibility between a fake and the server, differential testing |
 | `fake-in-process-dropin` | A socket with an in-process server seated in it and the remote one held out, still trailing its network | A drop-in test double, replacing a client with a fake |
+| `fbtree-wide-root` | One wide root node of child slots over four linked leaves of packed members | fbtree, B+ trees, the ordered index behind a sorted set |
+| `fbtree-tower-and-tree` | A row of members each under its own tower of pointers, above the same members in one wide node over linked leaves | Replacing the skiplist with fbtree, a change of shape |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -322,6 +324,16 @@ fake-in-process-parity / two rows       — replies in two horizontal rows: the 
 
 Shipped as two columns side by side instead. The caption owns the lower left, so a comparison
 has more height to work with standing up than lying down.
+
+```
+fbtree-leaf-run / bars (16 tall cells)  — one leaf filled with tall two-tone bars, blind-read as a bar chart
+fbtree-leaf-run / slots (10 two-field)  — the score-over-member split read as arbitrary, and the leaf border, which is the node and therefore the whole point, read as decoration (principle 2)
+```
+
+Both were the inside of a single leaf. The problem is structural: at leaf scale the only
+things in frame are a box and a row of identical cells, so the box has to be furniture and
+the subject at once. `fbtree-wide-root` already draws packed leaves inside a picture that
+also says which structure they belong to, so this one had nothing left to add (principle 1).
 
 ## Licence
 

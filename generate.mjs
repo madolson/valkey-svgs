@@ -5962,6 +5962,284 @@ function fakeInProcessDropin() {
   ].join('\n');
 }
 
+// ------------------------------------------- fbtree, drawn as the structure
+//
+// Valkey 9.2 replaces the skiplist behind large sorted sets with fbtree, a
+// high-fanout B+ tree variant. A reader of this post knows what a B+ tree looks
+// like, so these draw one (DESIGN.md rule 9) instead of inventing a metaphor for
+// it: one wide inner node holding a run of child slots divided by separator
+// keys, two levels, and leaves that hold their members packed side by side and
+// link to their neighbours so an ordered read walks along them.
+//
+//   fbtreeWideRoot      the shape: one wide node over linked packed leaves
+//   fbtreeTowerAndTree  the change: a tower of pointers per member becomes that
+//
+// Colour roles are the same in all three. Members are `cyan`, because they are
+// content at rest and they do not change. The skiplist's pointer and span
+// overhead is `violet`, because it is what is retired. The fbtree's nodes are
+// `mint`, because they are the state arrived at.
+
+// One packed entry: the normalised score, then the member bytes, stored as a
+// single value. Same glyph at the same proportions everywhere it appears, in the
+// leaves and in the skiplist row it replaced, so the two halves of
+// `fbtreeTowerAndTree` are visibly the same members in different containers.
+function fbtreeEntry(x, y, w, h, scoreH) {
+  return (
+    `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="5" fill="${C.cyanLt}" opacity="0.55"/>` +
+    `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(scoreH)}" rx="5" fill="${C.cyanLt}" opacity="0.95"/>`
+  );
+}
+
+function fbtreeWideRoot() {
+  // Idea: the ordered index behind a large sorted set is one wide node of child slots over leaves that hold their members packed side by side and linked to their neighbours.
+  // Focal: the wide root node, its run of slots and separator keys spanning the structure.
+  const X0 = 549;
+  const X1 = 1371;
+  const LEAVES = 4;
+  const GAP = 58;
+  const LEAF_W = (X1 - X0 - GAP * (LEAVES - 1)) / LEAVES;
+  const LEAF_Y = 555;
+  const LEAF_H = 192;
+  const leafX = [];
+  for (let i = 0; i < LEAVES; i++) leafX.push(X0 + i * (LEAF_W + GAP));
+  const leafCx = leafX.map((x) => x + LEAF_W / 2);
+
+  // The root. One allocation, wide enough to route the whole set: a child slot
+  // per leaf with a separator key standing between each pair, which is what an
+  // inner node holds. Everything in it sits on one baseline.
+  const SLOT_W = 90;
+  const KEY_W = 20;
+  const MARK_GAP = 26;
+  const MARK_H = 56;
+  const ROOT_Y = 200;
+  const ROOT_H = 130;
+  const pitch = SLOT_W + KEY_W + MARK_GAP * 2;
+  const slotCx = [];
+  for (let i = 0; i < LEAVES; i++) slotCx.push(960 + (i - (LEAVES - 1) / 2) * pitch);
+  const rootX = slotCx[0] - SLOT_W / 2 - 32;
+  const rootW = slotCx[LEAVES - 1] + SLOT_W / 2 + 32 - rootX;
+  const markY = ROOT_Y + (ROOT_H - MARK_H) / 2;
+
+  const slots = slotCx
+    .map(
+      (cx) =>
+        `<rect x="${n(cx - SLOT_W / 2)}" y="${n(markY)}" width="${SLOT_W}" height="${MARK_H}" rx="9" ` +
+        `fill="${C.mint}"/>`
+    )
+    .join('');
+  // A separator key stands between each pair of slots and spans the node, because
+  // what it separates is the whole child range on either side of it. Drawn as a
+  // divider rather than a small mark: a tick the height of a slot read as a gap.
+  const KEY_INSET = 16;
+  const keys = slotCx
+    .slice(1)
+    .map(
+      (cx, i) =>
+        `<rect x="${n((slotCx[i] + cx) / 2 - KEY_W / 2)}" y="${n(ROOT_Y + KEY_INSET)}" width="${KEY_W}" ` +
+        `height="${n(ROOT_H - KEY_INSET * 2)}" rx="7" fill="${C.mint}" opacity="0.75"/>`
+    )
+    .join('');
+  const root =
+    `<rect x="${n(rootX)}" y="${ROOT_Y}" width="${n(rootW)}" height="${ROOT_H}" rx="20" fill="${C.ink}" ` +
+    `fill-opacity="0.45" stroke="${C.mint}" stroke-width="12"/>`;
+
+  // One child pointer per slot, leaving the slot itself and crossing the node wall
+  // on its way to the leaf, so it is visible which slot routes where. A diagonal
+  // line, never a bar: descending into a child and running along the leaf level are
+  // different moves, and the second is the whole difference from a B tree.
+  const links = slotCx
+    .map(
+      (cx, i) =>
+        `<line x1="${n(cx)}" y1="${n(markY + MARK_H)}" x2="${n(leafCx[i])}" y2="${LEAF_Y}" ` +
+        `stroke="${C.mint}" stroke-width="9" stroke-linecap="round" opacity="0.6"/>`
+    )
+    .join('');
+
+  // The leaves, drawn at half the root's stroke: each holds a run of the set
+  // packed side by side rather than one member to an allocation. The score block
+  // grows across the whole run, left to right, because the run is in score order.
+  const ENTRIES = 3;
+  const PAD = 18;
+  const ePitch = (LEAF_W - PAD * 2) / ENTRIES;
+  const leaves = leafX
+    .map((x) => {
+      const cells = [];
+      for (let j = 0; j < ENTRIES; j++) {
+        cells.push(fbtreeEntry(x + PAD + j * ePitch + 3, LEAF_Y + 38, ePitch - 6, 124, 34));
+      }
+      return (
+        `<rect x="${n(x)}" y="${LEAF_Y}" width="${n(LEAF_W)}" height="${LEAF_H}" rx="16" fill="${C.ink}" ` +
+        `fill-opacity="0.45" stroke="${C.mint}" stroke-width="6" opacity="0.8"/>` +
+        cells.join('')
+      );
+    })
+    .join('');
+
+  // Sibling links: the leaves are a linked list, so an ordered read runs along
+  // them instead of climbing back into the root between members. A short bar four
+  // times the width of a child pointer, overlapping both leaf walls so it reads as
+  // joining them rather than as a tick in the gap.
+  const chain = leafX
+    .slice(0, -1)
+    .map(
+      (x) =>
+        `<rect x="${n(x + LEAF_W - 7)}" y="${n(LEAF_Y + LEAF_H / 2 - 17)}" width="${GAP + 14}" height="34" ` +
+        `rx="17" fill="${C.mint}" opacity="0.9"/>`
+    )
+    .join('');
+
+  return [
+    `  <ellipse cx="960" cy="${n(ROOT_Y + ROOT_H / 2)}" rx="430" ry="185" fill="url(#h-mint)" opacity="0.32"/>`,
+    `  <g>${links}</g>`,
+    `  <g>${leaves}</g>`,
+    `  <g>${chain}</g>`,
+    `  ${root}`,
+    `  <g>${slots}${keys}</g>`,
+  ].join('\n');
+}
+
+function fbtreeTowerAndTree(r) {
+  // Idea: the ordered index behind a large sorted set changed shape, from a tower of pointers standing over every single member to one wide node over leaves of packed members.
+  // Focal: the fbtree below, one wide root node fanning into four linked leaves.
+  const X0 = 580;
+  const X1 = 1340;
+  const CELL = 40;
+  const CELL_H = 60;
+  const MEMBERS = 12;
+  const SCORE_H = 16;
+
+  // The skiplist it replaced, drawn the way a skiplist is drawn: the members in
+  // order along the bottom, one separate allocation each with heap between them,
+  // every one carrying its own tower of forward pointers and spans, and a forward
+  // link at each level skipping to the next node tall enough to hold one.
+  const BASE_Y = 350;
+  const LVL_H = 28;
+  const LVL_PITCH = 32;
+  const mPitch = (X1 - X0 - CELL) / (MEMBERS - 1);
+  const nodes = [];
+  for (let i = 0; i < MEMBERS; i++) {
+    let levels = 1;
+    while (levels < 4 && r() < 0.38) levels++;
+    nodes.push({ x: X0 + i * mPitch, levels });
+  }
+
+  const towerY = (l) => BASE_Y - 4 - (l + 1) * LVL_PITCH + (LVL_PITCH - LVL_H);
+  const towers = nodes
+    .map((nd) => {
+      const out = [fbtreeEntry(nd.x, BASE_Y, CELL, CELL_H, SCORE_H)];
+      for (let l = 0; l < nd.levels; l++) {
+        out.push(
+          `<rect x="${n(nd.x)}" y="${n(towerY(l))}" width="${n(CELL)}" height="${LVL_H}" rx="5" ` +
+            `fill="${C.violet}" opacity="0.68"/>`
+        );
+      }
+      return out.join('');
+    })
+    .join('');
+
+  const forwards = [];
+  for (let l = 0; l < 4; l++) {
+    const have = nodes.filter((nd) => nd.levels > l);
+    for (let k = 0; k < have.length - 1; k++) {
+      const y = towerY(l) + LVL_H / 2;
+      forwards.push(
+        `<line x1="${n(have[k].x + CELL)}" y1="${n(y)}" x2="${n(have[k + 1].x)}" y2="${n(y)}" ` +
+          `stroke="${C.violet}" stroke-width="5" opacity="0.5"/>`
+      );
+    }
+  }
+
+  // The fbtree that replaced it: the same twelve members, in the same order, held
+  // in one wide node over four leaves that pack them and link to each other. The
+  // member cell is unchanged from the row above; what changed is that they now sit
+  // shoulder to shoulder inside a leaf instead of one allocation apiece.
+  const LEAVES = 4;
+  const GAP = 56;
+  const LEAF_W = (X1 - X0 - GAP * (LEAVES - 1)) / LEAVES;
+  const LEAF_Y = 652;
+  const LEAF_H = 100;
+  const leafX = [];
+  for (let i = 0; i < LEAVES; i++) leafX.push(X0 + i * (LEAF_W + GAP));
+
+  const SLOT_W = 104;
+  const KEY_W = 20;
+  const MARK_GAP = 26;
+  const MARK_H = 76;
+  const ROOT_Y = 452;
+  const ROOT_H = 136;
+  const pitch = SLOT_W + KEY_W + MARK_GAP * 2;
+  const slotCx = [];
+  for (let i = 0; i < LEAVES; i++) slotCx.push(960 + (i - (LEAVES - 1) / 2) * pitch);
+  const rootX = slotCx[0] - SLOT_W / 2 - 32;
+  const rootW = slotCx[LEAVES - 1] + SLOT_W / 2 + 32 - rootX;
+  const markY = ROOT_Y + (ROOT_H - MARK_H) / 2;
+
+  const slots = slotCx
+    .map(
+      (cx) =>
+        `<rect x="${n(cx - SLOT_W / 2)}" y="${n(markY)}" width="${SLOT_W}" height="${MARK_H}" rx="9" ` +
+        `fill="${C.mint}"/>`
+    )
+    .join('');
+  const KEY_INSET = 18;
+  const keys = slotCx
+    .slice(1)
+    .map(
+      (cx, i) =>
+        `<rect x="${n((slotCx[i] + cx) / 2 - KEY_W / 2)}" y="${n(ROOT_Y + KEY_INSET)}" width="${KEY_W}" ` +
+        `height="${n(ROOT_H - KEY_INSET * 2)}" rx="7" fill="${C.mint}" opacity="0.75"/>`
+    )
+    .join('');
+  const root =
+    `<rect x="${n(rootX)}" y="${ROOT_Y}" width="${n(rootW)}" height="${ROOT_H}" rx="20" fill="${C.ink}" ` +
+    `fill-opacity="0.45" stroke="${C.mint}" stroke-width="12"/>`;
+
+  const links = slotCx
+    .map(
+      (cx, i) =>
+        `<line x1="${n(cx)}" y1="${n(markY + MARK_H)}" x2="${n(leafX[i] + LEAF_W / 2)}" y2="${LEAF_Y}" ` +
+        `stroke="${C.mint}" stroke-width="9" stroke-linecap="round" opacity="0.6"/>`
+    )
+    .join('');
+
+  const ENTRIES = MEMBERS / LEAVES;
+  const PAD = 12;
+  const ePitch = (LEAF_W - PAD * 2) / ENTRIES;
+  const leaves = leafX
+    .map((x) => {
+      const cells = [];
+      for (let j = 0; j < ENTRIES; j++) {
+        cells.push(fbtreeEntry(x + PAD + j * ePitch, LEAF_Y + 20, CELL, CELL_H, SCORE_H));
+      }
+      return (
+        `<rect x="${n(x)}" y="${LEAF_Y}" width="${n(LEAF_W)}" height="${LEAF_H}" rx="16" fill="${C.ink}" ` +
+        `fill-opacity="0.45" stroke="${C.mint}" stroke-width="6" opacity="0.8"/>` +
+        cells.join('')
+      );
+    })
+    .join('');
+
+  const chain = leafX
+    .slice(0, -1)
+    .map(
+      (x) =>
+        `<rect x="${n(x + LEAF_W - 7)}" y="${n(LEAF_Y + LEAF_H / 2 - 17)}" width="${GAP + 14}" height="34" ` +
+        `rx="17" fill="${C.mint}" opacity="0.9"/>`
+    )
+    .join('');
+
+  return [
+    `  <ellipse cx="960" cy="${n(ROOT_Y + ROOT_H / 2)}" rx="470" ry="205" fill="url(#h-mint)" opacity="0.42"/>`,
+    `  <g>${forwards.join('')}</g>`,
+    `  <g>${towers}</g>`,
+    `  <g>${links}</g>`,
+    `  <g>${leaves}</g>`,
+    `  <g>${chain}</g>`,
+    `  ${root}`,
+    `  <g>${slots}${keys}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -6050,6 +6328,8 @@ const BASE_THEMES = [
   { name: 'fake-in-process-enclosure', seed: 47011, zoom: 1.22, center: [960, 540], title: 'Valkey inside the test process', desc: 'One rounded process boundary containing a card of test lines on the left, three lanes running from it to the white Valkey hexagon mark on the right, and a short list of key and value pairs under that mark, with the only port on the wall drawn in dim purple and its lead ending in an unplugged connector outside, representing a Valkey server whose behaviour runs inside the test process.', art: fakeInProcessEnclosure },
   { name: 'fake-in-process-parity', seed: 47021, zoom: 1.28, center: [960, 540], title: 'Valkey fake and real, same reply', desc: 'Two identical columns of five reply capsules standing side by side, matched row for row in width and colour, with one pale caliper bracketing both from below; above the left column a dashed test card holds the white Valkey hexagon mark, and above the right the same mark sits in a solid server box with a port capsule and a connection running out of the frame, representing a fake inside the test process and a real Valkey server answering one assertion identically.', art: fakeInProcessParity },
   { name: 'fake-in-process-dropin', seed: 47031, zoom: 1.3, center: [960, 540], title: 'Valkey test double, dropped in', desc: 'A pale socket at the centre with two contacts, a green in-process server carrying the white Valkey hexagon mark seated in it on matching pins, a dim purple server carrying the same mark held out of the socket above with its network connection trailing off the frame, and a call arriving on a blue lane from the lower left, representing an in-memory test double dropped into the socket a real server used to fill.', art: fakeInProcessDropin },
+  { name: 'fbtree-wide-root', seed: 66601, zoom: 1.48, center: [960, 505], title: 'Valkey sorted sets on a B+ tree', desc: 'One wide green root node holding a row of four large child slots divided by three narrow green separator bars that span the node from top to bottom, a thin green pointer dropping from each slot through the wall of the node onto one of four green leaf nodes below, every leaf holding three blue member entries packed side by side with their scores capped brighter at the top, and each pair of leaves joined by a short thick green bar overlapping both of their walls, representing the ordered index behind a large sorted set as a high-fanout B+ tree two levels deep.', art: fbtreeWideRoot },
+  { name: 'fbtree-tower-and-tree', seed: 66613, zoom: 1.5, center: [960, 505], title: 'Valkey sorted sets change shape', desc: 'Above, twelve blue member cells spaced far apart along a row, each a separate allocation carrying its own tower of purple forward-pointer cells with purple links skipping between towers at every level; below, the same twelve cells shoulder to shoulder in groups of three inside four green leaf nodes joined by thick green sibling links, with one wide green root node of four child slots divided by full-height separator bars fanning down onto them, representing a skiplist replaced by a high-fanout B+ tree.', art: fbtreeTowerAndTree },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
