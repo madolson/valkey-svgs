@@ -3822,6 +3822,275 @@ function planetRing(r) {
   ].join('\n');
 }
 
+// --------------------------------------------- sorted sets on a wide B+ tree
+//
+// Valkey 9.2 drops the skiplist behind a large sorted set for a 61-way B+ tree
+// variant. The change is a change of shape: an ordered index that was a tall
+// stack of pointers over one heap allocation per member becomes a short, wide
+// node that holds many members contiguously, in the same order.
+//
+// Three readings of that, one per candidate:
+//
+//   fbtreeFanoutSlab      footprint: an allocation per member becomes one node
+//   fbtreeFanoutTiers     depth: many thin levels become two wide ones
+//   fbtreeFanoutLeafwalk  the walk: a pointer chase becomes one straight run
+//
+// Colour roles are the same in all three, so the set reads as one argument:
+// members are `cyan` because they are content at rest and they do not change,
+// the skiplist's pointer overhead is `violet` because it is what is retired,
+// and the fbtree node is `mint` because it is the state being arrived at.
+
+function fbtreeFanoutSlab(r) {
+  // Idea: the ordering that cost one scattered heap allocation per member now fits inside one packed node.
+  // Focal: the wide green node along the bottom, its members shoulder to shoulder in score order.
+  const X0 = 505;
+  const X1 = 1415;
+  const Y0 = 630;
+  const Y1 = 810;
+  const CELLS = 15;
+
+  // The skiplist: the same fifteen members, one allocation each, wherever the heap
+  // put them, every one carrying its own stack of forward pointers. Jittered off a
+  // grid so the field reads as scattered rather than as a pattern.
+  const loose = [];
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 5; col++) {
+      const x = 560 + col * 200 + (r() - 0.5) * 74;
+      const y = 252 + row * 134 + (r() - 0.5) * 34;
+      const levels = 1 + Math.floor(r() * 3);
+      const tower = [];
+      for (let l = 0; l < levels; l++) {
+        tower.push(
+          `<rect x="${n(x - 37)}" y="${n(y - 29 - l * 12)}" width="74" height="8" rx="4" ` +
+            `fill="${C.violet}" opacity="0.85"/>`
+        );
+      }
+      loose.push(
+        `<rect x="${n(x - 37)}" y="${n(y - 16)}" width="74" height="32" rx="7" fill="${C.cyan}" ` +
+          `fill-opacity="0.35" stroke="${C.cyanLt}" stroke-width="2.6" opacity="0.7"/>`,
+        tower.join('')
+      );
+    }
+  }
+
+  // The fbtree leaf: the same members, side by side in one allocation, graded just
+  // enough that the run still reads as ordered rather than as a set.
+  const pad = 22;
+  const pitch = (X1 - X0 - pad * 2) / CELLS;
+  const cellW = pitch - 7;
+  const floorY = Y1 - 20;
+  const cells = [];
+  for (let i = 0; i < CELLS; i++) {
+    const h = 82 + i * 4;
+    cells.push(
+      `<rect x="${n(X0 + pad + i * pitch + 3.5)}" y="${n(floorY - h)}" width="${n(cellW)}" height="${n(h)}" ` +
+        `rx="5" fill="${C.cyanLt}" opacity="0.8"/>`
+    );
+  }
+
+  const node =
+    `<rect x="${X0}" y="${Y0}" width="${X1 - X0}" height="${Y1 - Y0}" rx="20" fill="${C.ink}" ` +
+      `fill-opacity="0.45" stroke="${C.mint}" stroke-width="9" opacity="0.95"/>`;
+
+  return [
+    `  <ellipse cx="960" cy="${n((Y0 + Y1) / 2)}" rx="580" ry="210" fill="url(#h-mint)" opacity="0.32"/>`,
+    `  <g>${loose.join('')}</g>`,
+    `  <g filter="url(#blur18)" opacity="0.5">${node}</g>`,
+    `  ${node}`,
+    `  <g>${cells.join('')}</g>`,
+  ].join('\n');
+}
+
+function fbtreeFanoutTiers(r) {
+  // Idea: the same ordered index that needed a tall stack of thin levels is reached through two wide ones.
+  // Focal: the short, broad green tree on the right, one root node fanning into three packed leaves.
+  const oldCx = 706;
+  const LEVELS = [1, 2, 2, 3, 4, 6, 9];
+  const LEAF = LEVELS.length - 1;
+  const levelY = (l) => 196 + l * 98;
+  const levelW = (l) => 58 + l * 57;
+  const nodeX = (l, i) => {
+    const c = LEVELS[l];
+    return c === 1 ? oldCx : oldCx - levelW(l) / 2 + (i * levelW(l)) / (c - 1);
+  };
+
+  // The skiplist's cost, drawn as depth: every extra level is another fetch from
+  // somewhere else in memory before the member is reached.
+  const oldNodes = [];
+  const oldLinks = [];
+  const parentOf = (l, j) => Math.floor((j * LEVELS[l - 1]) / LEVELS[l]);
+  for (let l = 0; l < LEVELS.length; l++) {
+    for (let i = 0; i < LEVELS[l]; i++) {
+      // The bottom level is the members themselves, drawn as the same blue cell the
+      // fbtree leaves hold, so the two structures are visibly ordering the same set.
+      oldNodes.push(
+        l === LEAF
+          ? `<rect x="${n(nodeX(l, i) - 13)}" y="${n(levelY(l) - 23)}" width="26" height="46" rx="5" ` +
+              `fill="${C.cyanLt}" opacity="0.6"/>`
+          : `<rect x="${n(nodeX(l, i) - 17)}" y="${n(levelY(l) - 12)}" width="34" height="24" rx="6" ` +
+              `fill="${C.violet}" fill-opacity="0.3" stroke="${C.violet}" stroke-width="2.4" opacity="0.6"/>`
+      );
+      if (l > 0) {
+        const p = parentOf(l, i);
+        oldLinks.push(
+          `<line x1="${n(nodeX(l - 1, p))}" y1="${n(levelY(l - 1) + 12)}" x2="${n(nodeX(l, i))}" ` +
+            `y2="${n(levelY(l) - (l === LEAF ? 23 : 12))}" stroke="${C.violet}" stroke-width="2" opacity="0.4"/>`
+        );
+      }
+    }
+  }
+
+  // One descent, one hop marker per level: the route a lookup takes down.
+  const route = [0];
+  for (let l = 1; l < LEVELS.length; l++) {
+    let pick = route[l - 1];
+    for (let j = 0; j < LEVELS[l]; j++) if (parentOf(l, j) === route[l - 1]) pick = j;
+    route.push(pick);
+  }
+  const oldRoute =
+    `<path d="${route.map((i, l) => `${l ? 'L' : 'M'} ${n(nodeX(l, i))} ${n(levelY(l))}`).join(' ')}" ` +
+      `fill="none" stroke="${C.violet}" stroke-width="3.6" opacity="0.6"/>` +
+    route.map((i, l) => dot(nodeX(l, i), levelY(l), 6, C.violet, 'violet', 0.7, 2.2)).join('');
+
+  // The fbtree: a root wide enough to route the whole set, and leaves that hold
+  // their members packed instead of one to an allocation.
+  const rootW = 420;
+  const rootCx = 1197;
+  const rootY = 424;
+  const rootH = 76;
+  const leafY = 676;
+  const leafH = 128;
+  const leafW = 130;
+  const leafCx = [rootCx - 146, rootCx, rootCx + 146];
+
+  const features = [];
+  for (let i = 0; i < 10; i++) {
+    features.push(
+      `<rect x="${n(rootCx - rootW / 2 + 25 + i * 38)}" y="${n(rootY + 27)}" width="22" height="22" rx="5" ` +
+        `fill="${C.mint}" opacity="0.5"/>`
+    );
+  }
+
+  const leaves = leafCx
+    .map((cx) => {
+      const cells = [];
+      for (let i = 0; i < 3; i++) {
+        cells.push(
+          `<rect x="${n(cx - leafW / 2 + 18 + i * 34)}" y="${n(leafY + 40)}" width="26" height="46" rx="5" ` +
+            `fill="${C.cyanLt}" opacity="0.85"/>`
+        );
+      }
+      return (
+        `<rect x="${n(cx - leafW / 2)}" y="${leafY}" width="${leafW}" height="${leafH}" rx="16" ` +
+          `fill="${C.ink}" fill-opacity="0.45" stroke="${C.mint}" stroke-width="9" opacity="0.95"/>` +
+        cells.join('')
+      );
+    })
+    .join('');
+
+  const root =
+    `<rect x="${n(rootCx - rootW / 2)}" y="${rootY}" width="${rootW}" height="${rootH}" rx="18" ` +
+    `fill="${C.ink}" fill-opacity="0.45" stroke="${C.mint}" stroke-width="9" opacity="0.95"/>`;
+
+  const newLinks = leafCx
+    .map(
+      (cx) =>
+        `<line x1="${n(rootCx + (cx - rootCx) * 0.32)}" y1="${n(rootY + rootH)}" x2="${n(cx)}" y2="${leafY}" ` +
+        `stroke="${C.mint}" stroke-width="7" opacity="0.7"/>`
+    )
+    .join('');
+
+  const newRoute =
+    `<path d="M ${rootCx} ${n(rootY + rootH / 2)} L ${rootCx} ${n(leafY + leafH / 2)}" fill="none" ` +
+      `stroke="${C.mint}" stroke-width="11" opacity="0.9"/>` +
+    dot(rootCx, rootY + rootH / 2, 11, C.mint, 'mint', 1, 3) +
+    dot(rootCx, leafY + leafH / 2, 11, C.mint, 'mint', 1, 3);
+
+  return [
+    `  <ellipse cx="${rootCx}" cy="600" rx="330" ry="290" fill="url(#h-mint)" opacity="0.3"/>`,
+    `  <g>${oldLinks.join('')}</g>`,
+    `  <g>${oldNodes.join('')}</g>`,
+    `  <g>${oldRoute}</g>`,
+    `  <g>${newLinks}</g>`,
+    `  <g filter="url(#blur18)" opacity="0.45">${root}${leaves}</g>`,
+    `  ${root}`,
+    `  <g>${features.join('')}</g>`,
+    `  <g>${leaves}</g>`,
+    `  <g>${newRoute}</g>`,
+  ].join('\n');
+}
+
+function fbtreeFanoutLeafwalk(r) {
+  // Idea: reading a range in order used to jump between scattered allocations; now it runs straight along linked packed leaves.
+  // Focal: the straight green run through the chain of leaf nodes, arrowhead at its end.
+  const HOPS = 7;
+  const hops = [];
+  for (let i = 0; i < HOPS; i++) {
+    hops.push({ x: 512 + i * 152, y: 264 + Math.round(r() * 216) });
+  }
+
+  // The pointer chase: consecutive members, but each one a separate allocation,
+  // so getting to the next means leaving this one and fetching from elsewhere.
+  const chase = [];
+  for (let i = 0; i < HOPS - 1; i++) {
+    const a = hops[i];
+    const b = hops[i + 1];
+    const lift = 100;
+    chase.push(
+      `<path d="M ${n(a.x)} ${n(a.y - 16)} C ${n(a.x + 34)} ${n(a.y - lift)} ${n(b.x - 34)} ` +
+        `${n(b.y - lift)} ${n(b.x)} ${n(b.y - 16)}" fill="none" stroke="${C.violet}" stroke-width="4" ` +
+        `opacity="0.65"/>`
+    );
+  }
+  const looseNodes = hops
+    .map(
+      (h) =>
+        `<rect x="${n(h.x - 31)}" y="${n(h.y - 16)}" width="62" height="32" rx="7" fill="${C.cyan}" ` +
+        `fill-opacity="0.3" stroke="${C.cyanLt}" stroke-width="2.6" opacity="0.6"/>`
+    )
+    .join('');
+
+  // The leaf chain: four allocations holding the whole run between them, linked
+  // end to end, so the walk never climbs back out.
+  const leafW = 214;
+  const leafH = 152;
+  const leafY = 640;
+  const gap = 24;
+  const leafX0 = 490;
+  const walkY = leafY + 52;
+  const leaves = [];
+  for (let i = 0; i < 4; i++) {
+    const x = leafX0 + i * (leafW + gap);
+    leaves.push(
+      `<rect x="${n(x)}" y="${leafY}" width="${leafW}" height="${leafH}" rx="18" fill="${C.ink}" ` +
+        `fill-opacity="0.45" stroke="${C.mint}" stroke-width="8" opacity="0.95"/>`
+    );
+    for (let j = 0; j < 4; j++) {
+      leaves.push(
+        `<rect x="${n(x + 17 + j * 48)}" y="${n(walkY + 30)}" width="44" height="48" rx="6" ` +
+          `fill="${C.cyanLt}" opacity="0.85"/>`
+      );
+    }
+  }
+
+  const walkEnd = leafX0 + 3 * (leafW + gap) + leafW - 42;
+  const walk =
+    `<line x1="${n(leafX0 + 26)}" y1="${n(walkY)}" x2="${n(walkEnd)}" y2="${n(walkY)}" stroke="${C.mint}" ` +
+      `stroke-width="11" stroke-linecap="round" opacity="0.95"/>` +
+    `<path d="M ${n(walkEnd - 6)} ${n(walkY - 26)} L ${n(walkEnd + 34)} ${n(walkY)} L ${n(walkEnd - 6)} ` +
+      `${n(walkY + 26)} Z" fill="${C.mint}" opacity="0.95"/>`;
+
+  return [
+    `  <ellipse cx="960" cy="${n(leafY + leafH / 2)}" rx="590" ry="230" fill="url(#h-mint)" opacity="0.3"/>`,
+    `  <g>${chase.join('')}</g>`,
+    `  <g>${looseNodes}</g>`,
+    `  <g filter="url(#blur18)" opacity="0.45">${leaves.join('')}</g>`,
+    `  <g>${leaves.join('')}</g>`,
+    `  <g filter="url(#blur8)" opacity="0.5">${walk}</g>`,
+    `  <g>${walk}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -3880,6 +4149,9 @@ const BASE_THEMES = [
   // spends it: the columns get 24 more units between them and the panel-to-shard span gets
   // the rest. It is not a dramatic stretch, because the frame is the frame.
   { name: 'key-size-card-flat', seed: 43049, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three widely spaced shard enclosures of servers drawn as the white Valkey hexagon mark, the whole chart sitting in a shallow band clear above the title blocks.', art: keySizeCard({ scale: 0.8, spread: 62, colPitch: 168, clearY: 748 }) },
+  { name: 'fbtree-fanout-slab', seed: 66501, zoom: 1.3, center: [960, 540], title: 'Valkey sorted sets in less memory', desc: 'A scattered field of small separate member blocks, each carrying a short stack of purple pointer bars above it, over one wide green node along the bottom holding the same members as blue cells packed side by side and rising in score order, representing a sorted set index that stops spending one heap allocation per member.', art: fbtreeFanoutSlab },
+  { name: 'fbtree-fanout-tiers', seed: 66511, zoom: 1.32, center: [960, 540], title: 'Valkey sorted sets, fewer levels', desc: 'A tall spindly purple tree of seven thin levels with a lookup route threading one node per level, beside a short broad green tree of one wide root node fanning into three leaf nodes of packed blue members, reached in two hops, representing a high-fanout B+ tree replacing a deep pointer structure.', art: fbtreeFanoutTiers },
+  { name: 'fbtree-fanout-leafwalk', seed: 66521, zoom: 1.32, center: [960, 540], title: 'Valkey sorted set ranges in one walk', desc: 'Seven separate member blocks at scattered heights joined by long purple arcs that climb out of each one to reach the next, above a chain of four green leaf nodes holding their members packed side by side with a single straight green arrow running the whole length of the chain, representing an ordered range read that no longer chases pointers.', art: fbtreeFanoutLeafwalk },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
