@@ -53,6 +53,9 @@ can't drift, and regenerating is a no-op diff.
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
+| `ai-advisory-surge-sieve` | A flood of reports narrowing onto a toothed screen, three getting through in red | Report volume, triage load, what counts as a vulnerability |
+| `ai-advisory-surge-reproducer` | Five candidate bugs, four struck out, the survivor dropping into its reproducer | Adversarial audits, LLM-found bugs, verification before a human |
+| `ai-advisory-surge-backport-rails` | Five version rails with one fix node aligned on every one of them | Backports, patch releases, shipping a fix to every supported version |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
