@@ -66,3 +66,33 @@ every candidate for fleet operations, release candidates and AZ affinity was rej
 | `2026-05-05-ai-agent-memory-with-valkey-and-mem0` | Agent memory, hot turns and recalled ones | `ai-agent-memory` |
 | `2026-06-10-managing-connection-storms-in-valkey-at-scale` | A surge of simultaneous reconnects | `conn-storm-spike` |
 | `2026-08-05-modern-ai-workloads-mapping-to-valkey` | One workload fanning out into several primitives | `workload-fanout` |
+
+## Pending posts, three candidates each
+
+Ten posts were open as pull requests on `valkey-io/valkey-io.github.io` on 2026-09-16 with no
+banner of their own. Each got three candidates rather than one, because which metaphor works is
+not obvious until it is rendered. Pick one per post; the other two stay in the set. All thirty
+are on the [gallery](https://madelynolson.com/valkey-banners).
+
+| PR | Post | Candidates |
+| --- | --- | --- |
+| [#469](https://github.com/valkey-io/valkey-io.github.io/pull/469) | Transparent compression in Valkey GLIDE | `glide-compress-press`, `glide-compress-fold`, `glide-compress-funnel` |
+| [#627](https://github.com/valkey-io/valkey-io.github.io/pull/627) | Monitoring Valkey with Prometheus | `prometheus-scrape-tick`, `prometheus-scrape-every-node`, `prometheus-scrape-wall` |
+| [#633](https://github.com/valkey-io/valkey-io.github.io/pull/633) | Large objects ruin the party | `large-object-tail-wake`, `large-object-tail-shared-gate`, `large-object-tail-bypass` |
+| [#642](https://github.com/valkey-io/valkey-io.github.io/pull/642) | KV caching on Valkey | `llm-kv-cache-new-tail`, `llm-kv-cache-shared-tier`, `llm-kv-cache-head-start` |
+| [#645](https://github.com/valkey-io/valkey-io.github.io/pull/645) | Valkey metrics in Prometheus: two exporters | `exporter-two-views-probes`, `exporter-two-views-twin-scopes`, `exporter-two-views-many-and-one` |
+| [#649](https://github.com/valkey-io/valkey-io.github.io/pull/649) | Browsing a Valkey keyspace safely | `keyspace-gui-safe-refusal`, `keyspace-gui-safe-grant`, `keyspace-gui-safe-readout` |
+| [#659](https://github.com/valkey-io/valkey-io.github.io/pull/659) | Valkey 9.2: fewer reasons to reach for Lua | `commands-replace-lua-round-trips`, `commands-replace-lua-one-line`, `commands-replace-lua-condition-gate` |
+| [#664](https://github.com/valkey-io/valkey-io.github.io/pull/664) | Keeping up with AI: Valkey security in 2026 | `ai-advisory-surge-sieve`, `ai-advisory-surge-reproducer`, `ai-advisory-surge-backport-rails` |
+| [#665](https://github.com/valkey-io/valkey-io.github.io/pull/665) | From skiplists to B+ trees | `fbtree-fanout-slab`, `fbtree-fanout-tiers`, `fbtree-fanout-leafwalk` |
+| [#667](https://github.com/valkey-io/valkey-io.github.io/pull/667) | Testing without a server: FakeValkey | `fake-in-process-enclosure`, `fake-in-process-parity`, `fake-in-process-dropin` |
+
+Where a candidate tracks the post's own headline rather than just its subject, it is worth
+starting there: `large-object-tail-bypass` is the only one of its three that says Valkey 9 fixed
+anything, `keyspace-gui-safe-readout` is the one whose title matches the post's, and
+`fbtree-fanout-slab` is the one that maps to the post's 43% figure.
+
+Two of the ten are both about Prometheus. `prometheus-scrape-*` is the pull-store-graph pipeline
+and `exporter-two-views-*` is the choice between per-node and cluster-wide scope, so they should
+not both be settled on a fan-in composition: `prometheus-scrape-every-node` and
+`exporter-two-views-probes` are the pair that would collide.
