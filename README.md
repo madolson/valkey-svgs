@@ -53,6 +53,9 @@ can't drift, and regenerating is a no-op diff.
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
+| `llm-kv-cache-new-tail` | One prompt as a run of chunks, most of it loaded from the store below, only the tail fed by the processor above | KV caching for LLM inference, prefix reuse, skipping prefill |
+| `llm-kv-cache-shared-tier` | Two processors with short rows of cached contexts above one much wider shared store, one context rising into the empty slot | A shared L2 KV cache tier, cache capacity that scales apart from the GPUs |
+| `llm-kv-cache-head-start` | The same request twice from one start line: a long dashed recompute above, a short loaded run below, first-token markers far apart | Time to first token, what the cache buys, GPU time spent re-reading |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -256,6 +259,7 @@ security-shield / broad (700x520)       — low and wide, the glow reaches the n
 security-shield / hex (536x620)         — hexagon silhouette, says Valkey twice with the mark inside it
 security-shield / high (mark up 86)     — empties the lower chamber, the weave becomes the subject
 security-shield / hex-high              — both faults at once
+llm-kv-cache-head-start / outline       — the recompute drawn as a dashed empty box read as nothing at all
 ```
 
 All five lost to `security-shield-clean` on the same judgement: the shipped proportions are
