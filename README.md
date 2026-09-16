@@ -90,6 +90,7 @@ can't drift, and regenerating is a no-op diff.
 | `client-compression-packed-run` | One value's eight fields filling a row, then the same eight taking a fifth of it on the way to the server | Client-side compression, when the point is how much smaller the value gets |
 | `client-compression-twin-sends` | The same six-field value on two wires of equal length, filling a quarter of one and most of the other | The same, when the point is how much of the network the value stops using |
 | `test-double-empty-rack` | An unlit host with three open, empty bays, and the server standing lit beside it | Test doubles, fakes, testing with no server, port or container |
+| `scan-cursor-pages` | Five stacked pages of keys tiling a keyspace, exactly one of them lit | `SCAN`, cursors, iterating a keyspace without holding it all at once |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -372,6 +373,22 @@ test-double-hop-gone                    — the hop that is no longer there, dra
 The absence of a network hop cannot be drawn with a line: a line is a connection, whatever is
 done to it. What survived instead draws the machine that is not running and leaves the server
 standing outside it.
+
+```
+scan-cursor / round-trips   — the keyspace with pages lifted out of it on legs: two pages of the
+                              same shape can only differ by colour, and the blind read said so
+                              ("nothing distinguishes the teal group from the yellow one except
+                              color"), which is principle 10; the field under them kept reading
+                              as wall texture rather than as the thing being walked
+scan-cursor / full-turn     — the pages closed into a ring, one arc lit: the circumference caps
+                              a key at about 57x28 framed units, so the keys can only be dashes,
+                              and the blind read called it "a generic loading spinner"
+```
+
+Both were attempts at the half of the sentence `scan-cursor-pages` carries only implicitly: that
+each call returns one bounded reply, and that the walk terminates. `round-trips` needed two pages
+to say "again" and had no legal way to tell them apart. `full-turn` had the closure but the ring
+costs the keys their size, and the keys are the thing that has to read as content.
 
 ## Licence
 
