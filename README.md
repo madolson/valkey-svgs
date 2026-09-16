@@ -21,26 +21,21 @@ can't drift, and regenerating is a no-op diff.
 | `clustering` | Slot ring around a meshed core, shards joining from outside | Cluster mode, replication, scaling out |
 | `atomic-slot-migration` | Two shard rings, a chevron driving slots between them, magnifier on the stream | Slot migration and rebalancing |
 | `atomic-slot-migration-quiet` | The same two rings and lens, with the lens given the frame | Slot migration when the point is watching it happen |
-| `slot-migration-lens` | A big lens over the migration stream, instances and stream quiet | Observability for migration, inspecting data in transit |
 | `release` | Valkey chevrons driving into a golden burst | Release and general announcements |
 | `release-version` | The same burst with a caption you set | A specific release. See [Captions](#captions) |
 | `security-shield-clean` | A radiant shield woven from one even lattice, the mark at its centre | Security in general, CVEs, hardening, ACLs, advisories |
 | `benchmarks` | Throughput bars climbing under flat P50/P99 latency | Benchmark results, observability, metrics |
 | `data-structures` | Hash buckets chaining out beside a skip list | Internals: hash tables, skip lists, new types, modules |
 | `how-to` | Step track with the current step lit | Tutorials, guides, getting started |
-| `keyspace-scan` | Cursor holding one lit window of a key field, uneven hop track below | `SCAN`, cursors, iterating a keyspace without blocking |
 | `large-key` | A field of identical key tiles with one scaled up until it dwarfs them | Large keys, hot keys, uneven key sizes |
 | `key-prefix-groups` | Sampled keys funnelling into prefix rows with count bars | Key naming, prefixes, keyspace browsing and clients |
 | `bloom-bit-array` | Hash nodes fanning out of the mark, lighting a handful of cells in a bit array | Bloom filters, valkey-bloom, probabilistic data structures |
 | `search-vector-nearest` | Query at the centre of an indexed field, its nearest matches lit inside a search radius | Vector similarity search, KNN queries, embeddings |
 | `search-field-index` | Records giving up one field each to a sorted index, a query bracketing the matched run | Secondary indexing on hashes and JSON, FT.CREATE, filters |
 | `client-ports` | Six unlike callers docking into identical ports around the mark, uniform inside the port circle | A specific client release, client API design |
-| `ai-agent-memory` | Conversation turns on a tape, recent ones lit in a window, older ones archived below and arcing back | Agent memory, chat history, context windows, mem0 |
 | `workload-fanout` | One inbound stream splitting at the mark into five differently shaped structures | AI workloads mapped onto Valkey primitives |
 | `conn-storm-spike` | Flat run of connection attempts spiking into a wall that overshoots the accept ceiling | Connection storms, accept backlog, reconnect surges |
 | `bundle-crate` | One bracketed package sealed with the mark, holding the bundle's four modules: bit array, nested document, magnifier, padlock | valkey-bundle, module distributions, batteries-included packaging |
-| `bundle-one-install` | A single strap arriving at the mark and branching into the same four modules | valkey-bundle, one install that delivers several capabilities |
-| `tooling-stack` | Identical primitives at the base, differently detailed tools resting on them, the mark on top | Server primitives, what gets built on them, extensibility |
 | `data-structures-grid` | Six value types, one per cell on an even 3x2 grid: byte run, list, set, hash, sorted set, bitmap | Type overviews, command surveys, what Valkey stores |
 | `k8s-spec-fanout` | A declared spec panel fanning out along rails into a grid of identical instances | Helm charts, operators, declarative deployment |
 | `key-size-distribution` | Ranked key-size bars with two big outliers, fanning into a grid of servers | Key size skew, heavy hitters, hot keys across a fleet |
@@ -51,38 +46,17 @@ can't drift, and regenerating is a no-op diff.
 | `key-size-card-a` | The key-size ranking and shards centred and scaled to clear the corner lockup, title overlapping the panel | The big-keys post; the reference card layout |
 | `key-size-card-flat` | The same card with the artwork short and wide, sitting clear of the title rather than under it | The big-keys post, when the title should not cross the chart |
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
-| `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
-| `glide-compress-press` | Two plates closing on loose lanes of data, the dense band leaving for the mark | Client-side compression, GLIDE compression, smaller payloads on the wire |
-| `glide-compress-fold` | A long ribbon of data folded into a compact stack that carries on to the mark | The same, when the point is the value being packed before it is sent |
-| `glide-compress-funnel` | Three unlike values meeting the client bar, leaving as identical dense blocks | The same, when the point is that any value type packs down to one form |
-| `prometheus-scrape-tick` | Readings of the same counters kept side by side, the newest bracketed under the collector's lead | Prometheus scraping, scrape intervals, metrics retention |
-| `prometheus-scrape-every-node` | Every instance's counters pulled down its own lane into one store panel | Scraping a whole deployment, per-node metrics, exporters |
 | `prometheus-scrape-wall` | Six flat dashboard panels and one big one whose trace climbs away in red | Dashboards, Grafana, finding the one metric that moved |
-| `large-object-tail-wake` | An even field of short request bars with one oversized value in it, and the few bars behind it dragged far out | Tail latency, p99.9, a small fraction of requests hurt badly |
-| `large-object-tail-shared-gate` | Six client lanes into one shared window, all of them held up while one oversized value occupies it | Noisy neighbours, multi-tenancy, one client's big objects hurting the rest |
-| `large-object-tail-bypass` | The same oversized value lifted out of the lane onto a dashed route over the top, the small stream below unbroken | Reply copy avoidance, large objects that no longer block the main thread |
 | `llm-kv-cache-new-tail` | One prompt as a run of chunks, most of it loaded from the store below, only the tail fed by the processor above | KV caching for LLM inference, prefix reuse, skipping prefill |
-| `llm-kv-cache-shared-tier` | Two processors with short rows of cached contexts above one much wider shared store, one context rising into the empty slot | A shared L2 KV cache tier, cache capacity that scales apart from the GPUs |
-| `llm-kv-cache-head-start` | The same request twice from one start line: a long dashed recompute above, a short loaded run below, first-token markers far apart | Time to first token, what the cache buys, GPU time spent re-reading |
-| `exporter-two-views-probes` | A small probe clipped to each node inside a bracketed cluster, one big probe clamped on the boundary | Two exporters, per-pod and cluster-wide metrics, Prometheus |
-| `exporter-two-views-twin-scopes` | One mount carrying two objectives, a small glass on one node and a large one on the cluster | Monitoring at two scopes, observability dimensions |
 | `exporter-two-views-many-and-one` | A deck of per-node readout cards beside one cluster-wide card with per-slot counters | Per-pod series versus per-slot series, exporter choice |
 | `keyspace-gui-safe-refusal` | Read lanes crossing the server's boundary, one write turned back at it | ACL users, read-only access, NOPERM, server-side authorisation |
-| `keyspace-gui-safe-grant` | A grid of commands with one block granted and the dangerous ones struck out inside it | ACL grants, command categories, least privilege |
 | `keyspace-gui-safe-readout` | A client window of four read-only panels, each fed by one read from the server | GUI clients, INFO, CLIENT LIST, SLOWLOG, monitoring views |
 | `commands-replace-lua-round-trips` | Four thin messages crossing between caller and server, one thick call below them carrying the condition | Command options that collapse an exchange into one call |
 | `commands-replace-lua-one-line` | A quiet block of script lines giving way to one long command bar with a condition on its end | New command options that replace a Lua script |
-| `commands-replace-lua-condition-gate` | A command lane running into a large condition, one branch carrying the write on and one stopping dead | Conditional commands, `SET IFNE`, `EXEC IFEQ`, optimistic locking |
 | `ai-advisory-surge-sieve` | A flood of reports narrowing onto a toothed screen, three getting through in red | Report volume, triage load, what counts as a vulnerability |
 | `ai-advisory-surge-reproducer` | Five candidate bugs, four struck out, the survivor dropping into its reproducer | Adversarial audits, LLM-found bugs, verification before a human |
 | `ai-advisory-surge-backport-rails` | Five version rails with one fix node aligned on every one of them | Backports, patch releases, shipping a fix to every supported version |
-| `fbtree-fanout-slab` | A scattered field of pointer-topped member blocks over one wide node holding the same members packed in order | Sorted sets on fbtree, index overhead, one allocation instead of many |
-| `fbtree-fanout-tiers` | A tall spindly seven-level tree beside a short broad two-level one, same members at the leaves | High fanout, tree depth, fewer fetches per lookup |
-| `fbtree-fanout-leafwalk` | Scattered blocks joined by climbing arcs above a chain of packed leaves with one straight run through it | Ordered range reads, linked leaves, cache-friendly traversal |
-| `fake-in-process-enclosure` | One process wall holding the test, the server and its keys, with the port on that wall unplugged | Test doubles, fakes, testing without a server or a container |
-| `fake-in-process-parity` | Two identical reply columns under one caliper, one from a fake inside the test and one from a real server | Compatibility between a fake and the server, differential testing |
-| `fake-in-process-dropin` | A socket with an in-process server seated in it and the remote one held out, still trailing its network | A drop-in test double, replacing a client with a fake |
 | `fbtree-wide-root` | One wide root node of child slots over four linked leaves of packed members | fbtree, B+ trees, the ordered index behind a sorted set |
 | `fbtree-tower-and-tree` | A row of members each under its own tower of pointers, above the same members in one wide node over linked leaves | Replacing the skiplist with fbtree, a change of shape |
 | `big-value-latency-copy-block` | One thread's timeline with a large value sitting on it, and the waits hanging underneath deepening into a wedge exactly across its span | Tail latency, head-of-line blocking, p99.9, one slow operation on a shared thread |
@@ -412,6 +386,37 @@ built-on-primitives / alphabet          — three runs spelled out of a three-gl
 The blind read got the sentence but said the three glyphs were interchangeable. Giving them
 identity needs internal detail, detail needs about 48px of feature, and there is no run length
 that affords both.
+
+Deleted on review, 2026-09-16. Principle numbers refer to [DESIGN.md](DESIGN.md).
+
+```
+slot-migration-lens                    — lens is the biggest brightest object and the bars inside it mean nothing (P2)
+keyspace-scan                          — scattered dots read as a starfield, the cursor window was the faintest edge (P5, P4)
+ai-agent-memory                        — three competing regions joined by hairline dashed curves (P2, P4)
+bundle-one-install                     — four modules in four accents, so colour said "four things" and nothing else (P10)
+tooling-stack                          — four levels, two ambient glows, meaning carried by 12px pills (P3, P4)
+limits-tight-envelope                  — the mark sits on top of the packed content it was meant to be packed with (P2)
+large-object-tail-wake                 — big value near some long bars, causation left to adjacency (P8)
+large-object-tail-shared-gate          — same, and four things happening in one rectangle (P8, P3)
+large-object-tail-bypass               — same, and the lane carrying the point sat on the frame edge (P8, P12)
+glide-compress-press                   — drew the machinery of compression rather than the thing getting smaller (P9)
+glide-compress-fold                    — same fault, and the folded stack read as a decorative serpentine (P9, P3)
+glide-compress-funnel                  — same fault, three focal candidates competing (P9, P2)
+fbtree-fanout-slab                     — abstracted a structure that has a well-known picture (P9)
+fbtree-fanout-tiers                    — same, and the violet tree read as the subject rather than the fbtree (P9, P2)
+fbtree-fanout-leafwalk                 — same (P9)
+fake-in-process-enclosure              — a process wall as the focal element; a wall is furniture (P2)
+fake-in-process-parity                 — read as two lists of bars, not as two implementations agreeing (P2)
+fake-in-process-dropin                 — socket-and-pins metaphor did not survive the blind read (P9)
+prometheus-scrape-tick                 — read as a grid of tiles, not as readings taken at instants (P6)
+prometheus-scrape-every-node           — generic fan-in, and it collided with exporter-two-views (P1)
+llm-kv-cache-shared-tier               — the wide tier bled off both edges and the caption sat on it (P12)
+llm-kv-cache-head-start                — read as a generic two-bar benchmark (P1)
+exporter-two-views-probes              — the per-node readings were sub-6px dots (P4)
+exporter-two-views-twin-scopes         — two lenses; a lens is furniture, and many-and-one says it better (P2, P1)
+keyspace-gui-safe-grant                — the struck-through commands carrying the point were the thinnest marks (P4)
+commands-replace-lua-condition-gate    — read as "a decision" and nothing more specific (P1)
+```
 
 ## Licence
 
