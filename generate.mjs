@@ -5058,6 +5058,216 @@ function keyspaceGuiSafeReadout(r) {
   ].join('\n');
 }
 
+// ------------------------------------------------ conditions in the command
+//
+// Valkey 9.2 pushes conditional logic into plain commands: a check that used to
+// cost extra round trips, or a Lua script, is now an option on one command. All
+// three themes below are the same substitution seen from a different side, so
+// they share two glyphs: the condition chip (two values set against each other)
+// and the chevron head.
+
+// The check the command now carries: two values held against each other, the
+// lower one shorter so they read as unequal rather than as a pair of bars.
+function conditionGlyph(cx, cy, w, h, color) {
+  const barH = Math.max(11, h * 0.125);
+  const inner = w * 0.58;
+  return (
+    `<rect x="${n(cx - w / 2)}" y="${n(cy - h / 2)}" width="${n(w)}" height="${n(h)}" rx="${n(h * 0.24)}" ` +
+      `fill="${C.ink}" fill-opacity="0.66" stroke="${color}" stroke-width="${n(Math.max(4.5, h * 0.05))}"/>` +
+    `<rect x="${n(cx - inner / 2)}" y="${n(cy - h * 0.21 - barH / 2)}" width="${n(inner)}" height="${n(barH)}" ` +
+      `rx="${n(barH / 2)}" fill="${color}" opacity="0.95"/>` +
+    `<rect x="${n(cx - inner * 0.275)}" y="${n(cy + h * 0.21 - barH / 2)}" width="${n(inner * 0.55)}" height="${n(barH)}" ` +
+      `rx="${n(barH / 2)}" fill="${color}" opacity="0.95"/>`
+  );
+}
+
+// A chevron arrowhead at (x, y) pointing along the unit vector (ux, uy).
+function chevronHead(x, y, ux, uy, size, color, width, opacity = 0.9) {
+  const bx = x - ux * size;
+  const by = y - uy * size;
+  const px = -uy * size * 0.82;
+  const py = ux * size * 0.82;
+  return (
+    `<path d="M ${n(bx + px)} ${n(by + py)} L ${n(x)} ${n(y)} L ${n(bx - px)} ${n(by - py)}" fill="none" ` +
+    `stroke="${color}" stroke-width="${n(width)}" stroke-linecap="round" stroke-linejoin="round" opacity="${n(opacity)}"/>`
+  );
+}
+
+// Idea: the conditional update that took a four-message exchange now takes one
+// call, because the call carries the condition.
+// Focal: the single thick green call along the bottom, with the check on it.
+function commandsRoundTrips() {
+  const cx = 596; // the caller's rail
+  const sx = 1324; // the server's rail
+  const endY = 222;
+  const callY = 778;
+
+  const rails = [cx, sx]
+    .map(
+      (x) =>
+        `<line x1="${x}" y1="${endY + 60}" x2="${x}" y2="${callY + 46}" stroke="${C.cyanLt}" ` +
+        `stroke-width="4" stroke-dasharray="12 16" opacity="0.3"/>`
+    )
+    .join('');
+
+  // The old exchange: ask, get the value back, decide, write, get the reply.
+  // Violet because it is the retired way of doing it, and thin because it is not
+  // what the picture is about.
+  const hops = [340, 444, 548, 652]
+    .map((y, i) => {
+      const rightward = i % 2 === 0;
+      const tip = rightward ? sx - 8 : cx + 8;
+      const u = rightward ? 1 : -1;
+      return (
+        `<line x1="${cx}" y1="${y}" x2="${sx}" y2="${y}" stroke="${C.violet}" stroke-width="7" opacity="0.5"/>` +
+        chevronHead(tip, y, u, 0, 26, C.violet, 7, 0.5)
+      );
+    })
+    .join('');
+
+  // The one call. Everything about it is heavier: the lane, its halo, its head.
+  const call =
+    `<line x1="${cx}" y1="${callY}" x2="${sx}" y2="${callY}" stroke="${C.mint}" stroke-width="60" ` +
+      `opacity="0.2" filter="url(#blur18)"/>` +
+    `<line x1="${cx}" y1="${callY}" x2="${sx}" y2="${callY}" stroke="${C.mint}" stroke-width="24" opacity="0.95"/>` +
+    chevronHead(sx - 6, callY, 1, 0, 40, C.mint, 24, 0.95);
+
+  return [
+    `  <ellipse cx="960" cy="${callY}" rx="480" ry="150" fill="url(#h-mint)" opacity="0.3"/>`,
+    `  <g>${rails}</g>`,
+    `  <g>${hops}</g>`,
+    // The two ends of the exchange, differently shaped so the direction reads: a
+    // caller on the left, the server on the right.
+    `  <rect x="${cx - 48}" y="${endY - 48}" width="96" height="96" rx="24" fill="${C.cyan}" ` +
+      `fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="5" opacity="0.8"/>`,
+    `  <g opacity="0.85">${mark(sx, endY, 96)}</g>`,
+    `  <g>${call}</g>`,
+    `  <g>${conditionGlyph(952, callY, 196, 124, C.ice)}</g>`,
+  ].join('\n');
+}
+
+// Idea: the Lua script written for a conditional write collapses into one plain
+// command with the condition hung on the end of it.
+// Focal: the single wide command bar and the green condition seated at its tail.
+function commandsOneLine(r) {
+  // Kept clear of the corner lockup, which reaches x 521 and y 247 at this zoom.
+  const px = 580;
+  const pw = 336;
+  const pTop = 200;
+  const pH = 300;
+
+  // The script, suggested as ragged indented lines rather than written out. Quiet
+  // and violet: it is what is being replaced.
+  const lines = [];
+  let ly = pTop + 46;
+  while (ly < pTop + pH - 30) {
+    const indent = weighted(r, [[0, 3], [1, 5], [2, 3]]) * 26;
+    const w = 58 + r() * (pw - 126 - indent);
+    lines.push(
+      `<rect x="${n(px + 32 + indent)}" y="${n(ly)}" width="${n(w)}" height="11" rx="5.5" ` +
+        `fill="${C.violet}" opacity="${n(0.42 + r() * 0.18)}"/>`
+    );
+    ly += 38;
+  }
+  const script =
+    `<rect x="${px}" y="${pTop}" width="${pw}" height="${pH}" rx="20" fill="${C.ink}" fill-opacity="0.35" ` +
+      `stroke="${C.violet}" stroke-width="3" opacity="0.55"/>` +
+    lines.join('');
+
+  // One command: a run of pale words on a single bar, and the option that carries
+  // the condition sitting at the end of it.
+  const bx = 510;
+  const bw = 900;
+  const by = 716;
+  const bh = 196;
+  const words = [[bx + 56, 240], [bx + 320, 150], [bx + 500, 130]]
+    .map(
+      ([x, w]) =>
+        `<rect x="${n(x)}" y="${n(by - 19)}" width="${n(w)}" height="38" rx="19" fill="${C.ice}" opacity="0.82"/>`
+    )
+    .join('');
+
+  const arrowX = px + pw / 2;
+  const arrow =
+    `<line x1="${n(arrowX)}" y1="${pTop + pH + 34}" x2="${n(arrowX)}" y2="${by - bh / 2 - 44}" ` +
+      `stroke="${C.mint}" stroke-width="9" opacity="0.7"/>` +
+    chevronHead(arrowX, by - bh / 2 - 36, 0, 1, 30, C.mint, 9, 0.7);
+
+  return [
+    `  <ellipse cx="${n(bx + bw / 2)}" cy="${by}" rx="600" ry="200" fill="url(#h-cyan)" opacity="0.26"/>`,
+    `  <g>${script}</g>`,
+    `  <g>${arrow}</g>`,
+    `  <rect x="${bx}" y="${n(by - bh / 2)}" width="${bw}" height="${bh}" rx="${bh / 2}" fill="${C.cyan}" ` +
+      `fill-opacity="0.22" stroke="${C.ice}" stroke-width="6"/>`,
+    `  <g>${words}</g>`,
+    `  <g>${conditionGlyph(bx + bw - 140, by, 216, 132, C.mint)}</g>`,
+  ].join('\n');
+}
+
+// Idea: the condition travels with the command, so the server decides on its own
+// whether the write lands.
+// Focal: the condition on the command's path, big enough to be the subject.
+function commandsConditionGate() {
+  const y = 540;
+  const gx = 800;
+  const gate = 344;
+  const edge = gx + gate / 2;
+
+  // The command arriving. It bleeds off the left, which is fine for a lane.
+  const inbound =
+    `<line x1="240" y1="${y}" x2="${n(gx - gate / 2 - 6)}" y2="${y}" stroke="${C.cyanLt}" stroke-width="64" ` +
+      `opacity="0.16" filter="url(#blur18)"/>` +
+    `<line x1="240" y1="${y}" x2="${n(gx - gate / 2 - 6)}" y2="${y}" stroke="${C.cyanLt}" stroke-width="26" opacity="0.75"/>`;
+
+  // The two outcomes leave on mirrored diagonals, so the only difference between
+  // them is state: one carries the write on to its key, the other is stopped short
+  // and the key it would have touched keeps the value it had.
+  const kx = 1264;
+  const kw = 176;
+  const kh = 128;
+  const branch = (dir) => {
+    const x0 = edge + 8;
+    const y0 = y + dir * 74;
+    const x1 = kx - kw / 2 - 26;
+    const y1 = y + dir * 248;
+    return { x0, y0, x1, y1, len: Math.hypot(x1 - x0, y1 - y0) };
+  };
+
+  const t = branch(-1);
+  const taken =
+    `<line x1="${n(t.x0)}" y1="${n(t.y0)}" x2="${n(t.x1)}" y2="${n(t.y1)}" stroke="${C.mint}" stroke-width="54" ` +
+      `opacity="0.2" filter="url(#blur18)"/>` +
+    `<line x1="${n(t.x0)}" y1="${n(t.y0)}" x2="${n(t.x1)}" y2="${n(t.y1)}" stroke="${C.mint}" stroke-width="22" opacity="0.9"/>` +
+    chevronHead(t.x1, t.y1, (t.x1 - t.x0) / t.len, (t.y1 - t.y0) / t.len, 34, C.mint, 22, 0.9);
+
+  // The stopped branch runs 62% of the way and meets a bar across it.
+  const s = branch(1);
+  const ux = (s.x1 - s.x0) / s.len;
+  const uy = (s.y1 - s.y0) / s.len;
+  const bx = s.x0 + ux * s.len * 0.62;
+  const by = s.y0 + uy * s.len * 0.62;
+  const skip =
+    `<line x1="${n(s.x0)}" y1="${n(s.y0)}" x2="${n(bx)}" y2="${n(by)}" stroke="${C.cyanLt}" stroke-width="11" opacity="0.45"/>` +
+    `<line x1="${n(bx - uy * 48)}" y1="${n(by + ux * 48)}" x2="${n(bx + uy * 48)}" y2="${n(by - ux * 48)}" ` +
+      `stroke="${C.cyanLt}" stroke-width="11" stroke-linecap="round" opacity="0.45"/>`;
+
+  // Two keys, identical in shape and different in state.
+  const key = (cy, color, opacity, fillOp) =>
+    `<rect x="${n(kx - kw / 2)}" y="${n(cy - kh / 2)}" width="${kw}" height="${kh}" rx="26" fill="${color}" ` +
+      `fill-opacity="${fillOp}" stroke="${color}" stroke-width="6" opacity="${opacity}"/>` +
+    `<rect x="${n(kx - 54)}" y="${n(cy - 14)}" width="108" height="28" rx="14" fill="${color}" opacity="${opacity}"/>`;
+
+  return [
+    `  <circle cx="${gx}" cy="${y}" r="330" fill="url(#h-ice)" opacity="0.26"/>`,
+    `  <g>${inbound}</g>`,
+    `  <g>${skip}</g>`,
+    `  <g>${key(y + 248, C.cyanLt, 0.4, '0.06')}</g>`,
+    `  <g>${taken}</g>`,
+    `  <g>${key(y - 248, C.mint, 0.95, '0.2')}</g>`,
+    `  <g>${conditionGlyph(gx, y, gate, gate, C.ice)}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -5134,6 +5344,9 @@ const BASE_THEMES = [
   { name: 'keyspace-gui-safe-refusal', seed: 64901, zoom: 1.36, center: [960, 562], title: 'Valkey server-side read-only', desc: 'Four blue command lanes running in from the left, crossing a tall pale boundary bar and carrying on towards the white Valkey hexagon mark on the far side, and one much thicker red lane that reaches the same boundary, turns back on itself and returns the way it came, representing a write refused by the server rather than by a setting in the client.', art: keyspaceGuiSafeRefusal },
   { name: 'keyspace-gui-safe-grant', seed: 64907, zoom: 1.44, center: [969, 563], title: 'Valkey read-only ACL user', desc: 'A field of forty-eight pale command pills laid out on an even grid, with sixteen of them lit green inside a rounded green boundary and three of those green pills struck through with a red line, representing a user granted the read commands as a category with the dangerous ones taken back out of the same grant.', art: keyspaceGuiSafeGrant },
   { name: 'keyspace-gui-safe-readout', seed: 64913, zoom: 1.38, center: [938, 560], title: 'Valkey browsing a keyspace safely', desc: 'The white Valkey hexagon mark on the left with four blue lanes fanning out of it into the left edge of a large client window, which holds four panels of read-only results: a row of counter bars, one large figure, a list of open connections and a list of slow commands with their durations, representing a graphical client that only renders what the server already publishes.', art: keyspaceGuiSafeReadout },
+  { name: 'commands-replace-lua-round-trips', seed: 65911, zoom: 1.28, center: [960, 520], title: 'Valkey one round trip, not four', desc: 'A caller on the left and a Valkey server drawn as the white hexagon mark on the right, with four thin purple messages crossing back and forth between them above, and one thick green call below carrying a pale condition chip that holds two unequal values, representing a conditional update that used to take an exchange of messages and now takes one command.', art: commandsRoundTrips },
+  { name: 'commands-replace-lua-one-line', seed: 65921, zoom: 1.31, center: [960, 540], title: 'Valkey one command, no script', desc: 'A small quiet panel of ragged purple script lines above an arrow pointing down to one long bright command bar holding a run of pale words, with a green condition chip of two unequal values seated at the bar\'s end, representing a Lua script replaced by a single command with a condition option on it.', art: commandsOneLine },
+  { name: 'commands-replace-lua-condition-gate', seed: 65931, zoom: 1.3, center: [960, 540], title: 'Valkey conditions inside the command', desc: 'One thick blue command lane running into a large pale condition holding two unequal values, out of which a thick green branch carries the write up into a lit key block while a thin dim branch stops short at a blunt bar, representing a command that decides for itself whether its write lands.', art: commandsConditionGate },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

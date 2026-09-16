@@ -71,6 +71,9 @@ can't drift, and regenerating is a no-op diff.
 | `keyspace-gui-safe-refusal` | Read lanes crossing the server's boundary, one write turned back at it | ACL users, read-only access, NOPERM, server-side authorisation |
 | `keyspace-gui-safe-grant` | A grid of commands with one block granted and the dangerous ones struck out inside it | ACL grants, command categories, least privilege |
 | `keyspace-gui-safe-readout` | A client window of four read-only panels, each fed by one read from the server | GUI clients, INFO, CLIENT LIST, SLOWLOG, monitoring views |
+| `commands-replace-lua-round-trips` | Four thin messages crossing between caller and server, one thick call below them carrying the condition | Command options that collapse an exchange into one call |
+| `commands-replace-lua-one-line` | A quiet block of script lines giving way to one long command bar with a condition on its end | New command options that replace a Lua script |
+| `commands-replace-lua-condition-gate` | A command lane running into a large condition, one branch carrying the write on and one stopping dead | Conditional commands, `SET IFNE`, `EXEC IFEQ`, optimistic locking |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
