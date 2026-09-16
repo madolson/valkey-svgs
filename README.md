@@ -89,6 +89,7 @@ can't drift, and regenerating is a no-op diff.
 | `big-value-latency-stalled-queue` | A large value standing across all three lanes out of the server, the small requests packed nose to tail behind it | Noisy neighbours, large values, one path out of the server |
 | `client-compression-packed-run` | One value's eight fields filling a row, then the same eight taking a fifth of it on the way to the server | Client-side compression, when the point is how much smaller the value gets |
 | `client-compression-twin-sends` | The same six-field value on two wires of equal length, filling a quarter of one and most of the other | The same, when the point is how much of the network the value stops using |
+| `test-double-empty-rack` | An unlit host with three open, empty bays, and the server standing lit beside it | Test doubles, fakes, testing with no server, port or container |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -362,6 +363,15 @@ client-compression / round-trip         — the value shrinking on the way out a
 
 It also said the same thing as `client-compression-packed-run` with a return leg added, which
 makes it the second banner for one sentence rather than a second idea.
+
+```
+test-double-inside-run                  — the test run drawn as corner brackets around the mark with a stack of code lines beside it, blind-read as a logo under inspection: the brackets, the lines and the port pill all read as decoration (principle 3)
+test-double-hop-gone                    — the hop that is no longer there, drawn three ways: two rows one hop apart, then the near row touching, then a hollow node and a broken line beside the server in its process box. Every version blind-read as a client talking to a server, and the dashed line read as the connection rather than as its absence (principle 2)
+```
+
+The absence of a network hop cannot be drawn with a line: a line is a connection, whatever is
+done to it. What survived instead draws the machine that is not running and leaves the server
+standing outside it.
 
 ## Licence
 

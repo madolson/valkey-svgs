@@ -6438,6 +6438,39 @@ function clientCompressionTwinSends() {
   ].join('\n');
 }
 
+// Idea: the server's behaviour runs inside the test process, so there is no server,
+// no port and no container in the test run.
+// Focal: the solid mark, standing on its own beside the empty machine it used to need.
+function testDoubleEmptyRack() {
+  const y = 470;
+  const x0 = 560;
+  const x1 = 920;
+
+  // The machine the test run no longer starts. Its three bays are drawn as open
+  // brackets, all the same size on one pitch and all facing the server, so the rack
+  // reads as standing empty rather than as three stacked units. Violet and unfilled
+  // is this set's vacated state; the ink body is there so the violet holds its edge
+  // against the background at crop size. Same top and bottom as the mark, so the two
+  // sit on one system rather than at arbitrary sizes.
+  const host =
+    `<rect x="${x0}" y="200" width="${x1 - x0}" height="540" rx="22" fill="${C.ink}" ` +
+      `fill-opacity="0.45" stroke="${C.violet}" stroke-width="11" opacity="0.6"/>` +
+    [230, 399, 568]
+      .map(
+        (sy) =>
+          `<path d="M ${x1 - 34} ${sy} L ${x0 + 34} ${sy} L ${x0 + 34} ${sy + 142} ` +
+          `L ${x1 - 34} ${sy + 142}" fill="none" stroke="${C.violet}" stroke-width="8" ` +
+          `stroke-linejoin="round" opacity="0.58"/>`
+      )
+      .join('');
+
+  return [
+    `  <circle cx="1183" cy="${y}" r="330" fill="url(#h-mint)" opacity="0.28"/>`,
+    `  <g>${host}</g>`,
+    `  <g>${mark(1183, y, 540)}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -6532,6 +6565,7 @@ const BASE_THEMES = [
   { name: 'big-value-latency-stalled-queue', seed: 67111, zoom: 1.34, center: [923, 540], title: 'Valkey one big value blocks the rest', desc: 'A tall solid red value standing across three lanes, with identical blue request blocks packed nose to tail behind it in every lane and nothing at all beyond it, representing every small request held up while one large value occupies the only path out.', art: bvlStalledQueue },
   { name: 'client-compression-packed-run', seed: 48111, zoom: 1.36, center: [960, 540], title: 'Valkey compressed before the wire', desc: 'Two rows of the same eight fields spanning the same width: above, a wide dim blue run filling its row, and below, the same eight fields in bright green taking a fifth of it, with a green arrow crossing the empty remainder to the white Valkey hexagon mark, representing a client library shrinking a value before it leaves the application so the smaller form is what crosses the network and what the server stores.', art: clientCompressionPackedRun },
   { name: 'client-compression-twin-sends', seed: 48121, zoom: 1.4, center: [1010, 530], title: 'Valkey a third of the bytes on the wire', desc: 'Two pale capsule-shaped wires of equal length, one above the other, each ending in a chevron: the upper wire holds six narrow bright green fields filling a quarter of its length, and the lower holds the same six fields in dim purple filling most of it, representing the same value crossing the network at a fraction of the size once the client compresses it.', art: clientCompressionTwinSends },
+  { name: 'test-double-empty-rack', seed: 48011, zoom: 1.4, center: [990, 470], title: 'Valkey testing with no server', desc: 'On the left a tall purple outline of a host with three empty slots and nothing seated in any of them; on the right the white Valkey hexagon mark drawn solid and lit, standing on its own, representing a Valkey server whose behaviour runs inside the test process so the test run starts no server, no port and no container.', art: testDoubleEmptyRack },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
