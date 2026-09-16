@@ -74,6 +74,9 @@ can't drift, and regenerating is a no-op diff.
 | `commands-replace-lua-round-trips` | Four thin messages crossing between caller and server, one thick call below them carrying the condition | Command options that collapse an exchange into one call |
 | `commands-replace-lua-one-line` | A quiet block of script lines giving way to one long command bar with a condition on its end | New command options that replace a Lua script |
 | `commands-replace-lua-condition-gate` | A command lane running into a large condition, one branch carrying the write on and one stopping dead | Conditional commands, `SET IFNE`, `EXEC IFEQ`, optimistic locking |
+| `ai-advisory-surge-sieve` | A flood of reports narrowing onto a toothed screen, three getting through in red | Report volume, triage load, what counts as a vulnerability |
+| `ai-advisory-surge-reproducer` | Five candidate bugs, four struck out, the survivor dropping into its reproducer | Adversarial audits, LLM-found bugs, verification before a human |
+| `ai-advisory-surge-backport-rails` | Five version rails with one fix node aligned on every one of them | Backports, patch releases, shipping a fix to every supported version |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title

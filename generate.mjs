@@ -5268,6 +5268,194 @@ function commandsConditionGate() {
   ].join('\n');
 }
 
+// ------------------------------------------------ advisories in the AI era
+//
+// AI made vulnerability reports nearly free to produce, so the inbound volume
+// jumped and a handful of maintainers have to keep up with it. Three readings of
+// that, one per section of the post: the flood against the bar that sorts it
+// (`ai-advisory-surge-sieve`), the project generating and killing its own
+// candidates before anyone reports them (`ai-advisory-surge-reproducer`), and one
+// verified fix landing on every supported version at once
+// (`ai-advisory-surge-backport-rails`). None of them draws a shield or a padlock:
+// `security-shield-clean` already owns security in general.
+
+function aiAdvisorySurgeSieve(r) {
+  // Idea: reports now arrive far faster than they can be judged, and a screen passes only the few that are real.
+  // Focal: the falling mass of arriving reports.
+  const cx = 960;
+  const topY = 232;
+  const barY = 632; // the bar's top edge
+  const barH = 38;
+  const barL = 524;
+  const barR = 1396;
+  const baseY = 812;
+  const openW = 66;
+  const openings = [784, 960, 1136];
+
+  // The flood. Rows narrow and pack tighter as they fall, so volume is the subject;
+  // every token is one report, sized to still read as a thing rather than a speck.
+  const cells = [];
+  const ROWS = 12;
+  for (let i = 0; i < ROWS; i++) {
+    const t = i / (ROWS - 1);
+    const y = topY + t * 300;
+    const half = 700 - t * 300;
+    const count = 11 + Math.round(t * 5);
+    for (let j = 0; j < count; j++) {
+      const x = cx - half + ((j + 0.5) / count) * half * 2 + (r() - 0.5) * 30;
+      cells.push(
+        `<rect x="${n(x - 17)}" y="${n(y - 7.5)}" width="34" height="15" rx="7.5" fill="${weighted(r, [
+          [C.cyan, 5],
+          [C.cyanLt, 4],
+          [C.ice, 2],
+        ])}" opacity="${n(0.44 + r() * 0.34)}"/>`
+      );
+    }
+  }
+
+  // Where the flood stops: the same tokens piled edge to edge on top of the bar, so
+  // what the bar holds back is visibly the same stuff that was falling.
+  for (let row = 0; row < 3; row++) {
+    const y = barY - 12 - row * 24;
+    const span = barR - barL - row * 90;
+    const count = Math.floor(span / 40);
+    for (let j = 0; j < count; j++) {
+      const x = cx - span / 2 + 20 + j * (span / count);
+      cells.push(
+        `<rect x="${n(x - 17)}" y="${n(y - 7.5)}" width="34" height="15" rx="7.5" fill="${weighted(r, [
+          [C.cyan, 4],
+          [C.cyanLt, 5],
+          [C.ice, 3],
+        ])}" opacity="${n(0.6 + r() * 0.3)}"/>`
+      );
+    }
+  }
+
+  // The bar itself: one heavy run with three openings cut in it, the openings all
+  // the same width, so three things get through and everything else does not.
+  const edges = [barL, ...openings.flatMap((x) => [x - openW / 2, x + openW / 2]), barR];
+  const bar = [];
+  for (let i = 0; i < edges.length; i += 2) {
+    bar.push(
+      `<rect x="${n(edges[i])}" y="${barY}" width="${n(edges[i + 1] - edges[i])}" height="${barH}" rx="${barH / 2}" fill="${C.ice}" opacity="0.6"/>`
+    );
+  }
+
+  // The few that are real, through the openings and resting on the advisory line.
+  // Coral because they are the anomaly in the field, not more of the field.
+  const passed = openings
+    .map(
+      (x) =>
+        `<rect x="${n(x - 27)}" y="${n(barY + 62)}" width="54" height="22" rx="11" fill="${C.coral}" opacity="0.6"/>` +
+        `<ellipse cx="${n(x)}" cy="${n(baseY - 34)}" rx="92" ry="72" fill="url(#h-coral)" opacity="0.5"/>` +
+        `<rect x="${n(x - 27)}" y="${n(baseY - 45)}" width="54" height="22" rx="11" fill="${C.coral}" opacity="0.95"/>`
+    )
+    .join('');
+
+  return [
+    `  <ellipse cx="${cx}" cy="420" rx="660" ry="272" fill="url(#h-cyan)" opacity="0.16"/>`,
+    `  <g filter="url(#blur18)" opacity="0.3">${cells.join('')}</g>`,
+    `  <g>${cells.join('')}</g>`,
+    `  <g>${bar.join('')}</g>`,
+    `  <g>${passed}</g>`,
+    `  <line x1="742" y1="${baseY}" x2="1178" y2="${baseY}" stroke="${C.ice}" stroke-width="4.5" opacity="0.75"/>`,
+  ].join('\n');
+}
+
+function aiAdvisorySurgeReproducer(r) {
+  // Idea: the project proposes its own candidate bugs, and only the one that comes with a reproducing crash survives a second reading.
+  // Focal: the reproducer panel under the surviving candidate.
+  const cx = 960;
+  const rowY = 300;
+  const pitch = 175;
+  const cw = 130;
+  const ch = 86;
+
+  // Four candidates struck out on the second reading. One line weight for the
+  // cross, one size for the card, everywhere.
+  const struck = [];
+  for (const i of [0, 1, 3, 4]) {
+    const x = cx + (i - 2) * pitch;
+    struck.push(
+      `<rect x="${n(x - cw / 2)}" y="${n(rowY - ch / 2)}" width="${cw}" height="${ch}" rx="14" fill="${C.cyan}" opacity="0.3"/>`,
+      `<rect x="${n(x - cw / 2)}" y="${n(rowY - ch / 2)}" width="${cw}" height="${ch}" rx="14" fill="none" stroke="${C.cyanLt}" stroke-width="3" opacity="0.4"/>`,
+      `<g stroke="${C.coral}" stroke-width="12" stroke-linecap="round" opacity="0.6">` +
+        `<line x1="${n(x - 40)}" y1="${n(rowY - 26)}" x2="${n(x + 40)}" y2="${n(rowY + 26)}"/>` +
+        `<line x1="${n(x + 40)}" y1="${n(rowY - 26)}" x2="${n(x - 40)}" y2="${n(rowY + 26)}"/></g>`
+    );
+  }
+
+  const survivor =
+    `<rect x="${n(cx - 75)}" y="${n(rowY - 50)}" width="150" height="100" rx="16" fill="${C.mint}" opacity="0.85"/>` +
+    `<rect x="${n(cx - 75)}" y="${n(rowY - 50)}" width="150" height="100" rx="16" fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.9"/>`;
+
+  // The evidence it carries: a run of lines and, at the end, the crash they produce.
+  const px0 = 720;
+  const py0 = 500;
+  const bars = [];
+  for (let i = 0; i < 4; i++) {
+    bars.push(
+      `<rect x="${px0 + 42}" y="${n(py0 + 46 + i * 46)}" width="${n(210 + r() * 150)}" height="18" rx="9" fill="${C.ice}" opacity="0.75"/>`
+    );
+  }
+  bars.push(
+    `<rect x="${px0 + 42}" y="${n(py0 + 236)}" width="300" height="18" rx="9" fill="${C.coral}" opacity="0.9"/>`
+  );
+
+  return [
+    `  <ellipse cx="${cx}" cy="670" rx="340" ry="250" fill="url(#h-mint)" opacity="0.35"/>`,
+    `  <g>${struck.join('')}</g>`,
+    `  <line x1="${cx}" y1="${rowY + 50}" x2="${cx}" y2="${py0}" stroke="${C.mint}" stroke-width="10" opacity="0.7"/>`,
+    `  <g>${survivor}</g>`,
+    `  <rect x="${px0}" y="${py0}" width="480" height="300" rx="22" fill="${C.ink}" opacity="0.45"/>`,
+    `  <rect x="${px0}" y="${py0}" width="480" height="300" rx="22" fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.9"/>`,
+    `  <g>${bars.join('')}</g>`,
+  ].join('\n');
+}
+
+function aiAdvisorySurgeBackportRails(r) {
+  // Idea: one verified fix lands on every supported version at the same time instead of being carried to them one at a time.
+  // Focal: the vertical run of the same fix, one node on every branch.
+  const RAILS = [290, 425, 560, 695, 830];
+  const branchX = [200, 420, 560, 700, 840];
+  const right = 1700;
+  const fixX = 1010;
+
+  const rails = RAILS.map(
+    (y, i) =>
+      `<line x1="${branchX[i]}" y1="${y}" x2="${right}" y2="${y}" stroke="${C.ice}" stroke-width="7" opacity="0.32"/>`
+  );
+
+  // Where each maintenance line left the one above it, so the rails read as
+  // supported versions rather than as rows.
+  const branches = RAILS.slice(1).map((y, k) => {
+    const bx = branchX[k + 1];
+    const yp = RAILS[k];
+    return `<path d="M ${bx - 96} ${yp} C ${bx - 40} ${yp} ${bx - 56} ${y} ${bx} ${y}" fill="none" stroke="${C.ice}" stroke-width="6" opacity="0.22"/>`;
+  });
+
+  const commits = [];
+  for (let i = 0; i < RAILS.length; i++) {
+    for (let x = branchX[i] + 104; x < right - 50; x += 116) {
+      if (Math.abs(x - fixX) < 84) continue;
+      commits.push(dot(x, RAILS[i], 9, C.cyanLt, 'cyan', 0.42 + r() * 0.12, 2.2));
+    }
+  }
+
+  const spine = `<line x1="${fixX}" y1="275" x2="${fixX}" y2="845" stroke="${C.mint}" stroke-width="11" opacity="0.85"/>`;
+  const nodes = RAILS.map((y) => dot(fixX, y, 21, C.mint, 'mint', 1, 3.2));
+
+  return [
+    `  <ellipse cx="${fixX}" cy="560" rx="205" ry="370" fill="url(#h-mint)" opacity="0.3"/>`,
+    `  <g>${branches.join('')}</g>`,
+    `  <g>${rails.join('')}</g>`,
+    `  <g>${commits.join('')}</g>`,
+    `  <g filter="url(#blur18)" opacity="0.4"><line x1="${fixX}" y1="275" x2="${fixX}" y2="845" stroke="${C.mint}" stroke-width="28"/></g>`,
+    `  ${spine}`,
+    `  <g>${nodes.join('')}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -5347,6 +5535,9 @@ const BASE_THEMES = [
   { name: 'commands-replace-lua-round-trips', seed: 65911, zoom: 1.28, center: [960, 520], title: 'Valkey one round trip, not four', desc: 'A caller on the left and a Valkey server drawn as the white hexagon mark on the right, with four thin purple messages crossing back and forth between them above, and one thick green call below carrying a pale condition chip that holds two unequal values, representing a conditional update that used to take an exchange of messages and now takes one command.', art: commandsRoundTrips },
   { name: 'commands-replace-lua-one-line', seed: 65921, zoom: 1.31, center: [960, 540], title: 'Valkey one command, no script', desc: 'A small quiet panel of ragged purple script lines above an arrow pointing down to one long bright command bar holding a run of pale words, with a green condition chip of two unequal values seated at the bar\'s end, representing a Lua script replaced by a single command with a condition option on it.', art: commandsOneLine },
   { name: 'commands-replace-lua-condition-gate', seed: 65931, zoom: 1.3, center: [960, 540], title: 'Valkey conditions inside the command', desc: 'One thick blue command lane running into a large pale condition holding two unequal values, out of which a thick green branch carries the write up into a lit key block while a thin dim branch stops short at a blunt bar, representing a command that decides for itself whether its write lands.', art: commandsConditionGate },
+  { name: 'ai-advisory-surge-sieve', seed: 47011, zoom: 1.42, center: [960, 536], title: 'Valkey advisory surge', desc: 'A wide flood of small identical report tokens falling and narrowing onto a row of evenly spaced light teeth, with only three red tokens through the gaps and resting on a short line below, representing far more vulnerability reports arriving than before and only a few of them being real advisories.', art: aiAdvisorySurgeSieve },
+  { name: 'ai-advisory-surge-reproducer', seed: 47023, zoom: 1.5, center: [960, 525], title: 'Valkey security audits', desc: 'A row of five identical candidate bug cards, four of them crossed out in red, the middle one lit green and dropping into a large panel holding four pale lines and a red one, representing self-run adversarial audits where a candidate only reaches a person once it comes with a reproducing crash.', art: aiAdvisorySurgeReproducer },
+  { name: 'ai-advisory-surge-backport-rails', seed: 47041, zoom: 1.5, center: [960, 560], title: 'Valkey backported fixes', desc: 'Five stacked version rails, each branching off the one above it and carrying a run of small blue commits, crossed by one bright green vertical line that places the same fix node on every rail at the same point, representing one security fix shipped to every supported version at once.', art: aiAdvisorySurgeBackportRails },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
