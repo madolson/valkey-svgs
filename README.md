@@ -65,6 +65,9 @@ can't drift, and regenerating is a no-op diff.
 | `llm-kv-cache-new-tail` | One prompt as a run of chunks, most of it loaded from the store below, only the tail fed by the processor above | KV caching for LLM inference, prefix reuse, skipping prefill |
 | `llm-kv-cache-shared-tier` | Two processors with short rows of cached contexts above one much wider shared store, one context rising into the empty slot | A shared L2 KV cache tier, cache capacity that scales apart from the GPUs |
 | `llm-kv-cache-head-start` | The same request twice from one start line: a long dashed recompute above, a short loaded run below, first-token markers far apart | Time to first token, what the cache buys, GPU time spent re-reading |
+| `exporter-two-views-probes` | A small probe clipped to each node inside a bracketed cluster, one big probe clamped on the boundary | Two exporters, per-pod and cluster-wide metrics, Prometheus |
+| `exporter-two-views-twin-scopes` | One mount carrying two objectives, a small glass on one node and a large one on the cluster | Monitoring at two scopes, observability dimensions |
+| `exporter-two-views-many-and-one` | A deck of per-node readout cards beside one cluster-wide card with per-slot counters | Per-pod series versus per-slot series, exporter choice |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -275,6 +278,12 @@ llm-kv-cache-head-start / outline       — the recompute drawn as a dashed empt
 
 All five lost to `security-shield-clean` on the same judgement: the shipped proportions are
 better than any of them, and the shield's silhouette is not a knob worth turning.
+
+```
+exporter-two-views-twin-scopes / mount bar  — the two glasses joined centre to centre read as
+                                              two unrelated bubbles on a rod; a callout wedge
+                                              off one node says which node is being detailed
+```
 
 ## Licence
 
