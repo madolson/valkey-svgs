@@ -65,6 +65,9 @@ can't drift, and regenerating is a no-op diff.
 | `client-compression-twin-sends` | The same six-field value on two wires of equal length, filling a quarter of one and most of the other | The same, when the point is how much of the network the value stops using |
 | `scan-cursor-pages` | Five stacked pages of keys tiling a keyspace, exactly one of them lit | `SCAN`, cursors, iterating a keyspace without holding it all at once |
 | `agent-context-recall-arc` | A dim column of turns with the newest lit, and one thick band carrying an older turn back up into them | Agent memory, recall, fetching an older turn back into the context window |
+| `fbtree-soft-two-levels` | One wide node of separator keys over a row of linked leaves of packed members, drawn hollow and thin | fbtree, B+ trees, the ordered index behind a sorted set |
+| `fbtree-soft-leaf-rail` | The same tree with one rail running through the leaf row and out past the last leaf | Range reads, `ZRANGE`, linked leaves, walking a sorted set in order |
+| `fbtree-soft-scatter-run` | Members spread out under their own pointer towers, above the same members packed three to a leaf | Replacing the skiplist with fbtree, one allocation per member becoming a few wide nodes |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title

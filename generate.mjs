@@ -4764,7 +4764,343 @@ const bopUnit = (c, r, opacity) => {
   );
 };
 
+// ------------------------------------------- fbtree, drawn in the quiet register
+//
+// Same subject as `fbtreeWideRoot` and `fbtreeTowerAndTree`: Valkey 9.2 replaces the
+// skiplist behind large sorted sets with fbtree, a high-fanout B+ tree variant, so
+// the ordering is unchanged and the container is one wide contiguous structure
+// instead of a tower of pointers per member. Those two drew it at focal weight
+// throughout — solid fills, 3 to 4px strokes, 90x70 cells — which is the fault
+// DESIGN.md 15 names: when every element is loud, none of them is.
+//
+// These three are the same structure in `dataStructures`' register: structural
+// strokes 1.2 to 1.8px at 0.14 to 0.6 and varied per element, hollow nodes over
+// fill-opacity 0.12, 40x24 entries, and the accent mixed by weight across a field
+// rather than a region filled with one colour. What carries the sentence is the
+// shape of the whole, so no single node has to.
+//
+//   fbtreeSoftWideTree     the shape: one wide node of separator keys over packed leaves
+//   fbtreeSoftOrderedWalk  the read: an ordered scan runs along the leaf level itself
+//   fbtreeSoftScatterRun   the change: one allocation per member becomes a few wide nodes
+//
+// Colour roles are unchanged from the two they replace: members are content at rest,
+// the fbtree's nodes are `mint` as the state arrived at, and the skiplist's pointer
+// and span overhead is `violet` as the thing retired.
 
+// One packed entry: small, low and hollow of detail, because fifteen of them in a row
+// are a mass and not fifteen readable things (DESIGN.md 14). The mix is by weight, so
+// the run has tonal variation without colour being asked to tell entries apart.
+//
+// `dataStructures` mixes cyan 6, mint 3, violet 2, and the first pass copied that. It
+// gets away with a hue mix because it has 35 of these spread over 12 ragged chains, so no
+// one of them is the odd one out. Here there are 15 in five tidy leaves, and every blind
+// read named the single off-hue cell as the thing its eye went to first — DESIGN.md 6's
+// exception-in-a-uniform-field working against the picture. So the mix is two tones of
+// the one colour that means content at rest, and the variation is carried by opacity.
+// Violet is out for a second reason: it is this set's accent for the thing retired, and
+// `fbtreeSoftScatterRun` spends it on the skiplist's overhead in the same frame.
+const FBS_MIX = [[C.cyan, 6], [C.cyanLt, 4]];
+
+function fbsCell(r, x, y, w, h) {
+  return (
+    `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="4" ` +
+    `fill="${weighted(r, FBS_MIX)}" opacity="${n(0.42 + r() * 0.38)}"/>`
+  );
+}
+
+// A node: hollow, a thin stroke over a fill that only just separates the inside from
+// the ground. Every caller passes its own stroke and opacity, because one flat value
+// across a structure is what makes a field of nodes read as a wall.
+function fbsNode(x, y, w, h, stroke, opacity, color = C.mint, rx = 5) {
+  return (
+    `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${rx}" fill="${color}" ` +
+    `fill-opacity="0.12" stroke="${color}" stroke-width="${n(stroke)}" opacity="${n(opacity)}"/>`
+  );
+}
+
+// An inner node: one wide box divided into child slots by separator keys, each slot
+// holding the small feature fbtree keeps for its child. Drawn hollow with the box
+// divided rather than filled, and the features are what stop it reading as an empty
+// container: on the first pass the divisions alone were too faint to see and the node
+// read as a bar with strings hanging off it, which is DESIGN.md 2's furniture.
+function fbsInner(x, y, w, h, slots, stroke, opacity) {
+  const pitch = w / slots;
+  const parts = [fbsNode(x, y, w, h, stroke, opacity, C.mint, 7)];
+  for (let i = 1; i < slots; i++) {
+    parts.push(
+      `<line x1="${n(x + i * pitch)}" y1="${n(y)}" x2="${n(x + i * pitch)}" y2="${n(y + h)}" ` +
+        `stroke="${C.mint}" stroke-width="1.8" opacity="0.55"/>`
+    );
+  }
+  for (let i = 0; i < slots; i++) {
+    parts.push(
+      `<rect x="${n(x + (i + 0.25) * pitch)}" y="${n(y + h / 2 - 7)}" width="${n(pitch / 2)}" ` +
+        `height="14" rx="4" fill="${C.mint}" opacity="0.5"/>`
+    );
+  }
+  return parts.join('');
+}
+
+function fbtreeSoftWideTree(r) {
+  // Idea: the ordered index behind a large sorted set is one wide node of separator keys over a single row of leaves holding their members packed side by side and linked to their neighbours.
+  // Focal: the two-level shape itself, per DESIGN.md 15 — nothing in it is drawn at focal weight.
+  const LEAVES = 5;
+  const ENTRIES = 3;
+  const EW = 36;
+  const EH = 24;
+  const EPITCH = 42;
+  const PAD = 14;
+  const LEAF_W = PAD * 2 + (ENTRIES - 1) * EPITCH + EW;
+  const LEAF_H = 64;
+  const LEAF_Y = 620;
+  const SPAN = 900;
+  const GAP = (SPAN - LEAVES * LEAF_W) / (LEAVES - 1);
+  const X0 = 960 - SPAN / 2;
+  const leafX = [];
+  for (let i = 0; i < LEAVES; i++) leafX.push(X0 + i * (LEAF_W + GAP));
+
+  // The root: one allocation wide enough to route the whole set, a child slot per
+  // leaf. Narrower than the leaf row it feeds, so the child pointers fan; drawn at
+  // the same weight as the leaves, because the shape and not the node is the subject.
+  const ROOT_Y = 300;
+  const ROOT_H = 72;
+  const SLOT = 112;
+  const ROOT_W = LEAVES * SLOT;
+  const ROOT_X = 960 - ROOT_W / 2;
+  const slotCx = [];
+  for (let i = 0; i < LEAVES; i++) slotCx.push(ROOT_X + (i + 0.5) * SLOT);
+
+  // One child pointer per slot, leaving the node's baseline for its leaf. Straight
+  // lines: descending into a child and running along the leaf level are different
+  // moves, and the second is the whole difference from a B tree.
+  const links = slotCx
+    .map(
+      (cx, i) =>
+        `<line x1="${n(cx)}" y1="${ROOT_Y + ROOT_H}" x2="${n(leafX[i] + LEAF_W / 2)}" y2="${LEAF_Y}" ` +
+        `stroke="${C.mint}" stroke-width="${n(1.3 + r() * 0.3)}" opacity="${n(0.22 + r() * 0.18)}"/>`
+    )
+    .join('');
+
+  const leaves = leafX
+    .map((x) => {
+      const cells = [];
+      for (let j = 0; j < ENTRIES; j++) {
+        cells.push(fbsCell(r, x + PAD + j * EPITCH, LEAF_Y + (LEAF_H - EH) / 2, EW, EH));
+      }
+      return fbsNode(x, LEAF_Y, LEAF_W, LEAF_H, 1.3 + r() * 0.4, 0.34 + r() * 0.2) + cells.join('');
+    })
+    .join('');
+
+  // Sibling links: the leaves are a linked list, so an ordered read walks along them
+  // instead of climbing back into the root between members. Above the 1.8px the rest of
+  // the structure holds to, because it is the one fact a B tree would not have and at
+  // 1.8px across a 40-unit gap the blind read said it nearly disappeared.
+  const chain = leafX
+    .slice(0, -1)
+    .map(
+      (x) =>
+        `<line x1="${n(x + LEAF_W)}" y1="${n(LEAF_Y + LEAF_H / 2)}" x2="${n(x + LEAF_W + GAP)}" ` +
+        `y2="${n(LEAF_Y + LEAF_H / 2)}" stroke="${C.mint}" stroke-width="2.6" opacity="0.72"/>`
+    )
+    .join('');
+
+  // One halo, not the two DESIGN.md 15 allows. A second one sat behind the root, and the
+  // deletion test took it out with nothing lost — the blind read had been attaching the
+  // root's importance to "the brightest part of the background glow" rather than to the
+  // node, which is DESIGN.md 3's ambient wash earning its ban.
+  return [
+    `  <circle cx="960" cy="${LEAF_Y + LEAF_H / 2}" r="430" fill="url(#h-cyan)" opacity="0.18"/>`,
+    `  <g>${links}</g>`,
+    `  <g>${leaves}</g>`,
+    `  <g>${chain}</g>`,
+    `  ${fbsInner(ROOT_X, ROOT_Y, ROOT_W, ROOT_H, LEAVES, 1.8, 0.55)}`,
+  ].join('\n');
+}
+
+function fbtreeSoftOrderedWalk(r) {
+  // Idea: an ordered read of a large sorted set runs along the leaf level itself, from one leaf into the next, instead of climbing back into the tree between members.
+  // Focal: the rail through the leaf row, the one element above 0.6 opacity and the only one with a halo.
+  const LEAVES = 4;
+  const ENTRIES = 3;
+  const EW = 40;
+  const EH = 24;
+  const EPITCH = 46;
+  const PAD = 14;
+  const LEAF_W = PAD * 2 + (ENTRIES - 1) * EPITCH + EW;
+  const LEAF_H = 64;
+  const LEAF_Y = 620;
+  const SPAN = 820;
+  const GAP = (SPAN - LEAVES * LEAF_W) / (LEAVES - 1);
+  const X0 = 960 - SPAN / 2;
+  const leafX = [];
+  for (let i = 0; i < LEAVES; i++) leafX.push(X0 + i * (LEAF_W + GAP));
+
+  // The root is drawn quieter than anything else here, and its pointers quieter still,
+  // because the point of the picture is that the read does not use them.
+  const ROOT_Y = 300;
+  const ROOT_H = 68;
+  const SLOT = 130;
+  const ROOT_W = LEAVES * SLOT;
+  const ROOT_X = 960 - ROOT_W / 2;
+  const slotCx = [];
+  for (let i = 0; i < LEAVES; i++) slotCx.push(ROOT_X + (i + 0.5) * SLOT);
+
+  const links = slotCx
+    .map(
+      (cx, i) =>
+        `<line x1="${n(cx)}" y1="${ROOT_Y + ROOT_H}" x2="${n(leafX[i] + LEAF_W / 2)}" y2="${LEAF_Y}" ` +
+        `stroke="${C.mint}" stroke-width="${n(1.2 + r() * 0.3)}" opacity="${n(0.2 + r() * 0.1)}"/>`
+    )
+    .join('');
+
+  const leaves = leafX
+    .map((x) => {
+      const cells = [];
+      for (let j = 0; j < ENTRIES; j++) {
+        cells.push(fbsCell(r, x + PAD + j * EPITCH, LEAF_Y + 20, EW, EH));
+      }
+      return fbsNode(x, LEAF_Y, LEAF_W, LEAF_H, 1.2 + r() * 0.4, 0.28 + r() * 0.16) + cells.join('');
+    })
+    .join('');
+
+  // The rail: one continuous path at the leaf level, running through every leaf and
+  // out the far side behind a single arrowhead. 24 units is about 6px in the narrow
+  // crop, so the one element carrying the sentence clears DESIGN.md 4's floor.
+  const railY = LEAF_Y + LEAF_H;
+  const railX0 = leafX[0] - 14;
+  const railX1 = leafX[LEAVES - 1] + LEAF_W + 14;
+  const tip = railX1 + 40;
+  const rail =
+    `<line x1="${n(railX0)}" y1="${n(railY)}" x2="${n(railX1)}" y2="${n(railY)}" stroke="${C.mint}" ` +
+    `stroke-width="24" stroke-linecap="round" opacity="0.78"/>` +
+    `<path d="M ${n(tip)} ${n(railY)} L ${n(railX1 + 4)} ${n(railY - 26)} L ${n(railX1 + 4)} ` +
+    `${n(railY + 26)} Z" fill="${C.mint}" opacity="0.9"/>`;
+
+  return [
+    `  <circle cx="960" cy="${n(railY)}" r="430" fill="url(#h-mint)" opacity="0.19"/>`,
+    `  <g>${links}</g>`,
+    `  ${fbsInner(ROOT_X, ROOT_Y, ROOT_W, ROOT_H, LEAVES, 1.3, 0.3)}`,
+    `  <g>${rail}</g>`,
+    `  <g>${leaves}</g>`,
+  ].join('\n');
+}
+
+function fbtreeSoftScatterRun(r) {
+  // Idea: the same ordered members that each needed their own allocation and its own tower of forward pointers now sit packed inside a few wide nodes.
+  // Focal: the density difference between the two rows, which is the shape of the whole and not any one object.
+  const MEMBERS = 12;
+  const CW = 40;
+  const CH = 24;
+  const SPAN = 800;
+  const X0 = 960 - SPAN / 2;
+  const mPitch = (SPAN - CW) / (MEMBERS - 1);
+
+  // What it replaced, drawn the way a skiplist is drawn: the members in order with
+  // heap between them, one allocation each, every one carrying its own tower of
+  // forward pointers, and a link at each level skipping to the next tall enough node.
+  const BASE_Y = 265;
+  const LVL_H = 14;
+  const LVL_PITCH = 18;
+  const nodes = [];
+  for (let i = 0; i < MEMBERS; i++) {
+    let levels = 1;
+    while (levels < 3 && r() < 0.42) levels++;
+    nodes.push({ x: X0 + i * mPitch, levels });
+  }
+  const towerY = (l) => BASE_Y - 4 - (l + 1) * LVL_PITCH;
+
+  const towers = nodes
+    .map((nd) => {
+      const out = [fbsCell(r, nd.x, BASE_Y, CW, CH)];
+      for (let l = 0; l < nd.levels; l++) {
+        out.push(
+          `<rect x="${n(nd.x)}" y="${n(towerY(l))}" width="${CW}" height="${LVL_H}" rx="4" ` +
+            `fill="${C.violet}" opacity="${n(0.3 + r() * 0.2)}"/>`
+        );
+      }
+      return out.join('');
+    })
+    .join('');
+
+  // The forward links sit at the top of the structural band, not the middle of it: the
+  // levels skipping over shorter nodes are what makes the top row a skiplist rather than
+  // a queue, and at 0.32 the blind read called the top structure's topology unreadable.
+  const forwards = [];
+  for (let l = 0; l < 3; l++) {
+    const have = nodes.filter((nd) => nd.levels > l);
+    for (let k = 0; k < have.length - 1; k++) {
+      const y = towerY(l) + LVL_H / 2;
+      forwards.push(
+        `<line x1="${n(have[k].x + CW)}" y1="${n(y)}" x2="${n(have[k + 1].x)}" y2="${n(y)}" ` +
+          `stroke="${C.violet}" stroke-width="${n(1.6 + r() * 0.2)}" opacity="${n(0.44 + r() * 0.16)}"/>`
+      );
+    }
+  }
+
+  // The fbtree below: the same twelve members, in the same order, three to a leaf in
+  // four leaves under one wide node. Nothing joins the two rows — an arrow between
+  // them would say the skiplist feeds the tree rather than that it was replaced.
+  const LEAVES = 4;
+  const ENTRIES = MEMBERS / LEAVES;
+  const EPITCH = 46;
+  const PAD = 14;
+  const LEAF_W = PAD * 2 + (ENTRIES - 1) * EPITCH + CW;
+  const LEAF_H = 64;
+  const LEAF_Y = 655;
+  const LEAF_SPAN = 680;
+  const GAP = (LEAF_SPAN - LEAVES * LEAF_W) / (LEAVES - 1);
+  const LX0 = 960 - LEAF_SPAN / 2;
+  const leafX = [];
+  for (let i = 0; i < LEAVES; i++) leafX.push(LX0 + i * (LEAF_W + GAP));
+
+  const ROOT_Y = 440;
+  const ROOT_H = 68;
+  const SLOT = 130;
+  const ROOT_W = LEAVES * SLOT;
+  const ROOT_X = 960 - ROOT_W / 2;
+  const slotCx = [];
+  for (let i = 0; i < LEAVES; i++) slotCx.push(ROOT_X + (i + 0.5) * SLOT);
+
+  const links = slotCx
+    .map(
+      (cx, i) =>
+        `<line x1="${n(cx)}" y1="${ROOT_Y + ROOT_H}" x2="${n(leafX[i] + LEAF_W / 2)}" y2="${LEAF_Y}" ` +
+        `stroke="${C.mint}" stroke-width="${n(1.3 + r() * 0.4)}" opacity="${n(0.26 + r() * 0.22)}"/>`
+    )
+    .join('');
+
+  const leaves = leafX
+    .map((x) => {
+      const cells = [];
+      for (let j = 0; j < ENTRIES; j++) {
+        cells.push(fbsCell(r, x + PAD + j * EPITCH, LEAF_Y + (LEAF_H - CH) / 2, CW, CH));
+      }
+      return fbsNode(x, LEAF_Y, LEAF_W, LEAF_H, 1.3 + r() * 0.4, 0.34 + r() * 0.2) + cells.join('');
+    })
+    .join('');
+
+  const chain = leafX
+    .slice(0, -1)
+    .map(
+      (x) =>
+        `<line x1="${n(x + LEAF_W)}" y1="${n(LEAF_Y + LEAF_H / 2)}" x2="${n(x + LEAF_W + GAP)}" ` +
+        `y2="${n(LEAF_Y + LEAF_H / 2)}" stroke="${C.mint}" stroke-width="2.6" opacity="0.72"/>`
+    )
+    .join('');
+
+  // One halo, over the tree. A violet one under the skiplist row went the same way as the
+  // root halo in `fbtreeSoftWideTree`: deleted, re-rendered, and the two rows still read as
+  // two structures because their glyphs differ, which is what DESIGN.md 10 asks of them.
+  return [
+    `  <circle cx="960" cy="595" r="430" fill="url(#h-mint)" opacity="0.18"/>`,
+    `  <g>${forwards.join('')}</g>`,
+    `  <g>${towers}</g>`,
+    `  <g>${links}</g>`,
+    `  <g>${leaves}</g>`,
+    `  <g>${chain}</g>`,
+    `  ${fbsInner(ROOT_X, ROOT_Y, ROOT_W, ROOT_H, LEAVES, 1.8, 0.55)}`,
+  ].join('\n');
+}
 
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
@@ -4821,6 +5157,9 @@ const BASE_THEMES = [
   { name: 'client-compression-twin-sends', seed: 48121, zoom: 1.4, center: [1010, 530], title: 'Valkey a third of the bytes on the wire', desc: 'Two pale capsule-shaped wires of equal length, one above the other, each ending in a chevron: the upper wire holds six narrow bright green fields filling a quarter of its length, and the lower holds the same six fields in dim purple filling most of it, representing the same value crossing the network at a fraction of the size once the client compresses it.', art: clientCompressionTwinSends },
   { name: 'scan-cursor-pages', seed: 67501, zoom: 1.35, center: [960, 544], title: 'Valkey scan by page', desc: 'A field of key pills on an even pitch, grouped into five stacked pages, with the middle page lit in gold and the other four blue at rest, representing a scan that hands back one bounded page of the keyspace at a time.', art: scanCursorPages },
   { name: 'agent-context-recall-arc', seed: 51021, zoom: 1.54, center: [944, 421], title: 'Valkey recalling an older turn', desc: 'A tall single column of twelve rounded bars standing for the turns of an agent conversation, newest at the top, most of them short and dim blue, the three newest and one much older turn far down the column drawn taller and solid green, and a single thick green band running out of that older turn, up the outside of the column and into the newest bar behind an arrowhead, representing an agent conversation held in Valkey out of which an older turn is loaded back into the next context window.', art: agentContextRecallArc },
+  { name: 'fbtree-soft-two-levels', seed: 66627, zoom: 1.38, center: [960, 553], title: 'Valkey sorted sets in one wide tree', desc: 'One wide hollow green node at the top, divided by four thin vertical separator lines into five child slots each holding a small green routing bar, a thin green pointer fanning out of every slot onto one of five small hollow green leaf nodes in a row below, every leaf holding three small blue entries packed side by side, and each pair of neighbouring leaves joined by a short green link, representing the ordered index behind a large sorted set as a high-fanout B+ tree two levels deep.', art: fbtreeSoftWideTree },
+  { name: 'fbtree-soft-leaf-rail', seed: 66631, zoom: 1.38, center: [960, 566], title: 'Valkey reading a sorted set in order', desc: 'A faint wide green node of four child slots at the top, each slot holding a small green routing bar, with barely visible pointers fanning down to four small hollow green leaf nodes in a row below, each holding three small blue entries, and one thick bright green rail running horizontally through all four leaves and out past the last of them behind a single arrowhead, representing an ordered read of a large sorted set walking along the linked leaves instead of climbing back into the tree between members.', art: fbtreeSoftOrderedWalk },
+  { name: 'fbtree-soft-scatter-run', seed: 66643, zoom: 1.38, center: [960, 524], title: 'Valkey the same members, fewer nodes', desc: 'Above, twelve small blue member cells spread far apart along a row with gaps between them, each carrying a short stack of purple forward-pointer cells with thin purple links skipping between the stacks at every level; below, unconnected to it, the same twelve cells three to a leaf inside four small hollow green leaf nodes joined by short green links, under one wide hollow green node divided into four child slots, each holding a small green routing bar and dropping a thin pointer onto one leaf, representing the ordered index moving from one allocation per member to a few wide nodes that hold them packed.', art: fbtreeSoftScatterRun },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
