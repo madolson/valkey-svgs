@@ -68,6 +68,9 @@ can't drift, and regenerating is a no-op diff.
 | `exporter-two-views-probes` | A small probe clipped to each node inside a bracketed cluster, one big probe clamped on the boundary | Two exporters, per-pod and cluster-wide metrics, Prometheus |
 | `exporter-two-views-twin-scopes` | One mount carrying two objectives, a small glass on one node and a large one on the cluster | Monitoring at two scopes, observability dimensions |
 | `exporter-two-views-many-and-one` | A deck of per-node readout cards beside one cluster-wide card with per-slot counters | Per-pod series versus per-slot series, exporter choice |
+| `keyspace-gui-safe-refusal` | Read lanes crossing the server's boundary, one write turned back at it | ACL users, read-only access, NOPERM, server-side authorisation |
+| `keyspace-gui-safe-grant` | A grid of commands with one block granted and the dangerous ones struck out inside it | ACL grants, command categories, least privilege |
+| `keyspace-gui-safe-readout` | A client window of four read-only panels, each fed by one read from the server | GUI clients, INFO, CLIENT LIST, SLOWLOG, monitoring views |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -284,6 +287,16 @@ exporter-two-views-twin-scopes / mount bar  — the two glasses joined centre to
                                               two unrelated bubbles on a rod; a callout wedge
                                               off one node says which node is being detailed
 ```
+
+```
+keyspace-gui-safe-refusal / slotted   — boundary cut open where each read crosses, reads as a dashed rule
+keyspace-gui-safe-refusal / banded    — the same openings capped across the thickness, reads as stacked boxes
+```
+
+Both were attempts to show permitted commands passing *through* a gap. At banner size a
+broken vertical line stops being a boundary at all. The shipped version leaves the bar
+unbroken and draws the lanes over it, which reads as crossing and keeps the boundary solid
+where the write meets it.
 
 ## Licence
 
