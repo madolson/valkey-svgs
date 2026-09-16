@@ -206,13 +206,43 @@ The escape is not a redraw. Either the units are interchangeable and carry meani
 which is what makes principle 6's exception legible, and is usually the better banner — or there
 are few enough of them to have faces. Pick one at the sketch stage.
 
+## 15. Two registers: the focal element is solid, the structure around it is fine
+
+The floors in principle 4 bind **the element that carries the sentence**. They do not bind the
+structure it sits in, and applying them to everything is what makes a banner read as big and blocky.
+
+`data-structures` is the reference for the quiet register, and it is worth copying the numbers
+rather than eyeballing them:
+
+| | |
+| --- | --- |
+| structural strokes | 1.1 to 1.8px |
+| structural opacity | 0.14 to 0.6, and *varied per element*, not one flat value |
+| node fills | hollow: `fill-opacity` around 0.12 behind a thin stroke |
+| node size | small and low, 48x24 to 64x30, `rx` 4 to 5 |
+| colour within a field | mixed by weight (cyan 6, mint 3, violet 2), never one uniform slab |
+| ambient | one or two large `url(#h-*)` circles at 0.15 to 0.2, **behind** the motif |
+
+The reason it holds together is that the *shape of the whole* carries the idea, so no single node has
+to. Per-element opacity jitter is what stops a field of small nodes reading as a texture or a wall:
+it breathes.
+
+`fbtree-wide-root` is the counter-example, and it is the fault the maintainer named as "very big and
+blocky": solid fills at full opacity, 3 to 4px strokes, 90x70 rects with large corner radii, and one
+big rounded container around them. Every element was drawn at focal weight, so nothing was.
+
+This does not soften principle 4, it locates it. Ask which layer holds the sentence. If it is the
+overall shape, the parts may be hairline and the whole must be unmistakable. If it is one object,
+that object obeys the floors and everything else drops into the quiet register. `keyspace-scan` died
+because it got this backwards: the meaning was in the faint layer and the frame was the loud one.
+
 ## Review procedure
 
 For a candidate, in this order. Stop at the first failure and fix it before continuing.
 
 1. Render it. Look at both crops. Never judge from the markup.
 2. Blind read (`~/bin/vblind`). Compare with the theme's sentence. Fail here and you redraw.
-3. Walk 1 through 14 and write the verdict for each. "Pass" is not a verdict; name the element
+3. Walk 1 through 15 and write the verdict for each. "Pass" is not a verdict; name the element
    that satisfies the rule.
 4. Cover the focal element and check the sentence dies.
 5. Count elements. Try deleting the one you are least sure about and re-render. If nothing was
