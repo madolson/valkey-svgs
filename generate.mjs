@@ -5962,6 +5962,106 @@ function fakeInProcessDropin() {
   ].join('\n');
 }
 
+// Idea: an agent keeps its whole conversation in Valkey and reads back only the
+// turns that matter for the next one, so the context holds the recent run plus a
+// few recalled older turns.
+// Focal: the solid mint bubbles — three together at the newest end of the
+// transcript and two isolated further down — in a transcript that is otherwise dim.
+function agentContextLitTranscript(r) {
+  const turns = 12;
+  // Pitch and start are set so the whole transcript clears the caption blocks:
+  // a bar half-hidden behind one reads as an accidental crop.
+  const pitch = 42;
+  const cy0 = 165;
+  const lit = new Set([0, 1, 2, 5, 8]); // the recent run, then two recalled turns
+  const dimH = 26;
+  const litH = 36; // under the pitch, so two lit turns in a row stay two bars
+  // Two lanes because a conversation alternates between two speakers, and each
+  // lane keeps its own width and its own tail so the alternation is the reason
+  // for the split rather than an unexplained left-right relationship.
+  const askX = 660;
+  const askW = 320;
+  const answerRight = 1240;
+  const answerW = 240;
+
+  const bubbles = [];
+  for (let i = 0; i < turns; i++) {
+    const cy = cy0 + i * pitch;
+    const on = lit.has(i);
+    const h = on ? litH : dimH;
+    const asked = i % 2 === 0;
+    const x = asked ? askX : answerRight - answerW;
+    const w = asked ? askW : answerW;
+    const fill = on ? C.mint : C.cyan;
+    const opacity = on ? 0.95 : 0.45;
+    // The tail sits on the speaker's own side, at the bottom outer corner.
+    const ty = n(cy + h / 2 - 2);
+    const tail = asked
+      ? `M ${n(x + 6)} ${ty} L ${n(x - 12)} ${n(cy + h / 2 + 13)} L ${n(x + 30)} ${ty} Z`
+      : `M ${n(x + w - 6)} ${ty} L ${n(x + w + 12)} ${n(cy + h / 2 + 13)} L ${n(x + w - 30)} ${ty} Z`;
+    bubbles.push(
+      `<rect x="${n(x)}" y="${n(cy - h / 2)}" width="${w}" height="${h}" rx="${n(h / 2)}" ` +
+        `fill="${fill}" opacity="${opacity}"/>` +
+        `<path d="${tail}" fill="${fill}" opacity="${opacity}"/>`
+    );
+  }
+
+  return [`  <g>${bubbles.join('')}</g>`].join('\n');
+}
+
+// Idea: an agent keeps its whole conversation in Valkey and reads back only the
+// turns that matter for the next one, so the context holds the recent run plus a
+// few recalled older turns.
+// Focal: the one older turn far down the transcript, lit, with a thick band
+// carrying it back up into the newest turns.
+function agentContextRecallArc() {
+  const turns = 12;
+  // Pitch and start are set so the whole column clears the caption blocks: a bar
+  // half-hidden behind one reads as an accidental crop.
+  const pitch = 42;
+  const cy0 = 165;
+  const dimH = 26;
+  const onH = 36; // under the pitch, so the three newest turns stay three bars
+  const barX = 680;
+  const barW = 320;
+  const recent = 3; // the newest turns, still in the window
+  const pulled = 9; // the older turn fetched back for this turn
+
+  const cy = (i) => cy0 + i * pitch;
+  const bar = (i, fill, opacity, h) =>
+    `<rect x="${barX}" y="${n(cy(i) - h / 2)}" width="${barW}" height="${h}" rx="${n(h / 2)}" ` +
+    `fill="${fill}" opacity="${opacity}"/>`;
+
+  const rest = [];
+  for (let i = recent; i < turns; i++) {
+    if (i !== pulled) rest.push(bar(i, C.cyan, 0.45, dimH));
+  }
+  // One code for every turn in the window: the blind read read two brightnesses
+  // of mint as a gradient artifact rather than as a distinction.
+  const held = [];
+  for (let i = 0; i < recent; i++) held.push(bar(i, C.mint, 0.95, onH));
+
+  // The one connector, thick enough to survive the narrow crop: out of the
+  // recalled turn, up the outside of the transcript, into the newest ones. The
+  // head overlaps the newest bar so it lands on a turn, not above the column.
+  const end = barX + barW;
+  const base = end + 64;
+  const band =
+    `M ${n(end)} ${n(cy(pulled))} C 1250 ${n(cy(pulled) - 40)} 1250 ${n(cy(0))} ${n(base)} ${n(cy(0))}`;
+  const head =
+    `M ${n(end - 8)} ${n(cy(0))} L ${n(base)} ${n(cy(0) - 26)} ` +
+    `L ${n(base)} ${n(cy(0) + 26)} Z`;
+
+  return [
+    `  <g>${rest.join('')}</g>`,
+    `  <g>${held.join('')}</g>`,
+    `  <g fill="none" stroke="${C.mint}" stroke-linecap="round" stroke-linejoin="round">` +
+      `<path d="${band}" stroke-width="24" opacity="0.9"/>` +
+      `<path d="${head}" fill="${C.mint}" opacity="0.95"/></g>`,
+    `  ${bar(pulled, C.mint, 0.95, onH)}`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -6050,6 +6150,8 @@ const BASE_THEMES = [
   { name: 'fake-in-process-enclosure', seed: 47011, zoom: 1.22, center: [960, 540], title: 'Valkey inside the test process', desc: 'One rounded process boundary containing a card of test lines on the left, three lanes running from it to the white Valkey hexagon mark on the right, and a short list of key and value pairs under that mark, with the only port on the wall drawn in dim purple and its lead ending in an unplugged connector outside, representing a Valkey server whose behaviour runs inside the test process.', art: fakeInProcessEnclosure },
   { name: 'fake-in-process-parity', seed: 47021, zoom: 1.28, center: [960, 540], title: 'Valkey fake and real, same reply', desc: 'Two identical columns of five reply capsules standing side by side, matched row for row in width and colour, with one pale caliper bracketing both from below; above the left column a dashed test card holds the white Valkey hexagon mark, and above the right the same mark sits in a solid server box with a port capsule and a connection running out of the frame, representing a fake inside the test process and a real Valkey server answering one assertion identically.', art: fakeInProcessParity },
   { name: 'fake-in-process-dropin', seed: 47031, zoom: 1.3, center: [960, 540], title: 'Valkey test double, dropped in', desc: 'A pale socket at the centre with two contacts, a green in-process server carrying the white Valkey hexagon mark seated in it on matching pins, a dim purple server carrying the same mark held out of the socket above with its network connection trailing off the frame, and a call arriving on a blue lane from the lower left, representing an in-memory test double dropped into the socket a real server used to fill.', art: fakeInProcessDropin },
+  { name: 'agent-context-lit-transcript', seed: 51011, zoom: 1.54, center: [950, 421], title: 'Valkey agent context window', desc: 'A tall transcript of twelve speech bubbles on one even pitch, alternating between a wide left lane and a narrow right lane with each bubble tailed towards its own side, most of them dim blue, with the three newest at the top and two isolated older ones further down drawn taller and solid green, representing an agent conversation kept in Valkey where only the recent turns and a few recalled older ones are loaded back into the context window.', art: agentContextLitTranscript },
+  { name: 'agent-context-recall-arc', seed: 51021, zoom: 1.54, center: [944, 421], title: 'Valkey recalling an older turn', desc: 'A tall single column of twelve rounded bars standing for the turns of an agent conversation, newest at the top, most of them short and dim blue, the three newest and one much older turn far down the column drawn taller and solid green, and a single thick green band running out of that older turn, up the outside of the column and into the newest bar behind an arrowhead, representing an agent conversation held in Valkey out of which an older turn is loaded back into the next context window.', art: agentContextRecallArc },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

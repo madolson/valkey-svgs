@@ -83,6 +83,8 @@ can't drift, and regenerating is a no-op diff.
 | `fake-in-process-enclosure` | One process wall holding the test, the server and its keys, with the port on that wall unplugged | Test doubles, fakes, testing without a server or a container |
 | `fake-in-process-parity` | Two identical reply columns under one caliper, one from a fake inside the test and one from a real server | Compatibility between a fake and the server, differential testing |
 | `fake-in-process-dropin` | A socket with an in-process server seated in it and the remote one held out, still trailing its network | A drop-in test double, replacing a client with a fake |
+| `agent-context-lit-transcript` | A two-lane chat transcript with the newest three turns and two isolated older ones lit | Agent memory, chat history, context windows, selective recall |
+| `agent-context-recall-arc` | A dim column of turns with the newest lit, and one thick band carrying an older turn back up into them | Agent memory, recall, fetching an older turn back into the context window |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -322,6 +324,15 @@ fake-in-process-parity / two rows       — replies in two horizontal rows: the 
 
 Shipped as two columns side by side instead. The caption owns the lower left, so a comparison
 has more height to work with standing up than lying down.
+
+```
+agent-context / working-set              — the transcript beside the turns picked out of it, blind-read as filtering candidates down to a selection: no conversation left in it, and it duplicated `ai-advisory-surge-reproducer`
+agent-context / recall-field             — turns as an even grid with a few cells lit, blind-read as sparse retrieval from a store; the lit run read as a header row and the lone cells as arbitrary positions
+```
+
+Both lost the word the subject turns on. A conversation is a sequence of turns between two
+sides, and neither a second column of selected items nor a grid of cells carries that. The two
+shipped versions keep one column of turns and change only which of them are lit.
 
 ## Licence
 
