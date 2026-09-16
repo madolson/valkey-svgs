@@ -4021,6 +4021,241 @@ function glideCompressFunnel(r) {
   ].join('\n');
 }
 
+// ------------------------------------------------------- prometheus scraping
+//
+// One post, three readings of the same pipeline: the counters come out of the
+// server on a schedule (`prometheus-scrape-tick`), every node's come out into the
+// same store (`prometheus-scrape-every-node`), and what you do with them is read
+// them all on one screen (`prometheus-scrape-wall`). None of them is a single
+// chart, because `benchmarks` is already that.
+
+// The scrape interval: the same handful of counters is read out of the server at a
+// fixed cadence, and each reading is kept beside the last, so a number that only
+// ever existed as an instant becomes a history.
+function prometheusScrapeTick(r) {
+  const railY = 230; // the collector, passing over the server on its schedule
+  const cardTop = 322;
+  const cardBottom = 848;
+  const cols = 6;
+  const rows = 5; // the same five counters, every time
+  const cw = 140;
+  const pitch = 172;
+  const first = 524; // centre of the oldest reading kept
+  const cx = (c) => first + c * pitch;
+  const barH = 72;
+  const barGap = 22;
+  const barTop = cardTop + (cardBottom - cardTop - (rows * barH + (rows - 1) * barGap)) / 2;
+  const barMax = cw - 36;
+
+  // One walk per counter, sampled once per scrape. Each reading is a card rather
+  // than a bare column of cells: the frame is what makes it read as one record
+  // taken at one instant instead of as a tile in a grid.
+  const vals = [];
+  for (let row = 0; row < rows; row++) {
+    let v = 0.6 + r() * 0.38;
+    const series = [];
+    for (let c = 0; c < cols; c++) {
+      v = clamp(v + (r() - 0.5) * 0.86, 0.26, 1);
+      series.push(v);
+    }
+    vals.push(series);
+  }
+
+  const card = (c, { stroke, strokeW, strokeOp, fillOp, color, barOp }) =>
+    `<rect x="${n(cx(c) - cw / 2)}" y="${cardTop}" width="${cw}" height="${cardBottom - cardTop}" rx="18" ` +
+      `fill="${stroke}" fill-opacity="${fillOp}" stroke="${stroke}" stroke-width="${strokeW}" opacity="${strokeOp}"/>` +
+    Array.from({ length: rows }, (_, row) =>
+      `<rect x="${n(cx(c) - cw / 2 + 18)}" y="${n(barTop + row * (barH + barGap))}" ` +
+        `width="${n(barMax * vals[row][c])}" height="${barH}" rx="9" fill="${color}" opacity="${n(barOp)}"/>`
+    ).join('');
+
+  // Readings already on record: neutral, and fading with age.
+  const kept = Array.from({ length: cols - 1 }, (_, c) => {
+    const age = c / (cols - 2);
+    return card(c, {
+      stroke: C.cyanLt,
+      strokeW: 3,
+      strokeOp: n(0.3 + age * 0.14),
+      fillOp: 0.04,
+      color: C.cyan,
+      barOp: 0.46 + age * 0.16,
+    });
+  }).join('');
+
+  // The reading being taken now: instrumentation colour, with the collector's lead
+  // coming down into it.
+  const last = cols - 1;
+  const fresh = card(last, {
+    stroke: C.ice,
+    strokeW: 5,
+    strokeOp: 0.95,
+    fillOp: 0.07,
+    color: C.ice,
+    barOp: 0.9,
+  });
+
+  // One lead per tick, evenly spaced because that is the whole point.
+  const leads = Array.from({ length: cols }, (_, c) => {
+    const live = c === last;
+    return (
+      `<line x1="${n(cx(c))}" y1="${railY}" x2="${n(cx(c))}" y2="${cardTop - (live ? 18 : 8)}" ` +
+      `stroke="${C.ice}" stroke-width="${live ? 11 : 5}" stroke-linecap="round" opacity="${live ? 0.95 : 0.38}"/>`
+    );
+  }).join('');
+  const head =
+    `<path d="M ${n(cx(last) - 38)} ${cardTop - 66} L ${n(cx(last))} ${cardTop - 18} L ${n(cx(last) + 38)} ${cardTop - 66}" ` +
+    `fill="none" stroke="${C.ice}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>`;
+
+  return [
+    `  <ellipse cx="${n(cx(last))}" cy="${n((cardTop + cardBottom) / 2)}" rx="210" ry="380" fill="url(#h-ice)" opacity="0.26"/>`,
+    `  <line x1="430" y1="${railY}" x2="1470" y2="${railY}" stroke="${C.ice}" stroke-width="5" opacity="0.45"/>`,
+    `  <g>${leads}</g>`,
+    `  <g>${kept}</g>`,
+    `  <g>${fresh}</g>`,
+    `  ${head}`,
+    `  <line x1="430" y1="${n(cardBottom + 22)}" x2="1470" y2="${n(cardBottom + 22)}" stroke="${C.ice}" stroke-width="4" opacity="0.5"/>`,
+  ].join('\n');
+}
+
+// Every node, one store: the collector pulls the same counters out of each
+// instance in the deployment, and they land as one series apiece in a single
+// place, which is what makes a per-node problem visible at all.
+function prometheusScrapeEveryNode(r) {
+  const nodeX = 560;
+  const nodeYs = [290, 445, 600, 755];
+  const markH = 96;
+  const px0 = 880;
+  const px1 = 1440;
+  const pTop = 260;
+  const pBottom = 870;
+
+  const marks = nodeYs.map((y) => mark(nodeX, y, markH)).join('');
+
+  // One series row per node, drawn as a short run of samples on its own baseline.
+  const rowBase = [430, 556, 682, 808];
+  const ticks = 6;
+  const tw = 46;
+  const tPitch = 78;
+  const tx0 = 940;
+  const series = [];
+  for (const base of rowBase) {
+    const level = 0.35 + r() * 0.45;
+    for (let i = 0; i < ticks; i++) {
+      const h = 26 + (level + (r() - 0.5) * 0.5) * 64;
+      series.push(
+        `<rect x="${n(tx0 + i * tPitch)}" y="${n(base - h)}" width="${tw}" height="${n(h)}" rx="7" ` +
+          `fill="${C.cyan}" opacity="0.52"/>`
+      );
+    }
+    series.push(
+      `<line x1="${n(tx0 - 12)}" y1="${n(base + 8)}" x2="${n(tx0 + (ticks - 1) * tPitch + tw + 12)}" ` +
+        `y2="${n(base + 8)}" stroke="${C.cyanLt}" stroke-width="2.4" opacity="0.3"/>`
+    );
+  }
+
+  // The pull: one lane per node, all of them arriving at their own row.
+  const lanes = nodeYs
+    .map((y0, i) => {
+      const y1 = rowBase[i] - 45;
+      const x0 = nodeX + markH * 0.44 + 18;
+      return `<path d="M ${n(x0)} ${n(y0)} C ${n(x0 + 120)} ${n(y0)} ${px0 - 120} ${n(y1)} ${px0} ${n(y1)}"/>`;
+    })
+    .join('');
+  const arrivals = nodeYs.map((_, i) => dot(px0, rowBase[i] - 45, 7, C.ice, 'ice', 0.85, 3)).join('');
+
+  const panel =
+    `<rect x="${px0}" y="${pTop}" width="${px1 - px0}" height="${pBottom - pTop}" rx="24" fill="${C.ink}" ` +
+      `fill-opacity="0.5" stroke="${C.ice}" stroke-width="5" opacity="0.92"/>` +
+    `<line x1="${px0 + 30}" y1="${pTop + 78}" x2="${px1 - 30}" y2="${pTop + 78}" stroke="${C.ice}" ` +
+      `stroke-width="2.6" opacity="0.45"/>`;
+
+  return [
+    `  <ellipse cx="${n((px0 + px1) / 2)}" cy="${n((pTop + pBottom) / 2)}" rx="360" ry="400" fill="url(#h-ice)" opacity="0.2"/>`,
+    `  <g stroke="${C.ice}" stroke-width="14" fill="none" opacity="0.13" filter="url(#blur8)">${lanes}</g>`,
+    `  <g stroke="${C.ice}" stroke-width="5" fill="none" opacity="0.5">${lanes}</g>`,
+    `  <g opacity="0.72">${marks}</g>`,
+    `  ${panel}`,
+    `  <g>${series.join('')}</g>`,
+    `  <g>${arrivals}</g>`,
+  ].join('\n');
+}
+
+// One screen, every series: the stored metrics come back as a wall of panels, and
+// the reason to have them is that the one that has gone wrong is the only thing on
+// the wall that is not flat.
+function prometheusScrapeWall(r) {
+  const smallW = 222;
+  const smallH = 200;
+  const smallX = [460, 700];
+  const smallY = [232, 446, 660];
+  const bx0 = 950;
+  const bx1 = 1460;
+  const byTop = 285;
+  const byBottom = 805;
+
+  // A quiet series: it wanders around its own level and stays there.
+  const trace = (x0, x1, level, amp, steps) => {
+    const pts = [];
+    let v = level;
+    for (let i = 0; i <= steps; i++) {
+      v += (level - v) * 0.5 + (r() - 0.5) * amp;
+      pts.push([x0 + ((x1 - x0) * i) / steps, v]);
+    }
+    return pts;
+  };
+  const path = (pts) => pts.map(([x, y], i) => `${i ? 'L' : 'M'} ${n(x)} ${n(y)}`).join(' ');
+
+  const panels = [];
+  for (const y of smallY) {
+    for (const x of smallX) {
+      const pts = trace(x + 24, x + smallW - 24, y + smallH * 0.66, 26, 9);
+      panels.push(
+        `<rect x="${x}" y="${y}" width="${smallW}" height="${smallH}" rx="18" fill="${C.ink}" ` +
+          `fill-opacity="0.42" stroke="${C.cyanLt}" stroke-width="2.6" opacity="0.5"/>`,
+        `<rect x="${x + 24}" y="${y + 26}" width="${n(58 + r() * 46)}" height="12" rx="6" fill="${C.ice}" opacity="0.4"/>`,
+        `<path d="${path(pts)}" fill="none" stroke="${C.cyan}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>`
+      );
+    }
+  }
+
+  // The panel that is why you built the wall: flat, then away it goes.
+  const bPts = [];
+  const bx = (t) => bx0 + 40 + t * (bx1 - bx0 - 110);
+  const flatY = byBottom - 120;
+  let v = flatY;
+  for (let i = 0; i <= 8; i++) {
+    v += (flatY - v) * 0.5 + (r() - 0.5) * 30;
+    bPts.push([bx(i / 16), v]);
+  }
+  for (let i = 1; i <= 8; i++) {
+    const t = i / 8;
+    bPts.push([bx(0.5 + t * 0.5), flatY - Math.pow(t, 1.7) * (flatY - byTop - 152)]);
+  }
+  const bDraw = path(bPts);
+  const bFill =
+    `<path d="${bDraw} L ${n(bx(1))} ${n(byBottom - 34)} L ${n(bx(0))} ${n(byBottom - 34)} Z" ` +
+    `fill="${C.coral}" opacity="0.16"/>`;
+  const bEnd = bPts[bPts.length - 1];
+
+  const big =
+    `<rect x="${bx0}" y="${byTop}" width="${bx1 - bx0}" height="${byBottom - byTop}" rx="22" fill="${C.ink}" ` +
+      `fill-opacity="0.5" stroke="${C.ice}" stroke-width="5" opacity="0.92"/>` +
+    `<line x1="${bx0 + 30}" y1="${byTop + 84}" x2="${bx1 - 30}" y2="${byTop + 84}" stroke="${C.ice}" ` +
+      `stroke-width="2.6" opacity="0.45"/>` +
+    `<g opacity="0.9">${mark(bx0 + 66, byTop + 44, 44)}</g>` +
+    `<rect x="${bx0 + 108}" y="${byTop + 34}" width="150" height="14" rx="7" fill="${C.ice}" opacity="0.45"/>`;
+
+  return [
+    `  <ellipse cx="${n((bx0 + bx1) / 2)}" cy="${n((byTop + byBottom) / 2)}" rx="360" ry="360" fill="url(#h-coral)" opacity="0.2"/>`,
+    `  <g>${panels.join('')}</g>`,
+    `  ${big}`,
+    `  ${bFill}`,
+    `  <path d="${bDraw}" fill="none" stroke="${C.coral}" stroke-width="20" stroke-linecap="round" opacity="0.28" filter="url(#blur8)"/>`,
+    `  <path d="${bDraw}" fill="none" stroke="${C.coral}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>`,
+    `  ${dot(bEnd[0], bEnd[1], 13, C.coral, 'coral', 0.95)}`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -4082,6 +4317,9 @@ const BASE_THEMES = [
   { name: 'glide-compress-press', seed: 47011, zoom: 1.36, center: [980, 540], title: 'Valkey GLIDE compression', desc: 'Two heavy pale plates converging from left to right on four lanes of blue data cells, closing them into a single block of dense green cells that carries on to the white Valkey hexagon mark, representing a client library compressing a value before it crosses the network.', art: glideCompressPress },
   { name: 'glide-compress-fold', seed: 47021, zoom: 1.3, center: [960, 540], title: 'Valkey compressed on the wire', desc: 'A long blue ribbon of data cells arriving from the left and folded into a compact green stack of seven layers, its last fold running on to the white Valkey hexagon mark, representing a client library packing a value down before it crosses the network.', art: glideCompressFold },
   { name: 'glide-compress-funnel', seed: 47031, zoom: 1.24, center: [980, 540], title: 'Valkey client-side compression', desc: 'Three differently shaped blue values, a nested document, a bracketed block and a scatter of short unequal fields, meeting a tall pale client bar, and leaving its far side as three identical blocks of dense green cells that run on to the white Valkey hexagon mark, representing a client library turning any value into the same compact form before it crosses the network.', art: glideCompressFunnel },
+  { name: 'prometheus-scrape-tick', seed: 62701, zoom: 1.3, center: [960, 540], title: 'Valkey metrics on a schedule', desc: 'Six readings of the same six Valkey counters standing side by side on a baseline, each drawn as a stack of six tracks filled to the value that was read, the five older ones in dim blue and the newest bracketed in pale blue at the right with a collector lead coming down into it from an evenly ticked rail above, representing metrics pulled out of the server at a fixed interval and kept as a history.', art: prometheusScrapeTick },
+  { name: 'prometheus-scrape-every-node', seed: 62711, zoom: 1.3, center: [960, 555], title: 'Valkey metrics from every node', desc: 'Four Valkey instances drawn as white hexagon marks in a column on the left, each with a pale blue lane curving into its own row inside one large store panel on the right, where each row holds a short run of sample bars on its own baseline, representing one collector pulling the same counters out of every node into a single store.', art: prometheusScrapeEveryNode },
+  { name: 'prometheus-scrape-wall', seed: 62721, zoom: 1.3, center: [960, 545], title: 'Valkey metrics in one view', desc: 'A wall of dashboard panels: six small panels holding flat blue traces, and one much larger panel carrying the white Valkey hexagon mark in its header whose red trace runs flat and then climbs steeply off the top of its range, representing a screen of stored Valkey metrics where the one that has gone wrong is the only thing that is not flat.', art: prometheusScrapeWall },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

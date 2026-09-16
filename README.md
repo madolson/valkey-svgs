@@ -56,6 +56,9 @@ can't drift, and regenerating is a no-op diff.
 | `glide-compress-press` | Two plates closing on loose lanes of data, the dense band leaving for the mark | Client-side compression, GLIDE compression, smaller payloads on the wire |
 | `glide-compress-fold` | A long ribbon of data folded into a compact stack that carries on to the mark | The same, when the point is the value being packed before it is sent |
 | `glide-compress-funnel` | Three unlike values meeting the client bar, leaving as identical dense blocks | The same, when the point is that any value type packs down to one form |
+| `prometheus-scrape-tick` | Readings of the same counters kept side by side, the newest bracketed under the collector's lead | Prometheus scraping, scrape intervals, metrics retention |
+| `prometheus-scrape-every-node` | Every instance's counters pulled down its own lane into one store panel | Scraping a whole deployment, per-node metrics, exporters |
+| `prometheus-scrape-wall` | Six flat dashboard panels and one big one whose trace climbs away in red | Dashboards, Grafana, finding the one metric that moved |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -259,6 +262,7 @@ security-shield / broad (700x520)       — low and wide, the glow reaches the n
 security-shield / hex (536x620)         — hexagon silhouette, says Valkey twice with the mark inside it
 security-shield / high (mark up 86)     — empties the lower chamber, the weave becomes the subject
 security-shield / hex-high              — both faults at once
+prometheus-scrape-tick / matrix         — readings as bare columns of value cells read as a tiled grid, not as readings taken at instants; framing each column as a card fixed it
 ```
 
 All five lost to `security-shield-clean` on the same judgement: the shipped proportions are
