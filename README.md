@@ -53,6 +53,9 @@ can't drift, and regenerating is a no-op diff.
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
+| `prometheus-scrape-tick` | Readings of the same counters kept side by side, the newest bracketed under the collector's lead | Prometheus scraping, scrape intervals, metrics retention |
+| `prometheus-scrape-every-node` | Every instance's counters pulled down its own lane into one store panel | Scraping a whole deployment, per-node metrics, exporters |
+| `prometheus-scrape-wall` | Six flat dashboard panels and one big one whose trace climbs away in red | Dashboards, Grafana, finding the one metric that moved |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -256,6 +259,7 @@ security-shield / broad (700x520)       — low and wide, the glow reaches the n
 security-shield / hex (536x620)         — hexagon silhouette, says Valkey twice with the mark inside it
 security-shield / high (mark up 86)     — empties the lower chamber, the weave becomes the subject
 security-shield / hex-high              — both faults at once
+prometheus-scrape-tick / matrix         — readings as bare columns of value cells read as a tiled grid, not as readings taken at instants; framing each column as a card fixed it
 ```
 
 All five lost to `security-shield-clean` on the same judgement: the shipped proportions are
