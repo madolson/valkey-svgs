@@ -3822,6 +3822,205 @@ function planetRing(r) {
   ].join('\n');
 }
 
+// ------------------------------------------- GLIDE transparent compression
+//
+// Three candidates for one idea: the client library shrinks a value before it
+// leaves the application, so the smaller form is what crosses the network and
+// what the server holds. All three keep the transformation on the client's side
+// of the wire and put the mark at the far end of it, which is what separates
+// them from `memory-efficiency` (a static field of cells getting denser, with no
+// client and no wire) and from `limits-tight-envelope` (work packed into a box).
+// They differ in the device: plates closing on the content, the content folding
+// itself, and unlike values leaving the client in one identical form.
+
+// The press: two plates converge on the lanes of content running between them,
+// so what enters the client loose leaves it as one dense band on the wire.
+function glideCompressPress(r) {
+  const yc = 540;
+  const x0 = 500; // the mouth, still inside the application
+  const x1 = 1040; // the client's edge, where the plates have closed
+  const lip = 80; // the flat run past the exit, so the band leaves level
+  const open = 270; // plate inner face at the mouth
+  const shut = 84; // plate inner face at the exit
+  const plateT = 46;
+
+  // One plate per side, drawn as a wedge: inner face, lip, then back along the
+  // outer face. The pair is the focal element, so they are the only full-opacity
+  // shapes in the frame.
+  const plate = (s) =>
+    `<path d="M ${x0} ${n(yc + s * open)} L ${x1} ${n(yc + s * shut)} L ${x1 + lip} ${n(yc + s * shut)} ` +
+    `L ${x1 + lip} ${n(yc + s * (shut + plateT))} L ${x1} ${n(yc + s * (shut + plateT))} ` +
+    `L ${x0} ${n(yc + s * (open + plateT))} Z" fill="${C.ice}" opacity="0.72"/>`;
+
+  // Four lanes of content, spread at the mouth and packed at the exit. Cut into
+  // segments so they read as a run of values rather than as streaks of light.
+  const LANES = 4;
+  const spread = 140; // lane pitch at the mouth
+  const packed = 34; // lane pitch at the exit
+  const lane = (i) => ({
+    c0: yc + (i - (LANES - 1) / 2) * spread,
+    c1: yc + (i - (LANES - 1) / 2) * packed,
+  });
+
+  const strands = [];
+  for (let i = 0; i < LANES; i++) {
+    const { c0, c1 } = lane(i);
+    const at = (x) => {
+      const t = (x - x0) / (x1 - x0);
+      return { c: c0 + (c1 - c0) * t, h: (56 + (28 - 56) * t) / 2 };
+    };
+    for (let xa = x0 + 18; xa + 118 <= x1 - 6; xa += 138) {
+      const xb = xa + 118;
+      const a = at(xa);
+      const b = at(xb);
+      strands.push(
+        `<path d="M ${n(xa)} ${n(a.c - a.h)} L ${n(xb)} ${n(b.c - b.h)} L ${n(xb)} ${n(b.c + b.h)} ` +
+          `L ${n(xa)} ${n(a.c + a.h)} Z" fill="${C.cyanLt}" opacity="${n(0.48 + r() * 0.2)}"/>`
+      );
+    }
+  }
+
+  // What leaves the client: the same four lanes, now a block of dense cells.
+  const payload = [];
+  for (let i = 0; i < LANES; i++) {
+    const cy = lane(i).c1;
+    for (let j = 0; j < 4; j++) {
+      payload.push(
+        `<rect x="${n(x1 + lip + j * 41)}" y="${n(cy - 14)}" width="34" height="28" rx="6" fill="${C.mint}" ` +
+          `opacity="${n(0.82 + r() * 0.16)}"/>`
+      );
+    }
+  }
+
+  return [
+    `  <ellipse cx="${x1 + 80}" cy="${yc}" rx="300" ry="190" fill="url(#h-ice)" opacity="0.24"/>`,
+    `  <g>${strands.join('')}</g>`,
+    `  <g>${payload.join('')}</g>`,
+    `  ${plate(-1)}`,
+    `  ${plate(1)}`,
+    `  <g opacity="0.85">${mark(1370, yc, 170)}</g>`,
+  ].join('\n');
+}
+
+// The fold: one long ribbon of content leaves the application, and the client
+// folds it into a compact stack that is what travels the rest of the way.
+function glideCompressFold(r) {
+  const LAYERS = 7; // odd, so the ribbon ends on the right, pointing at the mark
+  const xa = 862; // the client's edge: left of it the ribbon is still the app's
+  const xb = 1186;
+  const pitch = 88;
+  const thick = 56;
+  const rad = pitch / 2;
+  // The stack sits low enough that the ribbon's tail clears the corner lockup.
+  const top = 545 - ((LAYERS - 1) * pitch) / 2;
+  const CELL = 84;
+  const GAP = 16;
+  const cells = `stroke-dasharray="${CELL} ${GAP}"`; // the ribbon's own content
+
+  let d = `M ${xa} ${top}`;
+  for (let i = 0; i < LAYERS; i++) {
+    const y = top + i * pitch;
+    const right = i % 2 === 0;
+    d += ` L ${right ? xb : xa} ${n(y)}`;
+    // Bulge away from the stack on each turn: sweep 1 on the right, 0 on the left.
+    if (i < LAYERS - 1) d += ` A ${rad} ${rad} 0 0 ${right ? 1 : 0} ${right ? xb : xa} ${n(y + pitch)}`;
+  }
+  const exitY = top + (LAYERS - 1) * pitch;
+
+  const ribbon = (path, color, op, dash = cells) =>
+    `<path d="${path}" fill="none" stroke="${color}" stroke-width="${thick}" stroke-linecap="butt" ${dash} opacity="${op}"/>`;
+
+  // The tail still inside the application: the same ribbon, unfolded and quiet.
+  // Its length is a whole number of cells so the fold starts on a cell edge, and
+  // it starts left of the frame so it reads as coming in from off-frame.
+  const tail = `M ${n(xa - (CELL * 7 + GAP * 6))} ${n(top)} L ${xa} ${n(top)}`;
+  // One cell leaving the last fold, drawn on its own so the dash phase cannot
+  // leave a sliver against the mark.
+  const out = `M ${xb} ${n(exitY)} L ${xb + CELL} ${n(exitY)}`;
+
+  return [
+    `  <ellipse cx="${n((xa + xb) / 2)}" cy="545" rx="290" ry="330" fill="url(#h-mint)" opacity="0.2"/>`,
+    `  ${ribbon(tail, C.cyanLt, n(0.44 + r() * 0.08))}`,
+    `  ${ribbon(d, C.mint, '0.9')}`,
+    `  ${ribbon(out, C.mint, '0.9', '')}`,
+    `  <g opacity="0.85">${mark(1385, exitY, 160)}</g>`,
+  ].join('\n');
+}
+
+// The funnel: three unlike values meet the client, and every one of them leaves
+// its far side in the same compact form before anything crosses the wire.
+function glideCompressFunnel(r) {
+  const rows = [250, 500, 750];
+  const gx = 520; // the values, as the application holds them
+  const mx = 800; // the client
+  const mw = 62;
+  const bx = 940; // what leaves it
+  const bar = (x, y, w, h = 28) =>
+    `<rect x="${n(x)}" y="${n(y - h / 2)}" width="${n(w)}" height="${n(h)}" rx="7" fill="${C.cyanLt}" opacity="${n(
+      0.42 + r() * 0.14
+    )}"/>`;
+
+  // A different shape each: a nested document, a bracketed block, and a scatter
+  // of short unequal fields. Identical inputs would say "many of the same".
+  const values = [];
+  {
+    const y = rows[0];
+    values.push(bar(gx, y, 28, 166)); // the document's spine
+    [[gx + 44, 148], [gx + 80, 112], [gx + 80, 112], [gx + 44, 148]].forEach(([x, w], i) =>
+      values.push(bar(x, y - 69 + i * 46, w))
+    );
+  }
+  {
+    const y = rows[1];
+    values.push(bar(gx, y - 69, 200), bar(gx, y + 69, 200));
+    values.push(bar(gx + 40, y - 23, 124), bar(gx + 40, y + 23, 92));
+  }
+  {
+    const y = rows[2];
+    for (let i = 0; i < 4; i++) {
+      let x = gx;
+      for (const w of [58 + r() * 46, 44 + r() * 52, 38 + r() * 40]) {
+        if (x + w > gx + 200) break;
+        values.push(bar(x, y - 69 + i * 46, w));
+        x += w + 16;
+      }
+    }
+  }
+
+  // Three identical dense blocks, one per value, all the same size whatever
+  // went in. This run is the focal element.
+  const bricks = [];
+  for (const y of rows) {
+    for (let c = 0; c < 5; c++) {
+      for (let j = 0; j < 5; j++) {
+        bricks.push(
+          `<rect x="${n(bx + c * 30)}" y="${n(y - 72 + j * 30)}" width="24" height="24" rx="5" fill="${C.mint}" ` +
+            `opacity="${n(0.8 + r() * 0.18)}"/>`
+        );
+      }
+    }
+  }
+
+  const lanes = rows
+    .map(
+      (y) =>
+        `<line x1="${bx + 154}" y1="${y}" x2="1288" y2="${n(500 + (y - 500) * 0.12)}" stroke="${C.mint}" ` +
+        `stroke-width="12" opacity="0.38" stroke-linecap="round"/>`
+    )
+    .join('');
+
+  return [
+    `  <ellipse cx="${bx + 72}" cy="500" rx="210" ry="430" fill="url(#h-mint)" opacity="0.22"/>`,
+    `  <g>${values.join('')}</g>`,
+    `  <g>${lanes}</g>`,
+    `  <g>${bricks.join('')}</g>`,
+    `  <rect x="${mx}" y="170" width="${mw}" height="660" rx="24" fill="${C.ink}" fill-opacity="0.4" ` +
+      `stroke="${C.ice}" stroke-width="9" opacity="0.85"/>`,
+    `  <rect x="${n(mx + 15)}" y="192" width="32" height="616" rx="16" fill="${C.ice}" opacity="0.9"/>`,
+    `  <g opacity="0.85">${mark(1370, 500, 175)}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -3880,6 +4079,9 @@ const BASE_THEMES = [
   // spends it: the columns get 24 more units between them and the panel-to-shard span gets
   // the rest. It is not a dramatic stretch, because the frame is the frame.
   { name: 'key-size-card-flat', seed: 43049, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three widely spaced shard enclosures of servers drawn as the white Valkey hexagon mark, the whole chart sitting in a shallow band clear above the title blocks.', art: keySizeCard({ scale: 0.8, spread: 62, colPitch: 168, clearY: 748 }) },
+  { name: 'glide-compress-press', seed: 47011, zoom: 1.36, center: [980, 540], title: 'Valkey GLIDE compression', desc: 'Two heavy pale plates converging from left to right on four lanes of blue data cells, closing them into a single block of dense green cells that carries on to the white Valkey hexagon mark, representing a client library compressing a value before it crosses the network.', art: glideCompressPress },
+  { name: 'glide-compress-fold', seed: 47021, zoom: 1.3, center: [960, 540], title: 'Valkey compressed on the wire', desc: 'A long blue ribbon of data cells arriving from the left and folded into a compact green stack of seven layers, its last fold running on to the white Valkey hexagon mark, representing a client library packing a value down before it crosses the network.', art: glideCompressFold },
+  { name: 'glide-compress-funnel', seed: 47031, zoom: 1.24, center: [980, 540], title: 'Valkey client-side compression', desc: 'Three differently shaped blue values, a nested document, a bracketed block and a scatter of short unequal fields, meeting a tall pale client bar, and leaving its far side as three identical blocks of dense green cells that run on to the white Valkey hexagon mark, representing a client library turning any value into the same compact form before it crosses the network.', art: glideCompressFunnel },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

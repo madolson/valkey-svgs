@@ -53,6 +53,9 @@ can't drift, and regenerating is a no-op diff.
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
+| `glide-compress-press` | Two plates closing on loose lanes of data, the dense band leaving for the mark | Client-side compression, GLIDE compression, smaller payloads on the wire |
+| `glide-compress-fold` | A long ribbon of data folded into a compact stack that carries on to the mark | The same, when the point is the value being packed before it is sent |
+| `glide-compress-funnel` | Three unlike values meeting the client bar, leaving as identical dense blocks | The same, when the point is that any value type packs down to one form |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
