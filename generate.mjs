@@ -3822,6 +3822,202 @@ function planetRing(r) {
   ].join('\n');
 }
 
+// ------------------------------------------- two exporters, two scopes (PR 645)
+//
+// One post, three metaphors for the same sentence: a cluster is watched at two
+// scopes, inside a single node and across the whole cluster, and each scope needs
+// its own exporter. Ice is the instrument in all three, because ice is
+// instrumentation; the two scopes differ in size, never in colour.
+
+// Idea: a probe is clipped to every node and reports what is inside it, and one
+// far larger probe is clamped on the cluster boundary and reports the cluster.
+// Focal: the big boundary probe, its head full of slots.
+function exporterProbes(r) {
+  const bx0 = 518; // the cluster boundary, a bracket pair rather than a closed box
+  const bx1 = 1126;
+  const by0 = 195;
+  const by1 = 815;
+  const arm = 76;
+  const tileX = 554;
+  const tileW = 420;
+  const tileH = 156;
+  const rows = [298, 505, 712];
+  const px = 1302; // the cluster probe
+  const py = 540;
+  const pr = 98;
+
+  const bracket = (x, dir) =>
+    `<path d="M ${n(x + dir * arm)} ${by0} L ${x} ${by0} L ${x} ${by1} L ${n(x + dir * arm)} ${by1}" ` +
+    `fill="none" stroke="${C.ice}" stroke-width="8" stroke-linecap="round" ` +
+    `stroke-linejoin="round" opacity="0.5"/>`;
+
+  // One node per row: the mark, the three things a per-node exporter reports, and
+  // the small probe clipped to its side.
+  const nodes = rows.flatMap((cy) => [
+    `<rect x="${tileX}" y="${n(cy - tileH / 2)}" width="${tileW}" height="${tileH}" rx="22" ` +
+      `fill="${C.cyan}" fill-opacity="0.1" stroke="${C.cyanLt}" stroke-width="4" opacity="0.55"/>`,
+    `<g opacity="0.55">${mark(616, cy, 76)}</g>`,
+    ...[-38, 0, 38].map(
+      (dy) =>
+        `<rect x="674" y="${n(cy + dy - 7.5)}" width="${n(150 + r() * 136)}" height="15" rx="7.5" ` +
+        `fill="${C.cyanLt}" opacity="0.5"/>`
+    ),
+    `<line x1="${tileX + tileW}" y1="${cy}" x2="1052" y2="${cy}" stroke="${C.ice}" ` +
+      `stroke-width="7" opacity="0.55"/>`,
+    `<circle cx="1080" cy="${cy}" r="28" fill="${C.ink}" fill-opacity="0.5" stroke="${C.ice}" ` +
+      `stroke-width="6" opacity="0.6"/>`,
+    // The small head reads one node; the big one reads the whole slot range.
+    `<circle cx="1080" cy="${cy}" r="8" fill="${C.cyanLt}" opacity="0.6"/>`,
+  ]);
+
+  // What the big probe resolves that the small ones cannot: the slots.
+  const slots = 14;
+  const seg = [];
+  for (let i = 0; i < slots; i++) {
+    const step = (Math.PI * 2) / slots;
+    seg.push(
+      `<path d="${arcPath(px, py, 60, i * step + 0.06, (i + 1) * step - 0.06)}" fill="none" ` +
+        `stroke="${weighted(r, [[C.cyan, 5], [C.cyanLt, 4]])}" stroke-width="15" ` +
+        `opacity="${n(0.65 + r() * 0.3)}"/>`
+    );
+  }
+
+  return [
+    `  <circle cx="${px}" cy="${py}" r="176" fill="url(#h-ice)" opacity="0.3"/>`,
+    `  <g>${bracket(bx0, 1)}${bracket(bx1, -1)}</g>`,
+    `  <g>${nodes.join('')}</g>`,
+    `  <line x1="${bx1}" y1="${py}" x2="${n(px - pr + 6)}" y2="${py}" stroke="${C.ice}" ` +
+      `stroke-width="17" stroke-linecap="round" opacity="0.9"/>`,
+    `  <circle cx="${px}" cy="${py}" r="${pr}" fill="${C.ink}" fill-opacity="0.5" ` +
+      `stroke="${C.ice}" stroke-width="13"/>`,
+    `  <g>${seg.join('')}</g>`,
+  ].join('\n');
+}
+
+// Idea: one view holds the whole cluster and its slots, and a second, much smaller
+// one is pulled off a single node in it to show what is going on inside that node.
+// Focal: the large view, with the cluster's nodes and slot ring inside it.
+function exporterTwinScopes(r) {
+  const sx = 620; // the node view
+  const sy = 370;
+  const sr = 130;
+  const bx = 1150; // the cluster view
+  const by = 610;
+  const br = 250;
+  const nodes = 6;
+  const nodeRad = 130;
+  const detail = 5; // which node the small view is pulled off, at 210 degrees
+
+  // Inside the small glass: one node and the three series a per-node exporter gives.
+  const nodeView =
+    `<g opacity="0.75">${mark(sx - 58, sy, 60)}</g>` +
+    [-32, 0, 32]
+      .map(
+        (dy) =>
+          `<rect x="${sx + 2}" y="${n(sy + dy - 6.5)}" width="${n(52 + r() * 48)}" height="13" ` +
+          `rx="6.5" fill="${C.cyanLt}" opacity="0.7"/>`
+      )
+      .join('');
+
+  // Inside the large glass: the whole cluster, and the slot ring only it can see.
+  const slots = 16;
+  const step = (Math.PI * 2) / slots;
+  const ring = [];
+  for (let i = 0; i < slots; i++) {
+    ring.push(
+      `<path d="${arcPath(bx, by, 196, i * step + 0.05, (i + 1) * step - 0.05)}" fill="none" ` +
+        `stroke="${weighted(r, [[C.cyan, 5], [C.cyanLt, 4]])}" stroke-width="18" ` +
+        `opacity="${n(0.6 + r() * 0.35)}"/>`
+    );
+  }
+  const at = (i) => {
+    const a = -Math.PI / 2 + (i / nodes) * Math.PI * 2;
+    return [bx + nodeRad * Math.cos(a), by + nodeRad * Math.sin(a)];
+  };
+  const clusterView =
+    Array.from({ length: nodes }, (_, i) => {
+      const [x, y] = at(i);
+      return `<g opacity="0.62">${mark(x, y, 66)}</g>`;
+    }).join('') + `<g opacity="0.62">${mark(bx, by, 66)}</g>`;
+
+  // The callout: one wedge, from the detailed node out to the small glass, so the
+  // small view reads as that node rather than as a second unrelated bubble.
+  const [dx, dy] = at(detail);
+  const len = Math.hypot(sx - dx, sy - dy);
+  const px = -(sy - dy) / len; // unit perpendicular to the run
+  const py = (sx - dx) / len;
+  const wedge = [1, -1]
+    .map(
+      (s) =>
+        `<line x1="${n(dx + s * px * 34)}" y1="${n(dy + s * py * 34)}" ` +
+        `x2="${n(sx + s * px * (sr - 8))}" y2="${n(sy + s * py * (sr - 8))}" stroke="${C.ice}" ` +
+        `stroke-width="5" opacity="0.4"/>`
+    )
+    .join('');
+
+  return [
+    `  <circle cx="${bx}" cy="${by}" r="330" fill="url(#h-ice)" opacity="0.22"/>`,
+    `  <g>${wedge}</g>`,
+    `  <circle cx="${sx}" cy="${sy}" r="${n(sr - 4)}" fill="${C.ink}" fill-opacity="0.5"/>`,
+    `  <g>${nodeView}</g>`,
+    `  <circle cx="${sx}" cy="${sy}" r="${sr}" fill="none" stroke="${C.ice}" stroke-width="7" opacity="0.65"/>`,
+    `  <circle cx="${bx}" cy="${by}" r="${n(br - 7)}" fill="${C.ink}" fill-opacity="0.5"/>`,
+    `  <g>${ring.join('')}</g>`,
+    `  <g>${clusterView}</g>`,
+    `  <circle cx="${bx}" cy="${by}" r="${br}" fill="none" stroke="${C.ice}" stroke-width="14"/>`,
+  ].join('\n');
+}
+
+// Idea: the per-node exporter hands you one readout per node, the cluster exporter
+// hands you a single readout for the whole cluster, and they are not the same shape.
+// Focal: the one large cluster readout, its hottest slot picked out in red.
+function exporterManyAndOne(r) {
+  const cw = 320; // the per-node readouts, one per node, fanned as a deck
+  const ch = 140;
+  const deck = [];
+  for (let i = 0; i < 5; i++) {
+    const x = 500 + i * 24;
+    const y = 380 + i * 42;
+    const top = i === 4;
+    deck.push(
+      `<rect x="${x}" y="${y}" width="${cw}" height="${ch}" rx="18" fill="${C.ink}" ` +
+        `fill-opacity="0.6" stroke="${C.cyanLt}" stroke-width="4" opacity="${top ? 0.6 : 0.5}"/>`
+    );
+    if (top) {
+      deck.push(`<g opacity="0.55">${mark(x + 46, y + 70, 46)}</g>`);
+      for (let j = 0; j < 3; j++) {
+        deck.push(
+          `<rect x="${x + 92}" y="${n(y + 37 + j * 28)}" width="${n(90 + r() * 100)}" height="11" ` +
+            `rx="5.5" fill="${C.cyanLt}" opacity="0.5"/>`
+        );
+      }
+    }
+  }
+
+  // The single cluster readout: per-slot counters, which is the series the per-node
+  // exporter has no equivalent for, with the hottest slot standing out.
+  const bars = [];
+  const hot = 7;
+  for (let i = 0; i < 12; i++) {
+    const h = i === hot ? 396 : 96 + r() * 250;
+    bars.push(
+      `<rect x="${n(1032 + i * 30)}" y="${n(790 - h)}" width="22" height="${n(h)}" rx="5" ` +
+        `fill="${i === hot ? C.coral : C.cyan}" opacity="${i === hot ? 0.95 : n(0.5 + r() * 0.25)}"/>`
+    );
+  }
+
+  return [
+    `  <circle cx="1207" cy="540" r="360" fill="url(#h-ice)" opacity="0.2"/>`,
+    `  <g>${deck.join('')}</g>`,
+    `  <rect x="996" y="230" width="422" height="620" rx="24" fill="${C.ink}" fill-opacity="0.5" ` +
+      `stroke="${C.ice}" stroke-width="8" opacity="0.95"/>`,
+    `  <g opacity="0.85">${mark(1048, 280, 44)}</g>`,
+    `  <line x1="1020" y1="312" x2="1394" y2="312" stroke="${C.ice}" stroke-width="1.8" opacity="0.45"/>`,
+    `  <g>${bars.join('')}</g>`,
+    `  <line x1="1020" y1="790" x2="1394" y2="790" stroke="${C.ice}" stroke-width="2.4" opacity="0.5"/>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -3880,6 +4076,9 @@ const BASE_THEMES = [
   // spends it: the columns get 24 more units between them and the panel-to-shard span gets
   // the rest. It is not a dramatic stretch, because the frame is the frame.
   { name: 'key-size-card-flat', seed: 43049, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three widely spaced shard enclosures of servers drawn as the white Valkey hexagon mark, the whole chart sitting in a shallow band clear above the title blocks.', art: keySizeCard({ scale: 0.8, spread: 62, colPitch: 168, clearY: 748 }) },
+  { name: 'exporter-two-views-probes', seed: 64011, zoom: 1.34, center: [960, 540], title: 'Valkey metrics at two scopes', desc: 'A cluster boundary drawn as a bracket pair holding three Valkey nodes, each node showing its own memory, client and command readouts and carrying a small pale probe clipped to its side, with one far larger probe clamped on the boundary itself whose head resolves the cluster into a ring of slots, representing one exporter per node and one for the cluster.', art: exporterProbes },
+  { name: 'exporter-two-views-twin-scopes', seed: 64021, zoom: 1.34, center: [945, 540], title: 'Valkey metrics per pod and per cluster', desc: 'One instrument carrying two objectives on a single mount: a small glass resolving one Valkey node and its three readouts, and a much larger glass resolving the whole cluster as seven Valkey marks inside a ring of slot segments, representing two exporters watching the same deployment at two scopes.', art: exporterTwinScopes },
+  { name: 'exporter-two-views-many-and-one', seed: 64031, zoom: 1.34, center: [959, 540], title: 'Valkey metrics from two exporters', desc: 'A fanned deck of five identical small readout cards, one per Valkey node with its own memory, client and command bars, beside one large single card holding per-slot counters for the whole cluster with the hottest slot drawn in red, representing one readout per node from one exporter and a single cluster-wide readout from the other.', art: exporterManyAndOne },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

@@ -53,6 +53,9 @@ can't drift, and regenerating is a no-op diff.
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
+| `exporter-two-views-probes` | A small probe clipped to each node inside a bracketed cluster, one big probe clamped on the boundary | Two exporters, per-pod and cluster-wide metrics, Prometheus |
+| `exporter-two-views-twin-scopes` | One mount carrying two objectives, a small glass on one node and a large one on the cluster | Monitoring at two scopes, observability dimensions |
+| `exporter-two-views-many-and-one` | A deck of per-node readout cards beside one cluster-wide card with per-slot counters | Per-pod series versus per-slot series, exporter choice |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -260,6 +263,12 @@ security-shield / hex-high              — both faults at once
 
 All five lost to `security-shield-clean` on the same judgement: the shipped proportions are
 better than any of them, and the shield's silhouette is not a knob worth turning.
+
+```
+exporter-two-views-twin-scopes / mount bar  — the two glasses joined centre to centre read as
+                                              two unrelated bubbles on a rod; a callout wedge
+                                              off one node says which node is being detailed
+```
 
 ## Licence
 
