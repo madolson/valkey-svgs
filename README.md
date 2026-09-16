@@ -62,6 +62,9 @@ can't drift, and regenerating is a no-op diff.
 | `large-object-tail-wake` | An even field of short request bars with one oversized value in it, and the few bars behind it dragged far out | Tail latency, p99.9, a small fraction of requests hurt badly |
 | `large-object-tail-shared-gate` | Six client lanes into one shared window, all of them held up while one oversized value occupies it | Noisy neighbours, multi-tenancy, one client's big objects hurting the rest |
 | `large-object-tail-bypass` | The same oversized value lifted out of the lane onto a dashed route over the top, the small stream below unbroken | Reply copy avoidance, large objects that no longer block the main thread |
+| `llm-kv-cache-new-tail` | One prompt as a run of chunks, most of it loaded from the store below, only the tail fed by the processor above | KV caching for LLM inference, prefix reuse, skipping prefill |
+| `llm-kv-cache-shared-tier` | Two processors with short rows of cached contexts above one much wider shared store, one context rising into the empty slot | A shared L2 KV cache tier, cache capacity that scales apart from the GPUs |
+| `llm-kv-cache-head-start` | The same request twice from one start line: a long dashed recompute above, a short loaded run below, first-token markers far apart | Time to first token, what the cache buys, GPU time spent re-reading |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -267,6 +270,7 @@ security-shield / high (mark up 86)     — empties the lower chamber, the weave
 security-shield / hex-high              — both faults at once
 prometheus-scrape-tick / matrix         — readings as bare columns of value cells read as a tiled grid, not as readings taken at instants; framing each column as a card fixed it
 large-object-tail / jam (lane plug)     — big value in a lane with a queue behind it, blind-read as `large-key`
+llm-kv-cache-head-start / outline       — the recompute drawn as a dashed empty box read as nothing at all
 ```
 
 All five lost to `security-shield-clean` on the same judgement: the shipped proportions are

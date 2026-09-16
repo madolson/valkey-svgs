@@ -4420,6 +4420,227 @@ function largeObjectTailBypass(r) {
   ].join('\n');
 }
 
+// ------------------------------------------------------------- LLM KV caching
+//
+// Three candidates for the KV-cache post, and they share one colour reading:
+// mint is KV that came back from Valkey, cyan is the work the GPU still has to
+// do, violet is the recompute that no longer happens, gold is the first token
+// reaching the reader.
+//
+// A processor glyph appears in two of them, because the thing being spared here
+// is GPU work and no existing theme has a compute element. It is one shape used
+// one way: a rounded die with an even grid of cells inside it and pin stubs on
+// the outer edges, always quieter than whatever it is feeding.
+function die(x, y, w, h, r, { slots = 0, slotY = 0, slotH = 0 } = {}) {
+  const rows = slots ? 2 : 3;
+  const cells = [];
+  for (let c = 0; c < 6; c++) {
+    for (let j = 0; j < rows; j++) {
+      cells.push(
+        `<rect x="${n(x + 36 + c * 45)}" y="${n(y + 30 + j * 34)}" width="36" height="26" rx="5" ` +
+          `fill="${C.cyanLt}" opacity="${n(0.26 + r() * 0.2)}"/>`
+      );
+    }
+  }
+  const pins = [];
+  for (let i = 0; i < 7; i++) {
+    const px = x + 40 + i * 44;
+    pins.push(
+      `<rect x="${n(px)}" y="${n(y - 18)}" width="12" height="18" rx="3" fill="${C.ice}" opacity="0.3"/>`,
+      `<rect x="${n(px)}" y="${n(y + h)}" width="12" height="18" rx="3" fill="${C.ice}" opacity="0.3"/>`
+    );
+  }
+  // The local tier, when the die carries one: a row of identical slots along its
+  // lower edge, so a slot standing empty is legible as room for exactly one more.
+  const tier = [];
+  if (slots) {
+    tier.push(
+      `<line x1="${n(x + 26)}" y1="${n(slotY - 22)}" x2="${n(x + w - 26)}" y2="${n(slotY - 22)}" ` +
+        `stroke="${C.ice}" stroke-width="2" opacity="0.3"/>`
+    );
+    for (let i = 0; i < slots; i++) {
+      tier.push(
+        `<rect x="${n(x + 26 + i * 64)}" y="${n(slotY)}" width="52" height="${n(slotH)}" rx="10" ` +
+          `fill="none" stroke="${C.ice}" stroke-width="2.4" opacity="0.3"/>`
+      );
+    }
+  }
+  return (
+    `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="26" fill="${C.ink}" fill-opacity="0.45" ` +
+      `stroke="${C.ice}" stroke-width="3" opacity="0.55"/>` +
+    pins.join('') +
+    cells.join('') +
+    tier.join('')
+  );
+}
+
+// Idea: only the new tail of a prompt is computed, because the KV for everything
+// ahead of it is loaded back out of Valkey instead of being processed again.
+// Focal: the long mint run of loaded chunks that makes up most of the prompt bar.
+function kvCacheNewTail(r) {
+  const x0 = 340;
+  const x1 = 1560;
+  const chunks = 22;
+  const split = 15; // chunks before this one are loaded, the rest are computed
+  const pitch = (x1 - x0) / chunks;
+  const cw = pitch - 9;
+  const barTop = 496;
+  const cellH = 104;
+  const boundary = x0 + split * pitch;
+
+  // A gap at the split, so the two provenances read as two runs rather than as a
+  // gradient across one.
+  const gap = 20;
+  const cells = [];
+  for (let i = 0; i < chunks; i++) {
+    const loaded = i < split;
+    cells.push(
+      `<rect x="${n(x0 + i * pitch + (loaded ? 0 : gap))}" y="${barTop}" width="${n(cw)}" height="${cellH}" rx="12" ` +
+        `fill="${loaded ? C.mint : C.cyan}" opacity="${n(loaded ? 0.9 + r() * 0.1 : 0.72 + r() * 0.12)}"/>`
+    );
+  }
+
+  // The compute side, sitting over the tail and only as wide as the tail.
+  const chip = die(1120, 220, 340, 160, r);
+  const feed = (x, color, y0, y1) =>
+    `<line x1="${n(x)}" y1="${n(y0)}" x2="${n(x)}" y2="${n(y1)}" stroke="${color}" stroke-width="11" ` +
+    `stroke-linecap="round" opacity="0.5"/>`;
+  const feeds = [1210, 1300, 1390].map((x) => feed(x, C.cyan, 400, 490)).join('');
+
+  // The store, sitting under the loaded run, feeding it the same way.
+  const sy = 716;
+  const sh = 150;
+  const store =
+    `<rect x="556" y="${sy}" width="400" height="${sh}" rx="30" fill="${C.cyan}" fill-opacity="0.14" ` +
+      `stroke="${C.ice}" stroke-width="3.4" opacity="0.6"/>` +
+    `<circle cx="756" cy="${sy + sh / 2}" r="84" fill="url(#scrim)"/>` +
+    mark(756, sy + sh / 2, 108);
+  const loads = [640, 756, 872].map((x) => feed(x, C.mint, barTop + cellH + 6, sy - 6)).join('');
+
+  return [
+    `  <ellipse cx="${n((x0 + boundary) / 2)}" cy="${n(barTop + cellH / 2)}" rx="470" ry="215" fill="url(#h-mint)" opacity="0.22"/>`,
+    `  <g>${chip}</g>`,
+    `  <g>${feeds}</g>`,
+    `  <g>${store}</g>`,
+    `  <g>${loads}</g>`,
+    `  <g>${cells.join('')}</g>`,
+  ].join('\n');
+}
+
+// Idea: one cache tier under the whole GPU fleet, so a conversation whose KV no
+// longer fits on the node it landed on is loaded rather than recomputed.
+// Focal: the wide shared tier holding every context, far larger than the row of
+// slots any one node has.
+function kvCacheSharedTier(r) {
+  const nodes = [530, 1050]; // left edge of each die
+  const nW = 340;
+  const nTop = 230;
+  const nH = 240;
+  const slotY = 386;
+  const slotH = 62;
+  const bTop = 636;
+  const bH = 194;
+  const bx0 = 200;
+  const bx1 = 1720;
+
+  // Node 1 is full. Node 2 has room for one, which is the one arriving.
+  const dies = nodes.map((x) => die(x, nTop, nW, nH, r, { slots: 5, slotY, slotH })).join('');
+  const held = [];
+  nodes.forEach((x, ni) => {
+    for (let i = 0; i < 5; i++) {
+      if (ni === 1 && i === 4) continue;
+      held.push(
+        `<rect x="${n(x + 26 + i * 64)}" y="${slotY}" width="52" height="${slotH}" rx="10" ` +
+          `fill="${C.cyanLt}" opacity="${n(0.42 + r() * 0.16)}"/>`
+      );
+    }
+  });
+
+  const slotX = nodes[1] + 26 + 4 * 64;
+  const laneX = slotX + 26;
+  const arriving =
+    `<rect x="${n(slotX)}" y="${slotY}" width="52" height="${slotH}" rx="10" fill="${C.mint}" opacity="0.92"/>`;
+
+  // The tier's own contents, drawn at exactly the size a node slot is, two rows of
+  // them, so the comparison is how many of the same thing each side holds.
+  const blocks = [];
+  for (let i = 0; i < 22; i++) {
+    const bx = 232 + i * 66;
+    if (Math.abs(bx + 26 - 960) < 126) continue; // the mark's ground
+    for (const by of [660, 730]) {
+      blocks.push(
+        `<rect x="${n(bx)}" y="${by}" width="52" height="${slotH}" rx="10" fill="${C.cyanLt}" ` +
+          `opacity="${n(0.42 + r() * 0.2)}"/>`
+      );
+    }
+  }
+
+  return [
+    `  <ellipse cx="960" cy="${n(bTop + bH / 2)}" rx="700" ry="215" fill="url(#h-cyan)" opacity="0.2"/>`,
+    `  <g>${dies}</g>`,
+    `  <g>${held.join('')}</g>`,
+    `  <line x1="${n(laneX)}" y1="${bTop - 4}" x2="${n(laneX)}" y2="${n(slotY + slotH - 8)}" stroke="${C.mint}" ` +
+      `stroke-width="36" opacity="0.16" filter="url(#blur8)"/>`,
+    `  <line x1="${n(laneX)}" y1="${bTop - 4}" x2="${n(laneX)}" y2="${n(slotY + slotH - 8)}" stroke="${C.mint}" ` +
+      `stroke-width="13" opacity="0.6"/>`,
+    `  ${arriving}`,
+    `  <rect x="${bx0}" y="${bTop}" width="${n(bx1 - bx0)}" height="${bH}" rx="32" fill="${C.cyan}" ` +
+      `fill-opacity="0.12" stroke="${C.ice}" stroke-width="3.6" opacity="0.9"/>`,
+    `  <g>${blocks.join('')}</g>`,
+    `  <circle cx="960" cy="${n(bTop + bH / 2)}" r="104" fill="url(#scrim)"/>`,
+    `  <g>${mark(960, bTop + bH / 2, 130)}</g>`,
+  ].join('\n');
+}
+
+// Idea: loading the repeated context instead of recomputing it is what gets the
+// first token out early, because the new tokens were never the expensive part.
+// Focal: the short solid run from the same start line to an early first token.
+function kvCacheHeadStart(r) {
+  const t0 = 540; // both requests start here
+  const newW = 170; // the genuinely new tokens: identical work either way
+  const topY = 292;
+  const topH = 100;
+  const botY = 572;
+  const botH = 218;
+  const coldEnd = 1220; // where a full recompute of the old context finishes
+  const loadEnd = t0 + 170;
+  const botMid = botY + botH / 2;
+
+  const marker = (x, y0, y1, w, op, rad) =>
+    `<rect x="${n(x - w / 2)}" y="${n(y0)}" width="${n(w)}" height="${n(y1 - y0)}" rx="${n(w / 2)}" ` +
+    `fill="${C.gold}" opacity="${op}"/>` +
+    dot(x, (y0 + y1) / 2, rad, C.gold, 'gold', op, rad > 12 ? 4 : 0.01);
+
+  const cold =
+    `<rect x="${t0}" y="${topY}" width="${n(coldEnd - t0)}" height="${topH}" rx="16" fill="${C.violet}" opacity="0.36"/>` +
+    `<rect x="${n(coldEnd)}" y="${topY}" width="${newW}" height="${topH}" rx="16" fill="${C.cyan}" opacity="0.5"/>`;
+
+  const warm =
+    `<rect x="${t0}" y="${botY}" width="170" height="${botH}" rx="20" fill="${C.mint}" opacity="0.95"/>` +
+    `<rect x="${n(loadEnd)}" y="${botY}" width="${newW}" height="${botH}" rx="20" fill="${C.cyan}" opacity="0.88"/>`;
+
+  // The wait that is gone: the second run's span carried on, dashed, to where the
+  // first run's token finally landed.
+  const saved =
+    `<line x1="${n(loadEnd + newW + 34)}" y1="${n(botMid)}" x2="${n(coldEnd + newW)}" y2="${n(botMid)}" ` +
+      `stroke="${C.violet}" stroke-width="7" stroke-dasharray="22 18" opacity="0.5"/>` +
+    `<line x1="${n(coldEnd + newW)}" y1="${n(botMid - 46)}" x2="${n(coldEnd + newW)}" y2="${n(botMid + 46)}" ` +
+      `stroke="${C.violet}" stroke-width="7" opacity="0.5"/>`;
+
+  return [
+    `  <ellipse cx="${n(loadEnd)}" cy="${n(botMid)}" rx="380" ry="240" fill="url(#h-mint)" opacity="0.22"/>`,
+    `  <line x1="${t0}" y1="232" x2="${t0}" y2="830" stroke="${C.ice}" stroke-width="3" ` +
+      `stroke-dasharray="14 16" opacity="0.3"/>`,
+    `  <g>${cold}</g>`,
+    `  ${marker(coldEnd + newW, 252, 432, 12, '0.5', 10)}`,
+    `  <g>${saved}</g>`,
+    `  <g>${warm}</g>`,
+    `  <circle cx="${n(t0 + 85)}" cy="${n(botMid)}" r="88" fill="url(#scrim)"/>`,
+    `  <g>${mark(t0 + 85, botMid, 116)}</g>`,
+    `  ${marker(loadEnd + newW, 536, 830, 19, '0.95', 16)}`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -4487,6 +4708,9 @@ const BASE_THEMES = [
   { name: 'prometheus-scrape-tick', seed: 62701, zoom: 1.3, center: [960, 540], title: 'Valkey metrics on a schedule', desc: 'Six readings of the same six Valkey counters standing side by side on a baseline, each drawn as a stack of six tracks filled to the value that was read, the five older ones in dim blue and the newest bracketed in pale blue at the right with a collector lead coming down into it from an evenly ticked rail above, representing metrics pulled out of the server at a fixed interval and kept as a history.', art: prometheusScrapeTick },
   { name: 'prometheus-scrape-every-node', seed: 62711, zoom: 1.3, center: [960, 555], title: 'Valkey metrics from every node', desc: 'Four Valkey instances drawn as white hexagon marks in a column on the left, each with a pale blue lane curving into its own row inside one large store panel on the right, where each row holds a short run of sample bars on its own baseline, representing one collector pulling the same counters out of every node into a single store.', art: prometheusScrapeEveryNode },
   { name: 'prometheus-scrape-wall', seed: 62721, zoom: 1.3, center: [960, 545], title: 'Valkey metrics in one view', desc: 'A wall of dashboard panels: six small panels holding flat blue traces, and one much larger panel carrying the white Valkey hexagon mark in its header whose red trace runs flat and then climbs steeply off the top of its range, representing a screen of stored Valkey metrics where the one that has gone wrong is the only thing that is not flat.', art: prometheusScrapeWall },
+  { name: 'llm-kv-cache-new-tail', seed: 37011, zoom: 1.22, center: [960, 535], title: 'Valkey KV cache reuse', desc: 'One long prompt drawn as a run of identical chunks, the first fifteen of them green and fed by three lanes rising from a store marked with the white Valkey hexagon, the last seven blue and fed by three matching lanes dropping from a processor that sits only as wide as they run, representing a prompt whose repeated context is loaded from Valkey so that only its new tail is computed on the GPU.', art: kvCacheNewTail },
+  { name: 'llm-kv-cache-shared-tier', seed: 37023, zoom: 1.36, center: [960, 530], title: 'Valkey shared KV cache tier', desc: 'Two processors, each carrying a row of five cached contexts along its lower edge, above one far wider store marked with the white Valkey hexagon and holding two long rows of the same blocks, with one of them rising out of that store into the only empty slot either processor has, representing a KV cache tier shared by every GPU node in a fleet.', art: kvCacheSharedTier },
+  { name: 'llm-kv-cache-head-start', seed: 37031, zoom: 1.36, center: [960, 528], title: 'Valkey KV cache head start', desc: 'Two runs of the same request measured from one dashed start line: above, a long dim purple span recomputing old context, then a short blue span of new tokens, then a dim gold first-token marker far to the right; below, a short green span marked with the white Valkey hexagon, then a blue span of exactly the same length, then a bright gold first-token marker far earlier, and the gap between the two markers dashed out in purple as waiting that no longer happens.', art: kvCacheHeadStart },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer
