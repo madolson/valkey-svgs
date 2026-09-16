@@ -593,7 +593,7 @@
     {
       "name": "fbtree-soft-two-levels",
       "title": "Valkey sorted sets in one wide tree",
-      "desc": "One wide hollow green node at the top, divided by four thin vertical separator lines into five child slots each holding a small green routing bar, a thin green pointer fanning out of every slot onto one of five small hollow green leaf nodes in a row below, every leaf holding three small blue entries packed side by side, and each pair of neighbouring leaves joined by a short green link, representing the ordered index behind a large sorted set as a high-fanout B+ tree two levels deep. The title \"Valkey sorted sets in one wide tree\" is set on solid light blocks in the lower left.",
+      "desc": "One wide hollow green node at the top, divided by three thin vertical separator lines into four child slots each holding a small green routing bar, a thin green pointer fanning out of every slot onto one of four small hollow green leaf nodes in a row below, every leaf holding three blue entries packed side by side, and each pair of neighbouring leaves joined by a short green link, representing the ordered index behind a large sorted set as a high-fanout B+ tree two levels deep. The title \"Valkey sorted sets in one wide tree\" is set on solid light blocks in the lower left.",
       "motif": "One wide node of separator keys over a row of linked leaves of packed members, drawn hollow and thin",
       "useFor": "fbtree, B+ trees, the ordered index behind a sorted set",
       "image": "images/fbtree-soft-two-levels.webp",
@@ -607,7 +607,7 @@
     {
       "name": "fbtree-soft-leaf-rail",
       "title": "Valkey reading a sorted set in order",
-      "desc": "A faint wide green node of four child slots at the top, each slot holding a small green routing bar, with barely visible pointers fanning down to four small hollow green leaf nodes in a row below, each holding three small blue entries, and one thick bright green rail running horizontally through all four leaves and out past the last of them behind a single arrowhead, representing an ordered read of a large sorted set walking along the linked leaves instead of climbing back into the tree between members. The title \"Valkey reading a sorted set in order\" is set on solid light blocks in the lower left.",
+      "desc": "A faint wide green node of three child slots at the top, each slot holding a small green routing bar, with barely visible pointers fanning down to three small hollow green leaf nodes in a row below, each holding three blue entries, and one thick bright green rail running horizontally through all three leaves and out past the last of them behind a single arrowhead, representing an ordered read of a large sorted set walking along the linked leaves instead of climbing back into the tree between members. The title \"Valkey reading a sorted set in order\" is set on solid light blocks in the lower left.",
       "motif": "The same tree with one rail running through the leaf row and out past the last leaf",
       "useFor": "Range reads, `ZRANGE`, linked leaves, walking a sorted set in order",
       "image": "images/fbtree-soft-leaf-rail.webp",
