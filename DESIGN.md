@@ -171,9 +171,27 @@ the **width**, which is the constraint people get wrong. Anything that must stay
 between 15% and 85% of the framed width. Streaks and graph edges may bleed off; a sliced mark
 reads as a bug.
 
-The motif fills 75-80% of the framed height, and the left and right margins are within about 3%
-of each other. Fix framing with `zoom` and `center`; if the composition is off-centre, move the
-drawing, not the crop.
+The left and right margins are within about 3% of each other. Fix framing with `zoom` and
+`center`; if the composition is off-centre, move the drawing, not the crop.
+
+**The 75-80% height figure is an outcome of scaling, not a quota to hit.** The rule it stands in
+for is "the motif is as large as the frame allows", and the procedure is:
+
+1. Raise `zoom` until the outermost thing that must stay whole reaches 17% or 83% of the framed
+   width. Not 15/85 — that is where the narrow crop *cuts*, so a box landing on it gets shaved.
+2. If that leaves you short of 75%, make the drawing **narrower**: fewer elements, larger. A row of
+   four leaves takes more zoom than a row of five and says the same thing.
+3. Stop there. Whatever percentage falls out is the right one.
+
+**Never add elements, levels or repetitions to reach a fill number.** That is principle 3's failure
+wearing principle 12's clothes, and it makes a banner busier rather than better. The goal is a
+crisper image, not a fuller one.
+
+Measure it rather than eyeballing it: difference the chrome-free render against the per-pixel median
+of a sample of them, which is exactly the shared sky, and read the bounding box off that.
+`fbtree-soft-two-levels` was measured at 0.17..0.83 of the width with 59% height fill, and taking it
+to the 15/85 limit gained four points of fill and sliced its outer leaves, so it went back. That is
+what "framing exhausted" looks like, and the honest next move is a narrower drawing.
 
 ## 13. One frame cannot say that something used to be worse
 
