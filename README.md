@@ -91,6 +91,8 @@ can't drift, and regenerating is a no-op diff.
 | `client-compression-twin-sends` | The same six-field value on two wires of equal length, filling a quarter of one and most of the other | The same, when the point is how much of the network the value stops using |
 | `test-double-empty-rack` | An unlit host with three open, empty bays, and the server standing lit beside it | Test doubles, fakes, testing with no server, port or container |
 | `scan-cursor-pages` | Five stacked pages of keys tiling a keyspace, exactly one of them lit | `SCAN`, cursors, iterating a keyspace without holding it all at once |
+| `agent-context-lit-transcript` | A two-lane chat transcript with the newest three turns and two isolated older ones lit | Agent memory, chat history, context windows, selective recall |
+| `agent-context-recall-arc` | A dim column of turns with the newest lit, and one thick band carrying an older turn back up into them | Agent memory, recall, fetching an older turn back into the context window |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -389,6 +391,15 @@ Both were attempts at the half of the sentence `scan-cursor-pages` carries only 
 each call returns one bounded reply, and that the walk terminates. `round-trips` needed two pages
 to say "again" and had no legal way to tell them apart. `full-turn` had the closure but the ring
 costs the keys their size, and the keys are the thing that has to read as content.
+
+```
+agent-context / working-set              — the transcript beside the turns picked out of it, blind-read as filtering candidates down to a selection: no conversation left in it, and it duplicated `ai-advisory-surge-reproducer`
+agent-context / recall-field             — turns as an even grid with a few cells lit, blind-read as sparse retrieval from a store; the lit run read as a header row and the lone cells as arbitrary positions
+```
+
+Both lost the word the subject turns on. A conversation is a sequence of turns between two
+sides, and neither a second column of selected items nor a grid of cells carries that. The two
+shipped versions keep one column of turns and change only which of them are lit.
 
 ## Licence
 
