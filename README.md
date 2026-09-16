@@ -63,11 +63,8 @@ can't drift, and regenerating is a no-op diff.
 | `big-value-latency-stalled-queue` | A large value standing across all three lanes out of the server, the small requests packed nose to tail behind it | Noisy neighbours, large values, one path out of the server |
 | `client-compression-packed-run` | One value's eight fields filling a row, then the same eight taking a fifth of it on the way to the server | Client-side compression, when the point is how much smaller the value gets |
 | `client-compression-twin-sends` | The same six-field value on two wires of equal length, filling a quarter of one and most of the other | The same, when the point is how much of the network the value stops using |
-| `test-double-empty-rack` | An unlit host with three open, empty bays, and the server standing lit beside it | Test doubles, fakes, testing with no server, port or container |
 | `scan-cursor-pages` | Five stacked pages of keys tiling a keyspace, exactly one of them lit | `SCAN`, cursors, iterating a keyspace without holding it all at once |
-| `agent-context-lit-transcript` | A two-lane chat transcript with the newest three turns and two isolated older ones lit | Agent memory, chat history, context windows, selective recall |
 | `agent-context-recall-arc` | A dim column of turns with the newest lit, and one thick band carrying an older turn back up into them | Agent memory, recall, fetching an older turn back into the context window |
-| `built-on-primitives-one-brick` | Three unlike structures on one baseline, all built out of copies of the same block | Server primitives, what gets built on them, extensibility |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -586,6 +583,14 @@ exporter-two-views-probes              — the per-node readings were sub-6px do
 exporter-two-views-twin-scopes         — two lenses; a lens is furniture, and many-and-one says it better (P2, P1)
 keyspace-gui-safe-grant                — the struck-through commands carrying the point were the thinnest marks (P4)
 commands-replace-lua-condition-gate    — read as "a decision" and nothing more specific (P1)
+```
+
+Redraws that still did not carry their sentence, 2026-09-16.
+
+```
+test-double-empty-rack             — principle 2 inverted: the mark is the largest brightest object and the empty rack that carries the point is a thin outline, so it reads as a logo beside a shelf
+built-on-primitives-one-brick      — reads as Tetris; identical primitives plus the 48px feature floor forces large uniform blocks, and the composition could not escape the connotation
+agent-context-lit-transcript       — legible but strictly weaker than agent-context-recall-arc, which says the same thing with one device instead of a lit/dim split (P1)
 ```
 
 ## Licence

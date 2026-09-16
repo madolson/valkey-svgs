@@ -11,7 +11,8 @@
       "fps": 24,
       "animated": "motion/client-streams.webp",
       "poster": "motion/client-streams-poster.webp",
-      "source": "html/client-streams.html"
+      "source": "html/client-streams.html",
+      "experimental": false
     },
     {
       "name": "blackhole-particles",
@@ -21,7 +22,8 @@
       "fps": 20,
       "animated": "motion/blackhole-particles.webp",
       "poster": "motion/blackhole-particles-poster.webp",
-      "source": "html/blackhole-particles.html"
+      "source": "html/blackhole-particles.html",
+      "experimental": true
     },
     {
       "name": "cluster-gossip",
@@ -31,7 +33,8 @@
       "fps": 24,
       "animated": "motion/cluster-gossip.webp",
       "poster": "motion/cluster-gossip-poster.webp",
-      "source": "html/cluster-gossip.html"
+      "source": "html/cluster-gossip.html",
+      "experimental": false
     },
     {
       "name": "eclipse-corona",
@@ -41,7 +44,8 @@
       "fps": 24,
       "animated": "motion/eclipse-corona.webp",
       "poster": "motion/eclipse-corona-poster.webp",
-      "source": "html/eclipse-corona.html"
+      "source": "html/eclipse-corona.html",
+      "experimental": true
     }
   ]
 }

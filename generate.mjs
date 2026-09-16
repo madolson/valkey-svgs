@@ -4614,38 +4614,6 @@ function clientCompressionTwinSends() {
   ].join('\n');
 }
 
-// Idea: the server's behaviour runs inside the test process, so there is no server,
-// no port and no container in the test run.
-// Focal: the solid mark, standing on its own beside the empty machine it used to need.
-function testDoubleEmptyRack() {
-  const y = 470;
-  const x0 = 560;
-  const x1 = 920;
-
-  // The machine the test run no longer starts. Its three bays are drawn as open
-  // brackets, all the same size on one pitch and all facing the server, so the rack
-  // reads as standing empty rather than as three stacked units. Violet and unfilled
-  // is this set's vacated state; the ink body is there so the violet holds its edge
-  // against the background at crop size. Same top and bottom as the mark, so the two
-  // sit on one system rather than at arbitrary sizes.
-  const host =
-    `<rect x="${x0}" y="200" width="${x1 - x0}" height="540" rx="22" fill="${C.ink}" ` +
-      `fill-opacity="0.45" stroke="${C.violet}" stroke-width="11" opacity="0.6"/>` +
-    [230, 399, 568]
-      .map(
-        (sy) =>
-          `<path d="M ${x1 - 34} ${sy} L ${x0 + 34} ${sy} L ${x0 + 34} ${sy + 142} ` +
-          `L ${x1 - 34} ${sy + 142}" fill="none" stroke="${C.violet}" stroke-width="8" ` +
-          `stroke-linejoin="round" opacity="0.58"/>`
-      )
-      .join('');
-
-  return [
-    `  <circle cx="1183" cy="${y}" r="330" fill="url(#h-mint)" opacity="0.28"/>`,
-    `  <g>${host}</g>`,
-    `  <g>${mark(1183, y, 540)}</g>`,
-  ].join('\n');
-}
 
 // ------------------------------------------------------- SCAN, page by page
 //
@@ -4723,52 +4691,6 @@ function scanCursorPages(r) {
   ].join('\n');
 }
 
-// Idea: an agent keeps its whole conversation in Valkey and reads back only the
-// turns that matter for the next one, so the context holds the recent run plus a
-// few recalled older turns.
-// Focal: the solid mint bubbles — three together at the newest end of the
-// transcript and two isolated further down — in a transcript that is otherwise dim.
-function agentContextLitTranscript(r) {
-  const turns = 12;
-  // Pitch and start are set so the whole transcript clears the caption blocks:
-  // a bar half-hidden behind one reads as an accidental crop.
-  const pitch = 42;
-  const cy0 = 165;
-  const lit = new Set([0, 1, 2, 5, 8]); // the recent run, then two recalled turns
-  const dimH = 26;
-  const litH = 36; // under the pitch, so two lit turns in a row stay two bars
-  // Two lanes because a conversation alternates between two speakers, and each
-  // lane keeps its own width and its own tail so the alternation is the reason
-  // for the split rather than an unexplained left-right relationship.
-  const askX = 660;
-  const askW = 320;
-  const answerRight = 1240;
-  const answerW = 240;
-
-  const bubbles = [];
-  for (let i = 0; i < turns; i++) {
-    const cy = cy0 + i * pitch;
-    const on = lit.has(i);
-    const h = on ? litH : dimH;
-    const asked = i % 2 === 0;
-    const x = asked ? askX : answerRight - answerW;
-    const w = asked ? askW : answerW;
-    const fill = on ? C.mint : C.cyan;
-    const opacity = on ? 0.95 : 0.45;
-    // The tail sits on the speaker's own side, at the bottom outer corner.
-    const ty = n(cy + h / 2 - 2);
-    const tail = asked
-      ? `M ${n(x + 6)} ${ty} L ${n(x - 12)} ${n(cy + h / 2 + 13)} L ${n(x + 30)} ${ty} Z`
-      : `M ${n(x + w - 6)} ${ty} L ${n(x + w + 12)} ${n(cy + h / 2 + 13)} L ${n(x + w - 30)} ${ty} Z`;
-    bubbles.push(
-      `<rect x="${n(x)}" y="${n(cy - h / 2)}" width="${w}" height="${h}" rx="${n(h / 2)}" ` +
-        `fill="${fill}" opacity="${opacity}"/>` +
-        `<path d="${tail}" fill="${fill}" opacity="${opacity}"/>`
-    );
-  }
-
-  return [`  <g>${bubbles.join('')}</g>`].join('\n');
-}
 
 // Idea: an agent keeps its whole conversation in Valkey and reads back only the
 // turns that matter for the next one, so the context holds the recent run plus a
@@ -4842,81 +4764,7 @@ const bopUnit = (c, r, opacity) => {
   );
 };
 
-// The silhouette of a set of lattice cells. Every cell contributes its four edges
-// wound the same way, the pairs that cancel are the shared ones, and what is left
-// chains into one loop. Hand-writing these paths is what leaves a stray notch in a
-// structure's outline.
-function bopSilhouette(cells) {
-  const edges = new Map();
-  for (const [c, r] of cells) {
-    for (const [a0, b0, a1, b1] of [
-      [c, r, c + 1, r],
-      [c + 1, r, c + 1, r + 1],
-      [c + 1, r + 1, c, r + 1],
-      [c, r + 1, c, r],
-    ]) {
-      const back = `${a1},${b1}|${a0},${b0}`;
-      if (edges.has(back)) edges.delete(back);
-      else edges.set(`${a0},${b0}|${a1},${b1}`, `${a1},${b1}`);
-    }
-  }
-  const step = new Map();
-  for (const [k, to] of edges) step.set(k.split('|')[0], to);
-  const first = edges.keys().next().value.split('|')[0];
-  const loop = [first];
-  for (let i = 0; i < edges.size; i++) {
-    const to = step.get(loop[loop.length - 1]);
-    if (!to || to === first) break;
-    loop.push(to);
-  }
-  const pt = (corner) => {
-    const [a, b] = corner.split(',').map(Number);
-    return `${n(BOP.x0 + a * BOP.px - BOP.px / 2)} ${n(BOP.baseY - b * BOP.py + BOP.py / 2)}`;
-  };
-  return `M ${loop.map(pt).join(' L ')} Z`;
-}
 
-// Idea: Valkey ships one small set of identical primitives, and the tools people
-// actually run are unlike structures assembled out of that same block.
-// Focal: the tall hollow arch, the largest thing built and the only one at full weight.
-//
-// The silhouettes are architectural on purpose: a flight of steps, a portal, a tower on
-// a plinth. Loose polyominoes of three or four blocks read as Tetris pieces, which says
-// puzzle-fitting rather than composition, so every structure here is nine blocks or more
-// and stands on the same bottom row.
-function builtOnPrimitivesOneBrick() {
-  // A flight of steps rising towards the arch.
-  const steps = [
-    [0, 0], [1, 0], [2, 0],
-    [0, 1], [1, 1], [2, 1],
-    [1, 2], [2, 2],
-    [2, 3],
-  ];
-  // The portal: two legs and a course across the top, the tallest thing here.
-  const arch = [
-    ...[0, 1, 2, 3, 4, 5].map((r) => [4, r]),
-    ...[0, 1, 2, 3, 4, 5].map((r) => [6, r]),
-    [4, 6], [5, 6], [6, 6],
-  ];
-  // A tower standing on a plinth that oversails it on one side.
-  const tower = [
-    [8, 0], [9, 0], [10, 0],
-    ...[1, 2, 3, 4, 5].flatMap((r) => [[9, r], [10, r]]),
-  ];
-
-  // The mint outline is what makes a run of blocks read as one object; cyan is the
-  // block, mint is the thing composed out of it, everywhere in the picture.
-  const built = (cells, focal) =>
-    `<path d="${bopSilhouette(cells)}" fill="none" stroke="${C.mint}" ` +
-    `stroke-width="${focal ? 12 : 7}" stroke-linejoin="round" opacity="${focal ? 0.95 : 0.55}"/>` +
-    cells.map(([c, r]) => bopUnit(c, r, focal ? 1 : 0.6)).join('');
-
-  return [
-    `  <g>${built(steps, false)}</g>`,
-    `  <g>${built(tower, false)}</g>`,
-    `  <g>${built(arch, true)}</g>`,
-  ].join('\n');
-}
 
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
@@ -4971,11 +4819,8 @@ const BASE_THEMES = [
   { name: 'big-value-latency-stalled-queue', seed: 67111, zoom: 1.34, center: [923, 540], title: 'Valkey one big value blocks the rest', desc: 'A tall solid red value standing across three lanes, with identical blue request blocks packed nose to tail behind it in every lane and nothing at all beyond it, representing every small request held up while one large value occupies the only path out.', art: bvlStalledQueue },
   { name: 'client-compression-packed-run', seed: 48111, zoom: 1.36, center: [960, 540], title: 'Valkey compressed before the wire', desc: 'Two rows of the same eight fields spanning the same width: above, a wide dim blue run filling its row, and below, the same eight fields in bright green taking a fifth of it, with a green arrow crossing the empty remainder to the white Valkey hexagon mark, representing a client library shrinking a value before it leaves the application so the smaller form is what crosses the network and what the server stores.', art: clientCompressionPackedRun },
   { name: 'client-compression-twin-sends', seed: 48121, zoom: 1.4, center: [1010, 530], title: 'Valkey a third of the bytes on the wire', desc: 'Two pale capsule-shaped wires of equal length, one above the other, each ending in a chevron: the upper wire holds six narrow bright green fields filling a quarter of its length, and the lower holds the same six fields in dim purple filling most of it, representing the same value crossing the network at a fraction of the size once the client compresses it.', art: clientCompressionTwinSends },
-  { name: 'test-double-empty-rack', seed: 48011, zoom: 1.4, center: [990, 470], title: 'Valkey testing with no server', desc: 'On the left a tall purple outline of a host with three empty slots and nothing seated in any of them; on the right the white Valkey hexagon mark drawn solid and lit, standing on its own, representing a Valkey server whose behaviour runs inside the test process so the test run starts no server, no port and no container.', art: testDoubleEmptyRack },
   { name: 'scan-cursor-pages', seed: 67501, zoom: 1.35, center: [960, 544], title: 'Valkey scan by page', desc: 'A field of key pills on an even pitch, grouped into five stacked pages, with the middle page lit in gold and the other four blue at rest, representing a scan that hands back one bounded page of the keyspace at a time.', art: scanCursorPages },
-  { name: 'agent-context-lit-transcript', seed: 51011, zoom: 1.54, center: [950, 421], title: 'Valkey agent context window', desc: 'A tall transcript of twelve speech bubbles on one even pitch, alternating between a wide left lane and a narrow right lane with each bubble tailed towards its own side, most of them dim blue, with the three newest at the top and two isolated older ones further down drawn taller and solid green, representing an agent conversation kept in Valkey where only the recent turns and a few recalled older ones are loaded back into the context window.', art: agentContextLitTranscript },
   { name: 'agent-context-recall-arc', seed: 51021, zoom: 1.54, center: [944, 421], title: 'Valkey recalling an older turn', desc: 'A tall single column of twelve rounded bars standing for the turns of an agent conversation, newest at the top, most of them short and dim blue, the three newest and one much older turn far down the column drawn taller and solid green, and a single thick green band running out of that older turn, up the outside of the column and into the newest bar behind an arrowhead, representing an agent conversation held in Valkey out of which an older turn is loaded back into the next context window.', art: agentContextRecallArc },
-  { name: 'built-on-primitives-one-brick', seed: 67011, zoom: 1.2, center: [960, 540], title: 'Valkey primitives, composed', desc: 'Three unlike structures standing on one baseline, each built out of copies of the same identical blue block: a flight of steps rising to the right, a tall hollow portal in the middle outlined in bright green, and a tower on a wider plinth on the right, representing the tools people run being assembled out of the few primitives the server ships.', art: builtOnPrimitivesOneBrick },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

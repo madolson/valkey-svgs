@@ -1012,6 +1012,7 @@ const THEMES = [
   },
   {
     name: 'blackhole-particles',
+    experimental: true,
     seed: 52041,
     loop: 5,
     fps: 20,
@@ -1039,6 +1040,7 @@ const THEMES = [
   },
   {
     name: 'eclipse-corona',
+    experimental: true,
     seed: 60606,
     loop: 5,
     fps: 24,
@@ -1389,6 +1391,7 @@ try {
           animated: `motion/${t.name}.webp`,
           poster: `motion/${t.name}-poster.webp`,
           source: `html/${t.name}.html`,
+          experimental: t.experimental === true,
         })),
       },
       null,

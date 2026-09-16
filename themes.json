@@ -1,6 +1,6 @@
 {
   "generatedBy": "generate.mjs",
-  "count": 68,
+  "count": 50,
   "themes": [
     {
       "name": "community",
@@ -13,7 +13,8 @@
       "svg": "svg/community.svg",
       "captioned": false,
       "caption": "Community",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "performance",
@@ -26,7 +27,8 @@
       "svg": "svg/performance.svg",
       "captioned": false,
       "caption": "Performance",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "memory-efficiency",
@@ -39,7 +41,8 @@
       "svg": "svg/memory-efficiency.svg",
       "captioned": false,
       "caption": "Memory efficiency",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "clustering",
@@ -52,7 +55,8 @@
       "svg": "svg/clustering.svg",
       "captioned": false,
       "caption": "Clustering and scale",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "release",
@@ -65,7 +69,8 @@
       "svg": "svg/release.svg",
       "captioned": false,
       "caption": "Release",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "release-version",
@@ -78,7 +83,8 @@
       "svg": "svg/release-version.svg",
       "captioned": true,
       "caption": null,
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "atomic-slot-migration",
@@ -91,7 +97,8 @@
       "svg": "svg/atomic-slot-migration.svg",
       "captioned": false,
       "caption": "Atomic slot migration",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "atomic-slot-migration-quiet",
@@ -104,20 +111,8 @@
       "svg": "svg/atomic-slot-migration-quiet.svg",
       "captioned": false,
       "caption": "Atomic slot migration",
-      "space": false
-    },
-    {
-      "name": "slot-migration-lens",
-      "title": "Valkey slot migration under inspection",
-      "desc": "Two Valkey instances drawn as quiet rings around the white hexagon mark with a thin stream running between them, and a large teal magnifying glass over the middle of that stream showing the objects in transit as bars of different lengths and colours, on a flat purple field, representing observability for slot migration. The title \"Valkey slot migration under inspection\" is set on solid light blocks in the lower left.",
-      "motif": "A big lens over the migration stream, instances and stream quiet",
-      "useFor": "Observability for migration, inspecting data in transit",
-      "image": "images/slot-migration-lens.webp",
-      "plain": "images/plain/slot-migration-lens.webp",
-      "svg": "svg/slot-migration-lens.svg",
-      "captioned": false,
-      "caption": "Slot migration under inspection",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "security-shield-clean",
@@ -130,7 +125,8 @@
       "svg": "svg/security-shield-clean.svg",
       "captioned": false,
       "caption": "Security",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "benchmarks",
@@ -143,7 +139,8 @@
       "svg": "svg/benchmarks.svg",
       "captioned": false,
       "caption": null,
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "data-structures",
@@ -156,7 +153,8 @@
       "svg": "svg/data-structures.svg",
       "captioned": false,
       "caption": "Data structures",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "how-to",
@@ -169,20 +167,8 @@
       "svg": "svg/how-to.svg",
       "captioned": false,
       "caption": "How-to",
-      "space": false
-    },
-    {
-      "name": "keyspace-scan",
-      "title": "Valkey keyspace scan",
-      "desc": "A wide field of keys with one bounded window lit in green, the keys behind it dimmed and the keys ahead of it unlit, above a track of uneven cursor steps, representing scanning a keyspace a window at a time instead of reading it all at once. The title \"Valkey keyspace scan\" is set on solid light blocks in the lower left.",
-      "motif": "Cursor holding one lit window of a key field, uneven hop track below",
-      "useFor": "`SCAN`, cursors, iterating a keyspace without blocking",
-      "image": "images/keyspace-scan.webp",
-      "plain": "images/plain/keyspace-scan.webp",
-      "svg": "svg/keyspace-scan.svg",
-      "captioned": false,
-      "caption": "Keyspace scan",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "large-key",
@@ -195,7 +181,8 @@
       "svg": "svg/large-key.svg",
       "captioned": false,
       "caption": "Large key",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "key-prefix-groups",
@@ -208,7 +195,8 @@
       "svg": "svg/key-prefix-groups.svg",
       "captioned": false,
       "caption": "Key prefix groups",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "bloom-bit-array",
@@ -221,7 +209,8 @@
       "svg": "svg/bloom-bit-array.svg",
       "captioned": false,
       "caption": "Bloom filters",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "search-vector-nearest",
@@ -234,7 +223,8 @@
       "svg": "svg/search-vector-nearest.svg",
       "captioned": false,
       "caption": "Vector search",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "search-field-index",
@@ -247,7 +237,8 @@
       "svg": "svg/search-field-index.svg",
       "captioned": false,
       "caption": "Secondary indexing",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "client-ports",
@@ -260,20 +251,8 @@
       "svg": "svg/client-ports.svg",
       "captioned": false,
       "caption": "Client protocol",
-      "space": false
-    },
-    {
-      "name": "ai-agent-memory",
-      "title": "Valkey AI agent memory",
-      "desc": "A row of conversation turns with the most recent ones lit inside a bright window, older turns dimmed and parked in an archive below the white Valkey hexagon mark, and two of them arcing back up into the window, representing agent memory with hot recent context and older context recalled on demand. The title \"Valkey AI agent memory\" is set on solid light blocks in the lower left.",
-      "motif": "Conversation turns on a tape, recent ones lit in a window, older ones archived below and arcing back",
-      "useFor": "Agent memory, chat history, context windows, mem0",
-      "image": "images/ai-agent-memory.webp",
-      "plain": "images/plain/ai-agent-memory.webp",
-      "svg": "svg/ai-agent-memory.svg",
-      "captioned": false,
-      "caption": "AI agent memory",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "workload-fanout",
@@ -286,7 +265,8 @@
       "svg": "svg/workload-fanout.svg",
       "captioned": false,
       "caption": "Workload primitives",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "conn-storm-spike",
@@ -299,7 +279,8 @@
       "svg": "svg/conn-storm-spike.svg",
       "captioned": false,
       "caption": "Connection storms",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "bundle-crate",
@@ -312,33 +293,8 @@
       "svg": "svg/bundle-crate.svg",
       "captioned": false,
       "caption": "Bundle",
-      "space": false
-    },
-    {
-      "name": "bundle-one-install",
-      "title": "Valkey bundle, one install",
-      "desc": "A port marked with the white Valkey hexagon fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a padlock, representing one install that delivers all four bundled modules. The title \"Valkey bundle, one install\" is set on solid light blocks in the lower left.",
-      "motif": "A single strap arriving at the mark and branching into the same four modules",
-      "useFor": "valkey-bundle, one install that delivers several capabilities",
-      "image": "images/bundle-one-install.webp",
-      "plain": "images/plain/bundle-one-install.webp",
-      "svg": "svg/bundle-one-install.svg",
-      "captioned": false,
-      "caption": "Bundle, one install",
-      "space": false
-    },
-    {
-      "name": "tooling-stack",
-      "title": "Valkey primitives and tools",
-      "desc": "A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives. The title \"Valkey primitives and tools\" is set on solid light blocks in the lower left.",
-      "motif": "Identical primitives at the base, differently detailed tools resting on them, the mark on top",
-      "useFor": "Server primitives, what gets built on them, extensibility",
-      "image": "images/tooling-stack.webp",
-      "plain": "images/plain/tooling-stack.webp",
-      "svg": "svg/tooling-stack.svg",
-      "captioned": false,
-      "caption": "Primitives and tools",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "data-structures-grid",
@@ -351,7 +307,8 @@
       "svg": "svg/data-structures-grid.svg",
       "captioned": false,
       "caption": "Data types",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "k8s-spec-fanout",
@@ -364,7 +321,8 @@
       "svg": "svg/k8s-spec-fanout.svg",
       "captioned": false,
       "caption": "Deployed from a chart",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "k8s-desired-count",
@@ -377,20 +335,8 @@
       "svg": "svg/k8s-desired-count.svg",
       "captioned": false,
       "caption": "Replicas reaching the declared count",
-      "space": false
-    },
-    {
-      "name": "limits-tight-envelope",
-      "title": "Valkey in a tight resource envelope",
-      "desc": "A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual. The title \"Valkey in a tight resource envelope\" is set on solid light blocks in the lower left.",
-      "motif": "A small box packed edge to edge, pushing out, inside far larger outlines",
-      "useFor": "Constrained hardware, small instances, resource ceilings",
-      "image": "images/limits-tight-envelope.webp",
-      "plain": "images/plain/limits-tight-envelope.webp",
-      "svg": "svg/limits-tight-envelope.svg",
-      "captioned": false,
-      "caption": "In a tight resource envelope",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "limits-gauge-pinned",
@@ -403,7 +349,8 @@
       "svg": "svg/limits-gauge-pinned.svg",
       "captioned": false,
       "caption": "Pinned near its limit",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "key-size-distribution",
@@ -416,7 +363,8 @@
       "svg": "svg/key-size-distribution.svg",
       "captioned": false,
       "caption": "Key size distribution",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "blackhole-gargantua",
@@ -429,7 +377,8 @@
       "svg": "svg/blackhole-gargantua.svg",
       "captioned": false,
       "caption": "Black hole",
-      "space": true
+      "space": true,
+      "experimental": true
     },
     {
       "name": "blackhole-halo",
@@ -442,7 +391,8 @@
       "svg": "svg/blackhole-halo.svg",
       "captioned": false,
       "caption": "Black hole",
-      "space": true
+      "space": true,
+      "experimental": true
     },
     {
       "name": "blackhole-beamed",
@@ -455,7 +405,8 @@
       "svg": "svg/blackhole-beamed.svg",
       "captioned": false,
       "caption": "Black hole",
-      "space": true
+      "space": true,
+      "experimental": true
     },
     {
       "name": "planet-ring",
@@ -468,7 +419,8 @@
       "svg": "svg/planet-ring.svg",
       "captioned": false,
       "caption": "Planet Valkey",
-      "space": true
+      "space": true,
+      "experimental": false
     },
     {
       "name": "key-size-card-a",
@@ -481,46 +433,8 @@
       "svg": "svg/key-size-card-a.svg",
       "captioned": false,
       "caption": "Finding big keys in a running Valkey cluster with Valkey Admin",
-      "space": false
-    },
-    {
-      "name": "large-object-tail-wake",
-      "title": "Valkey large objects drag the tail",
-      "desc": "An even field of short blue bars, one per small request, with one oversized red value standing in the middle of the field and six long red bars trailing out of it across the rows it covers, representing a handful of very large objects making a small fraction of the small requests late out of all proportion to the rest of them. The title \"Valkey large objects drag the tail\" is set on solid light blocks in the lower left.",
-      "motif": "An even field of short request bars with one oversized value in it, and the few bars behind it dragged far out",
-      "useFor": "Tail latency, p99.9, a small fraction of requests hurt badly",
-      "image": "images/large-object-tail-wake.webp",
-      "plain": "images/plain/large-object-tail-wake.webp",
-      "svg": "svg/large-object-tail-wake.svg",
-      "captioned": false,
-      "caption": "Large objects drag the tail",
-      "space": false
-    },
-    {
-      "name": "large-object-tail-shared-gate",
-      "title": "Valkey large objects stall every client",
-      "desc": "Six lanes of small blue requests all running into one narrow shared window, with a single oversized red value wedged across that window, every lane packed tight in front of it and a wide gap in every lane just past it, representing large objects from one client delaying every other client that shares the same main thread. The title \"Valkey large objects stall every client\" is set on solid light blocks in the lower left.",
-      "motif": "Six client lanes into one shared window, all of them held up while one oversized value occupies it",
-      "useFor": "Noisy neighbours, multi-tenancy, one client's big objects hurting the rest",
-      "image": "images/large-object-tail-shared-gate.webp",
-      "plain": "images/plain/large-object-tail-shared-gate.webp",
-      "svg": "svg/large-object-tail-shared-gate.svg",
-      "captioned": false,
-      "caption": "Large objects stall every client",
-      "space": false
-    },
-    {
-      "name": "large-object-tail-bypass",
-      "title": "Valkey large objects out of the line",
-      "desc": "One oversized red value lifted clear of the lane onto a dashed green route that leaves the lane and rejoins it further along, with the row of small blue requests below running unbroken and evenly spaced, representing a large object sent past the reply path instead of through it so the small requests never stall. The title \"Valkey large objects out of the line\" is set on solid light blocks in the lower left.",
-      "motif": "The same oversized value lifted out of the lane onto a dashed route over the top, the small stream below unbroken",
-      "useFor": "Reply copy avoidance, large objects that no longer block the main thread",
-      "image": "images/large-object-tail-bypass.webp",
-      "plain": "images/plain/large-object-tail-bypass.webp",
-      "svg": "svg/large-object-tail-bypass.svg",
-      "captioned": false,
-      "caption": "Large objects out of the line",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "key-size-card-flat",
@@ -533,72 +447,8 @@
       "svg": "svg/key-size-card-flat.svg",
       "captioned": false,
       "caption": "Finding big keys in a running Valkey cluster with Valkey Admin",
-      "space": false
-    },
-    {
-      "name": "glide-compress-press",
-      "title": "Valkey GLIDE compression",
-      "desc": "Two heavy pale plates converging from left to right on four lanes of blue data cells, closing them into a single block of dense green cells that carries on to the white Valkey hexagon mark, representing a client library compressing a value before it crosses the network. The title \"Valkey GLIDE compression\" is set on solid light blocks in the lower left.",
-      "motif": "Two plates closing on loose lanes of data, the dense band leaving for the mark",
-      "useFor": "Client-side compression, GLIDE compression, smaller payloads on the wire",
-      "image": "images/glide-compress-press.webp",
-      "plain": "images/plain/glide-compress-press.webp",
-      "svg": "svg/glide-compress-press.svg",
-      "captioned": false,
-      "caption": "GLIDE compression",
-      "space": false
-    },
-    {
-      "name": "glide-compress-fold",
-      "title": "Valkey compressed on the wire",
-      "desc": "A long blue ribbon of data cells arriving from the left and folded into a compact green stack of seven layers, its last fold running on to the white Valkey hexagon mark, representing a client library packing a value down before it crosses the network. The title \"Valkey compressed on the wire\" is set on solid light blocks in the lower left.",
-      "motif": "A long ribbon of data folded into a compact stack that carries on to the mark",
-      "useFor": "The same, when the point is the value being packed before it is sent",
-      "image": "images/glide-compress-fold.webp",
-      "plain": "images/plain/glide-compress-fold.webp",
-      "svg": "svg/glide-compress-fold.svg",
-      "captioned": false,
-      "caption": "Compressed on the wire",
-      "space": false
-    },
-    {
-      "name": "glide-compress-funnel",
-      "title": "Valkey client-side compression",
-      "desc": "Three differently shaped blue values, a nested document, a bracketed block and a scatter of short unequal fields, meeting a tall pale client bar, and leaving its far side as three identical blocks of dense green cells that run on to the white Valkey hexagon mark, representing a client library turning any value into the same compact form before it crosses the network. The title \"Valkey client-side compression\" is set on solid light blocks in the lower left.",
-      "motif": "Three unlike values meeting the client bar, leaving as identical dense blocks",
-      "useFor": "The same, when the point is that any value type packs down to one form",
-      "image": "images/glide-compress-funnel.webp",
-      "plain": "images/plain/glide-compress-funnel.webp",
-      "svg": "svg/glide-compress-funnel.svg",
-      "captioned": false,
-      "caption": "Client-side compression",
-      "space": false
-    },
-    {
-      "name": "prometheus-scrape-tick",
-      "title": "Valkey metrics on a schedule",
-      "desc": "Six readings of the same six Valkey counters standing side by side on a baseline, each drawn as a stack of six tracks filled to the value that was read, the five older ones in dim blue and the newest bracketed in pale blue at the right with a collector lead coming down into it from an evenly ticked rail above, representing metrics pulled out of the server at a fixed interval and kept as a history. The title \"Valkey metrics on a schedule\" is set on solid light blocks in the lower left.",
-      "motif": "Readings of the same counters kept side by side, the newest bracketed under the collector's lead",
-      "useFor": "Prometheus scraping, scrape intervals, metrics retention",
-      "image": "images/prometheus-scrape-tick.webp",
-      "plain": "images/plain/prometheus-scrape-tick.webp",
-      "svg": "svg/prometheus-scrape-tick.svg",
-      "captioned": false,
-      "caption": "Metrics on a schedule",
-      "space": false
-    },
-    {
-      "name": "prometheus-scrape-every-node",
-      "title": "Valkey metrics from every node",
-      "desc": "Four Valkey instances drawn as white hexagon marks in a column on the left, each with a pale blue lane curving into its own row inside one large store panel on the right, where each row holds a short run of sample bars on its own baseline, representing one collector pulling the same counters out of every node into a single store. The title \"Valkey metrics from every node\" is set on solid light blocks in the lower left.",
-      "motif": "Every instance's counters pulled down its own lane into one store panel",
-      "useFor": "Scraping a whole deployment, per-node metrics, exporters",
-      "image": "images/prometheus-scrape-every-node.webp",
-      "plain": "images/plain/prometheus-scrape-every-node.webp",
-      "svg": "svg/prometheus-scrape-every-node.svg",
-      "captioned": false,
-      "caption": "Metrics from every node",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "prometheus-scrape-wall",
@@ -611,7 +461,8 @@
       "svg": "svg/prometheus-scrape-wall.svg",
       "captioned": false,
       "caption": "Metrics in one view",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "llm-kv-cache-new-tail",
@@ -624,59 +475,8 @@
       "svg": "svg/llm-kv-cache-new-tail.svg",
       "captioned": false,
       "caption": "KV cache reuse",
-      "space": false
-    },
-    {
-      "name": "llm-kv-cache-shared-tier",
-      "title": "Valkey shared KV cache tier",
-      "desc": "Two processors, each carrying a row of five cached contexts along its lower edge, above one far wider store marked with the white Valkey hexagon and holding two long rows of the same blocks, with one of them rising out of that store into the only empty slot either processor has, representing a KV cache tier shared by every GPU node in a fleet. The title \"Valkey shared KV cache tier\" is set on solid light blocks in the lower left.",
-      "motif": "Two processors with short rows of cached contexts above one much wider shared store, one context rising into the empty slot",
-      "useFor": "A shared L2 KV cache tier, cache capacity that scales apart from the GPUs",
-      "image": "images/llm-kv-cache-shared-tier.webp",
-      "plain": "images/plain/llm-kv-cache-shared-tier.webp",
-      "svg": "svg/llm-kv-cache-shared-tier.svg",
-      "captioned": false,
-      "caption": "Shared KV cache tier",
-      "space": false
-    },
-    {
-      "name": "llm-kv-cache-head-start",
-      "title": "Valkey KV cache head start",
-      "desc": "Two runs of the same request measured from one dashed start line: above, a long dim purple span recomputing old context, then a short blue span of new tokens, then a dim gold first-token marker far to the right; below, a short green span marked with the white Valkey hexagon, then a blue span of exactly the same length, then a bright gold first-token marker far earlier, and the gap between the two markers dashed out in purple as waiting that no longer happens. The title \"Valkey KV cache head start\" is set on solid light blocks in the lower left.",
-      "motif": "The same request twice from one start line: a long dashed recompute above, a short loaded run below, first-token markers far apart",
-      "useFor": "Time to first token, what the cache buys, GPU time spent re-reading",
-      "image": "images/llm-kv-cache-head-start.webp",
-      "plain": "images/plain/llm-kv-cache-head-start.webp",
-      "svg": "svg/llm-kv-cache-head-start.svg",
-      "captioned": false,
-      "caption": "KV cache head start",
-      "space": false
-    },
-    {
-      "name": "exporter-two-views-probes",
-      "title": "Valkey metrics at two scopes",
-      "desc": "A cluster boundary drawn as a bracket pair holding three Valkey nodes, each node showing its own memory, client and command readouts and carrying a small pale probe clipped to its side, with one far larger probe clamped on the boundary itself whose head resolves the cluster into a ring of slots, representing one exporter per node and one for the cluster. The title \"Valkey metrics at two scopes\" is set on solid light blocks in the lower left.",
-      "motif": "A small probe clipped to each node inside a bracketed cluster, one big probe clamped on the boundary",
-      "useFor": "Two exporters, per-pod and cluster-wide metrics, Prometheus",
-      "image": "images/exporter-two-views-probes.webp",
-      "plain": "images/plain/exporter-two-views-probes.webp",
-      "svg": "svg/exporter-two-views-probes.svg",
-      "captioned": false,
-      "caption": "Metrics at two scopes",
-      "space": false
-    },
-    {
-      "name": "exporter-two-views-twin-scopes",
-      "title": "Valkey metrics per pod and per cluster",
-      "desc": "One instrument carrying two objectives on a single mount: a small glass resolving one Valkey node and its three readouts, and a much larger glass resolving the whole cluster as seven Valkey marks inside a ring of slot segments, representing two exporters watching the same deployment at two scopes. The title \"Valkey metrics per pod and per cluster\" is set on solid light blocks in the lower left.",
-      "motif": "One mount carrying two objectives, a small glass on one node and a large one on the cluster",
-      "useFor": "Monitoring at two scopes, observability dimensions",
-      "image": "images/exporter-two-views-twin-scopes.webp",
-      "plain": "images/plain/exporter-two-views-twin-scopes.webp",
-      "svg": "svg/exporter-two-views-twin-scopes.svg",
-      "captioned": false,
-      "caption": "Metrics per pod and per cluster",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "exporter-two-views-many-and-one",
@@ -689,7 +489,8 @@
       "svg": "svg/exporter-two-views-many-and-one.svg",
       "captioned": false,
       "caption": "Metrics from two exporters",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "keyspace-gui-safe-refusal",
@@ -702,20 +503,8 @@
       "svg": "svg/keyspace-gui-safe-refusal.svg",
       "captioned": false,
       "caption": "Server-side read-only",
-      "space": false
-    },
-    {
-      "name": "keyspace-gui-safe-grant",
-      "title": "Valkey read-only ACL user",
-      "desc": "A field of forty-eight pale command pills laid out on an even grid, with sixteen of them lit green inside a rounded green boundary and three of those green pills struck through with a red line, representing a user granted the read commands as a category with the dangerous ones taken back out of the same grant. The title \"Valkey read-only ACL user\" is set on solid light blocks in the lower left.",
-      "motif": "A grid of commands with one block granted and the dangerous ones struck out inside it",
-      "useFor": "ACL grants, command categories, least privilege",
-      "image": "images/keyspace-gui-safe-grant.webp",
-      "plain": "images/plain/keyspace-gui-safe-grant.webp",
-      "svg": "svg/keyspace-gui-safe-grant.svg",
-      "captioned": false,
-      "caption": "Read-only ACL user",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "keyspace-gui-safe-readout",
@@ -728,7 +517,8 @@
       "svg": "svg/keyspace-gui-safe-readout.svg",
       "captioned": false,
       "caption": "Browsing a keyspace safely",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "commands-replace-lua-round-trips",
@@ -741,7 +531,8 @@
       "svg": "svg/commands-replace-lua-round-trips.svg",
       "captioned": false,
       "caption": "One round trip, not four",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "commands-replace-lua-one-line",
@@ -754,20 +545,8 @@
       "svg": "svg/commands-replace-lua-one-line.svg",
       "captioned": false,
       "caption": "One command, no script",
-      "space": false
-    },
-    {
-      "name": "commands-replace-lua-condition-gate",
-      "title": "Valkey conditions inside the command",
-      "desc": "One thick blue command lane running into a large pale condition holding two unequal values, out of which a thick green branch carries the write up into a lit key block while a thin dim branch stops short at a blunt bar, representing a command that decides for itself whether its write lands. The title \"Valkey conditions inside the command\" is set on solid light blocks in the lower left.",
-      "motif": "A command lane running into a large condition, one branch carrying the write on and one stopping dead",
-      "useFor": "Conditional commands, `SET IFNE`, `EXEC IFEQ`, optimistic locking",
-      "image": "images/commands-replace-lua-condition-gate.webp",
-      "plain": "images/plain/commands-replace-lua-condition-gate.webp",
-      "svg": "svg/commands-replace-lua-condition-gate.svg",
-      "captioned": false,
-      "caption": "Conditions inside the command",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "ai-advisory-surge-sieve",
@@ -780,7 +559,8 @@
       "svg": "svg/ai-advisory-surge-sieve.svg",
       "captioned": false,
       "caption": "Advisory surge",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "ai-advisory-surge-reproducer",
@@ -793,7 +573,8 @@
       "svg": "svg/ai-advisory-surge-reproducer.svg",
       "captioned": false,
       "caption": "Security audits",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
       "name": "ai-advisory-surge-backport-rails",
@@ -806,85 +587,120 @@
       "svg": "svg/ai-advisory-surge-backport-rails.svg",
       "captioned": false,
       "caption": "Backported fixes",
-      "space": false
+      "space": false,
+      "experimental": false
     },
     {
-      "name": "fbtree-fanout-slab",
-      "title": "Valkey sorted sets in less memory",
-      "desc": "A scattered field of small separate member blocks, each carrying a short stack of purple pointer bars above it, over one wide green node along the bottom holding the same members as blue cells packed side by side and rising in score order, representing a sorted set index that stops spending one heap allocation per member. The title \"Valkey sorted sets in less memory\" is set on solid light blocks in the lower left.",
-      "motif": "A scattered field of pointer-topped member blocks over one wide node holding the same members packed in order",
-      "useFor": "Sorted sets on fbtree, index overhead, one allocation instead of many",
-      "image": "images/fbtree-fanout-slab.webp",
-      "plain": "images/plain/fbtree-fanout-slab.webp",
-      "svg": "svg/fbtree-fanout-slab.svg",
+      "name": "fbtree-wide-root",
+      "title": "Valkey sorted sets on a B+ tree",
+      "desc": "One wide green root node holding a row of four large child slots divided by three narrow green separator bars that span the node from top to bottom, a thin green pointer dropping from each slot through the wall of the node onto one of four green leaf nodes below, every leaf holding three blue member entries packed side by side with their scores capped brighter at the top, and each pair of leaves joined by a short thick green bar overlapping both of their walls, representing the ordered index behind a large sorted set as a high-fanout B+ tree two levels deep. The title \"Valkey sorted sets on a B+ tree\" is set on solid light blocks in the lower left.",
+      "motif": "One wide root node of child slots over four linked leaves of packed members",
+      "useFor": "fbtree, B+ trees, the ordered index behind a sorted set",
+      "image": "images/fbtree-wide-root.webp",
+      "plain": "images/plain/fbtree-wide-root.webp",
+      "svg": "svg/fbtree-wide-root.svg",
       "captioned": false,
-      "caption": "Sorted sets in less memory",
-      "space": false
+      "caption": "Sorted sets on a B+ tree",
+      "space": false,
+      "experimental": false
     },
     {
-      "name": "fbtree-fanout-tiers",
-      "title": "Valkey sorted sets, fewer levels",
-      "desc": "A tall spindly purple tree of seven thin levels with a lookup route threading one node per level, beside a short broad green tree of one wide root node fanning into three leaf nodes of packed blue members, reached in two hops, representing a high-fanout B+ tree replacing a deep pointer structure. The title \"Valkey sorted sets, fewer levels\" is set on solid light blocks in the lower left.",
-      "motif": "A tall spindly seven-level tree beside a short broad two-level one, same members at the leaves",
-      "useFor": "High fanout, tree depth, fewer fetches per lookup",
-      "image": "images/fbtree-fanout-tiers.webp",
-      "plain": "images/plain/fbtree-fanout-tiers.webp",
-      "svg": "svg/fbtree-fanout-tiers.svg",
+      "name": "fbtree-tower-and-tree",
+      "title": "Valkey sorted sets change shape",
+      "desc": "Above, twelve blue member cells spaced far apart along a row, each a separate allocation carrying its own tower of purple forward-pointer cells with purple links skipping between towers at every level; below, the same twelve cells shoulder to shoulder in groups of three inside four green leaf nodes joined by thick green sibling links, with one wide green root node of four child slots divided by full-height separator bars fanning down onto them, representing a skiplist replaced by a high-fanout B+ tree. The title \"Valkey sorted sets change shape\" is set on solid light blocks in the lower left.",
+      "motif": "A row of members each under its own tower of pointers, above the same members in one wide node over linked leaves",
+      "useFor": "Replacing the skiplist with fbtree, a change of shape",
+      "image": "images/fbtree-tower-and-tree.webp",
+      "plain": "images/plain/fbtree-tower-and-tree.webp",
+      "svg": "svg/fbtree-tower-and-tree.svg",
       "captioned": false,
-      "caption": "Sorted sets, fewer levels",
-      "space": false
+      "caption": "Sorted sets change shape",
+      "space": false,
+      "experimental": false
     },
     {
-      "name": "fbtree-fanout-leafwalk",
-      "title": "Valkey sorted set ranges in one walk",
-      "desc": "Seven separate member blocks at scattered heights joined by long purple arcs that climb out of each one to reach the next, above a chain of four green leaf nodes holding their members packed side by side with a single straight green arrow running the whole length of the chain, representing an ordered range read that no longer chases pointers. The title \"Valkey sorted set ranges in one walk\" is set on solid light blocks in the lower left.",
-      "motif": "Scattered blocks joined by climbing arcs above a chain of packed leaves with one straight run through it",
-      "useFor": "Ordered range reads, linked leaves, cache-friendly traversal",
-      "image": "images/fbtree-fanout-leafwalk.webp",
-      "plain": "images/plain/fbtree-fanout-leafwalk.webp",
-      "svg": "svg/fbtree-fanout-leafwalk.svg",
+      "name": "big-value-latency-copy-block",
+      "title": "Valkey one big copy holds the thread",
+      "desc": "One bright pale timeline with a solid red block sitting on it, and under the line a run of short identical blue bars at an even pitch that, along the span the red block covers, lengthen into a deep wedge deepest against the block's leading edge, representing small requests waiting exactly as long as one large value occupies the main thread. The title \"Valkey one big copy holds the thread\" is set on solid light blocks in the lower left.",
+      "motif": "One thread's timeline with a large value sitting on it, and the waits hanging underneath deepening into a wedge exactly across its span",
+      "useFor": "Tail latency, head-of-line blocking, p99.9, one slow operation on a shared thread",
+      "image": "images/big-value-latency-copy-block.webp",
+      "plain": "images/plain/big-value-latency-copy-block.webp",
+      "svg": "svg/big-value-latency-copy-block.svg",
       "captioned": false,
-      "caption": "Sorted set ranges in one walk",
-      "space": false
+      "caption": "One big copy holds the thread",
+      "space": false,
+      "experimental": false
     },
     {
-      "name": "fake-in-process-enclosure",
-      "title": "Valkey inside the test process",
-      "desc": "One rounded process boundary containing a card of test lines on the left, three lanes running from it to the white Valkey hexagon mark on the right, and a short list of key and value pairs under that mark, with the only port on the wall drawn in dim purple and its lead ending in an unplugged connector outside, representing a Valkey server whose behaviour runs inside the test process. The title \"Valkey inside the test process\" is set on solid light blocks in the lower left.",
-      "motif": "One process wall holding the test, the server and its keys, with the port on that wall unplugged",
-      "useFor": "Test doubles, fakes, testing without a server or a container",
-      "image": "images/fake-in-process-enclosure.webp",
-      "plain": "images/plain/fake-in-process-enclosure.webp",
-      "svg": "svg/fake-in-process-enclosure.svg",
+      "name": "big-value-latency-stalled-queue",
+      "title": "Valkey one big value blocks the rest",
+      "desc": "A tall solid red value standing across three lanes, with identical blue request blocks packed nose to tail behind it in every lane and nothing at all beyond it, representing every small request held up while one large value occupies the only path out. The title \"Valkey one big value blocks the rest\" is set on solid light blocks in the lower left.",
+      "motif": "A large value standing across all three lanes out of the server, the small requests packed nose to tail behind it",
+      "useFor": "Noisy neighbours, large values, one path out of the server",
+      "image": "images/big-value-latency-stalled-queue.webp",
+      "plain": "images/plain/big-value-latency-stalled-queue.webp",
+      "svg": "svg/big-value-latency-stalled-queue.svg",
       "captioned": false,
-      "caption": "Inside the test process",
-      "space": false
+      "caption": "One big value blocks the rest",
+      "space": false,
+      "experimental": false
     },
     {
-      "name": "fake-in-process-parity",
-      "title": "Valkey fake and real, same reply",
-      "desc": "Two identical columns of five reply capsules standing side by side, matched row for row in width and colour, with one pale caliper bracketing both from below; above the left column a dashed test card holds the white Valkey hexagon mark, and above the right the same mark sits in a solid server box with a port capsule and a connection running out of the frame, representing a fake inside the test process and a real Valkey server answering one assertion identically. The title \"Valkey fake and real, same reply\" is set on solid light blocks in the lower left.",
-      "motif": "Two identical reply columns under one caliper, one from a fake inside the test and one from a real server",
-      "useFor": "Compatibility between a fake and the server, differential testing",
-      "image": "images/fake-in-process-parity.webp",
-      "plain": "images/plain/fake-in-process-parity.webp",
-      "svg": "svg/fake-in-process-parity.svg",
+      "name": "client-compression-packed-run",
+      "title": "Valkey compressed before the wire",
+      "desc": "Two rows of the same eight fields spanning the same width: above, a wide dim blue run filling its row, and below, the same eight fields in bright green taking a fifth of it, with a green arrow crossing the empty remainder to the white Valkey hexagon mark, representing a client library shrinking a value before it leaves the application so the smaller form is what crosses the network and what the server stores. The title \"Valkey compressed before the wire\" is set on solid light blocks in the lower left.",
+      "motif": "One value's eight fields filling a row, then the same eight taking a fifth of it on the way to the server",
+      "useFor": "Client-side compression, when the point is how much smaller the value gets",
+      "image": "images/client-compression-packed-run.webp",
+      "plain": "images/plain/client-compression-packed-run.webp",
+      "svg": "svg/client-compression-packed-run.svg",
       "captioned": false,
-      "caption": "Fake and real, same reply",
-      "space": false
+      "caption": "Compressed before the wire",
+      "space": false,
+      "experimental": false
     },
     {
-      "name": "fake-in-process-dropin",
-      "title": "Valkey test double, dropped in",
-      "desc": "A pale socket at the centre with two contacts, a green in-process server carrying the white Valkey hexagon mark seated in it on matching pins, a dim purple server carrying the same mark held out of the socket above with its network connection trailing off the frame, and a call arriving on a blue lane from the lower left, representing an in-memory test double dropped into the socket a real server used to fill. The title \"Valkey test double, dropped in\" is set on solid light blocks in the lower left.",
-      "motif": "A socket with an in-process server seated in it and the remote one held out, still trailing its network",
-      "useFor": "A drop-in test double, replacing a client with a fake",
-      "image": "images/fake-in-process-dropin.webp",
-      "plain": "images/plain/fake-in-process-dropin.webp",
-      "svg": "svg/fake-in-process-dropin.svg",
+      "name": "client-compression-twin-sends",
+      "title": "Valkey a third of the bytes on the wire",
+      "desc": "Two pale capsule-shaped wires of equal length, one above the other, each ending in a chevron: the upper wire holds six narrow bright green fields filling a quarter of its length, and the lower holds the same six fields in dim purple filling most of it, representing the same value crossing the network at a fraction of the size once the client compresses it. The title \"Valkey a third of the bytes on the wire\" is set on solid light blocks in the lower left.",
+      "motif": "The same six-field value on two wires of equal length, filling a quarter of one and most of the other",
+      "useFor": "The same, when the point is how much of the network the value stops using",
+      "image": "images/client-compression-twin-sends.webp",
+      "plain": "images/plain/client-compression-twin-sends.webp",
+      "svg": "svg/client-compression-twin-sends.svg",
       "captioned": false,
-      "caption": "Test double, dropped in",
-      "space": false
+      "caption": "A third of the bytes on the wire",
+      "space": false,
+      "experimental": false
+    },
+    {
+      "name": "scan-cursor-pages",
+      "title": "Valkey scan by page",
+      "desc": "A field of key pills on an even pitch, grouped into five stacked pages, with the middle page lit in gold and the other four blue at rest, representing a scan that hands back one bounded page of the keyspace at a time. The title \"Valkey scan by page\" is set on solid light blocks in the lower left.",
+      "motif": "Five stacked pages of keys tiling a keyspace, exactly one of them lit",
+      "useFor": "`SCAN`, cursors, iterating a keyspace without holding it all at once",
+      "image": "images/scan-cursor-pages.webp",
+      "plain": "images/plain/scan-cursor-pages.webp",
+      "svg": "svg/scan-cursor-pages.svg",
+      "captioned": false,
+      "caption": "Scan by page",
+      "space": false,
+      "experimental": false
+    },
+    {
+      "name": "agent-context-recall-arc",
+      "title": "Valkey recalling an older turn",
+      "desc": "A tall single column of twelve rounded bars standing for the turns of an agent conversation, newest at the top, most of them short and dim blue, the three newest and one much older turn far down the column drawn taller and solid green, and a single thick green band running out of that older turn, up the outside of the column and into the newest bar behind an arrowhead, representing an agent conversation held in Valkey out of which an older turn is loaded back into the next context window. The title \"Valkey recalling an older turn\" is set on solid light blocks in the lower left.",
+      "motif": "A dim column of turns with the newest lit, and one thick band carrying an older turn back up into them",
+      "useFor": "Agent memory, recall, fetching an older turn back into the context window",
+      "image": "images/agent-context-recall-arc.webp",
+      "plain": "images/plain/agent-context-recall-arc.webp",
+      "svg": "svg/agent-context-recall-arc.svg",
+      "captioned": false,
+      "caption": "Recalling an older turn",
+      "space": false,
+      "experimental": false
     }
   ]
 }
