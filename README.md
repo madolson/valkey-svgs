@@ -87,6 +87,8 @@ can't drift, and regenerating is a no-op diff.
 | `fbtree-tower-and-tree` | A row of members each under its own tower of pointers, above the same members in one wide node over linked leaves | Replacing the skiplist with fbtree, a change of shape |
 | `big-value-latency-copy-block` | One thread's timeline with a large value sitting on it, and the waits hanging underneath deepening into a wedge exactly across its span | Tail latency, head-of-line blocking, p99.9, one slow operation on a shared thread |
 | `big-value-latency-stalled-queue` | A large value standing across all three lanes out of the server, the small requests packed nose to tail behind it | Noisy neighbours, large values, one path out of the server |
+| `client-compression-packed-run` | One value's eight fields filling a row, then the same eight taking a fifth of it on the way to the server | Client-side compression, when the point is how much smaller the value gets |
+| `client-compression-twin-sends` | The same six-field value on two wires of equal length, filling a quarter of one and most of the other | The same, when the point is how much of the network the value stops using |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -353,6 +355,13 @@ as a row of small requests is read as blocking them however it is arranged: the 
 say "this used to be worse", so the only thing left to read is the big object next to it. Anything
 that carries copy avoidance needs the two paths drawn as two paths, with the payload's own route
 going somewhere, and that is a different banner from the two shipped here.
+
+```
+client-compression / round-trip         — the value shrinking on the way out and coming back whole on the way in: two payload pairs, so the focal element was a pair and not one object, and the blind read called the glow and the right-hand gap decoration
+```
+
+It also said the same thing as `client-compression-packed-run` with a return leg added, which
+makes it the second banner for one sentence rather than a second idea.
 
 ## Licence
 
