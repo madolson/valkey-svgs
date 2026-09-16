@@ -83,6 +83,8 @@ can't drift, and regenerating is a no-op diff.
 | `fake-in-process-enclosure` | One process wall holding the test, the server and its keys, with the port on that wall unplugged | Test doubles, fakes, testing without a server or a container |
 | `fake-in-process-parity` | Two identical reply columns under one caliper, one from a fake inside the test and one from a real server | Compatibility between a fake and the server, differential testing |
 | `fake-in-process-dropin` | A socket with an in-process server seated in it and the remote one held out, still trailing its network | A drop-in test double, replacing a client with a fake |
+| `big-value-latency-copy-block` | One thread's timeline with a large value sitting on it, and the waits hanging underneath deepening into a wedge exactly across its span | Tail latency, head-of-line blocking, p99.9, one slow operation on a shared thread |
+| `big-value-latency-stalled-queue` | A large value standing across all three lanes out of the server, the small requests packed nose to tail behind it | Noisy neighbours, large values, one path out of the server |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -322,6 +324,23 @@ fake-in-process-parity / two rows       — replies in two horizontal rows: the 
 
 Shipped as two columns side by side instead. The caption owns the lower left, so a comparison
 has more height to work with standing up than lying down.
+
+```
+big-value-latency-off-thread / stem      — payload on its own track under the timeline, one narrow
+                                           green reference standing in the row: blind-read as
+                                           "a big value stalls the thread", the opposite sentence
+big-value-latency-off-thread / channel   — the same payload under a two-railed channel: read as a
+                                           latency bar hanging off a baseline, inverted again
+big-value-latency-off-thread / diverted  — no rails, payload offset sideways, one green diagonal
+                                           arrow into it: read as "a stream interrupted by an
+                                           outlier that is being diverted somewhere else"
+```
+
+Three drawings of the 9.0 fix, all dropped at the blind read. A large coral mass in the same frame
+as a row of small requests is read as blocking them however it is arranged: the row alone cannot
+say "this used to be worse", so the only thing left to read is the big object next to it. Anything
+that carries copy avoidance needs the two paths drawn as two paths, with the payload's own route
+going somewhere, and that is a different banner from the two shipped here.
 
 ## Licence
 
