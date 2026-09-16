@@ -5962,6 +5962,39 @@ function fakeInProcessDropin() {
   ].join('\n');
 }
 
+// Idea: the server's behaviour runs inside the test process, so there is no server,
+// no port and no container in the test run.
+// Focal: the solid mark, standing on its own beside the empty machine it used to need.
+function testDoubleEmptyRack() {
+  const y = 470;
+  const x0 = 560;
+  const x1 = 920;
+
+  // The machine the test run no longer starts. Its three bays are drawn as open
+  // brackets, all the same size on one pitch and all facing the server, so the rack
+  // reads as standing empty rather than as three stacked units. Violet and unfilled
+  // is this set's vacated state; the ink body is there so the violet holds its edge
+  // against the background at crop size. Same top and bottom as the mark, so the two
+  // sit on one system rather than at arbitrary sizes.
+  const host =
+    `<rect x="${x0}" y="200" width="${x1 - x0}" height="540" rx="22" fill="${C.ink}" ` +
+      `fill-opacity="0.45" stroke="${C.violet}" stroke-width="11" opacity="0.6"/>` +
+    [230, 399, 568]
+      .map(
+        (sy) =>
+          `<path d="M ${x1 - 34} ${sy} L ${x0 + 34} ${sy} L ${x0 + 34} ${sy + 142} ` +
+          `L ${x1 - 34} ${sy + 142}" fill="none" stroke="${C.violet}" stroke-width="8" ` +
+          `stroke-linejoin="round" opacity="0.58"/>`
+      )
+      .join('');
+
+  return [
+    `  <circle cx="1183" cy="${y}" r="330" fill="url(#h-mint)" opacity="0.28"/>`,
+    `  <g>${host}</g>`,
+    `  <g>${mark(1183, y, 540)}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -6050,6 +6083,7 @@ const BASE_THEMES = [
   { name: 'fake-in-process-enclosure', seed: 47011, zoom: 1.22, center: [960, 540], title: 'Valkey inside the test process', desc: 'One rounded process boundary containing a card of test lines on the left, three lanes running from it to the white Valkey hexagon mark on the right, and a short list of key and value pairs under that mark, with the only port on the wall drawn in dim purple and its lead ending in an unplugged connector outside, representing a Valkey server whose behaviour runs inside the test process.', art: fakeInProcessEnclosure },
   { name: 'fake-in-process-parity', seed: 47021, zoom: 1.28, center: [960, 540], title: 'Valkey fake and real, same reply', desc: 'Two identical columns of five reply capsules standing side by side, matched row for row in width and colour, with one pale caliper bracketing both from below; above the left column a dashed test card holds the white Valkey hexagon mark, and above the right the same mark sits in a solid server box with a port capsule and a connection running out of the frame, representing a fake inside the test process and a real Valkey server answering one assertion identically.', art: fakeInProcessParity },
   { name: 'fake-in-process-dropin', seed: 47031, zoom: 1.3, center: [960, 540], title: 'Valkey test double, dropped in', desc: 'A pale socket at the centre with two contacts, a green in-process server carrying the white Valkey hexagon mark seated in it on matching pins, a dim purple server carrying the same mark held out of the socket above with its network connection trailing off the frame, and a call arriving on a blue lane from the lower left, representing an in-memory test double dropped into the socket a real server used to fill.', art: fakeInProcessDropin },
+  { name: 'test-double-empty-rack', seed: 48011, zoom: 1.4, center: [990, 470], title: 'Valkey testing with no server', desc: 'On the left a tall purple outline of a host with three empty slots and nothing seated in any of them; on the right the white Valkey hexagon mark drawn solid and lit, standing on its own, representing a Valkey server whose behaviour runs inside the test process so the test run starts no server, no port and no container.', art: testDoubleEmptyRack },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

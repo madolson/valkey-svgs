@@ -83,6 +83,7 @@ can't drift, and regenerating is a no-op diff.
 | `fake-in-process-enclosure` | One process wall holding the test, the server and its keys, with the port on that wall unplugged | Test doubles, fakes, testing without a server or a container |
 | `fake-in-process-parity` | Two identical reply columns under one caliper, one from a fake inside the test and one from a real server | Compatibility between a fake and the server, differential testing |
 | `fake-in-process-dropin` | A socket with an in-process server seated in it and the remote one held out, still trailing its network | A drop-in test double, replacing a client with a fake |
+| `test-double-empty-rack` | An unlit host with three open, empty bays, and the server standing lit beside it | Test doubles, fakes, testing with no server, port or container |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -322,6 +323,15 @@ fake-in-process-parity / two rows       — replies in two horizontal rows: the 
 
 Shipped as two columns side by side instead. The caption owns the lower left, so a comparison
 has more height to work with standing up than lying down.
+
+```
+test-double-inside-run                  — the test run drawn as corner brackets around the mark with a stack of code lines beside it, blind-read as a logo under inspection: the brackets, the lines and the port pill all read as decoration (principle 3)
+test-double-hop-gone                    — the hop that is no longer there, drawn three ways: two rows one hop apart, then the near row touching, then a hollow node and a broken line beside the server in its process box. Every version blind-read as a client talking to a server, and the dashed line read as the connection rather than as its absence (principle 2)
+```
+
+The absence of a network hop cannot be drawn with a line: a line is a connection, whatever is
+done to it. What survived instead draws the machine that is not running and leaves the server
+standing outside it.
 
 ## Licence
 
