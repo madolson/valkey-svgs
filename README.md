@@ -59,6 +59,9 @@ can't drift, and regenerating is a no-op diff.
 | `prometheus-scrape-tick` | Readings of the same counters kept side by side, the newest bracketed under the collector's lead | Prometheus scraping, scrape intervals, metrics retention |
 | `prometheus-scrape-every-node` | Every instance's counters pulled down its own lane into one store panel | Scraping a whole deployment, per-node metrics, exporters |
 | `prometheus-scrape-wall` | Six flat dashboard panels and one big one whose trace climbs away in red | Dashboards, Grafana, finding the one metric that moved |
+| `large-object-tail-wake` | An even field of short request bars with one oversized value in it, and the few bars behind it dragged far out | Tail latency, p99.9, a small fraction of requests hurt badly |
+| `large-object-tail-shared-gate` | Six client lanes into one shared window, all of them held up while one oversized value occupies it | Noisy neighbours, multi-tenancy, one client's big objects hurting the rest |
+| `large-object-tail-bypass` | The same oversized value lifted out of the lane onto a dashed route over the top, the small stream below unbroken | Reply copy avoidance, large objects that no longer block the main thread |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -263,6 +266,7 @@ security-shield / hex (536x620)         — hexagon silhouette, says Valkey twic
 security-shield / high (mark up 86)     — empties the lower chamber, the weave becomes the subject
 security-shield / hex-high              — both faults at once
 prometheus-scrape-tick / matrix         — readings as bare columns of value cells read as a tiled grid, not as readings taken at instants; framing each column as a card fixed it
+large-object-tail / jam (lane plug)     — big value in a lane with a queue behind it, blind-read as `large-key`
 ```
 
 All five lost to `security-shield-clean` on the same judgement: the shipped proportions are

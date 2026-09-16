@@ -4256,6 +4256,170 @@ function prometheusScrapeWall(r) {
   ].join('\n');
 }
 
+// ------------------------------------------------- large objects and the tail
+//
+// One subject, three readings. A fast stream of 1KB requests shares one main
+// thread with a trickle of 10MB values, and copying a large value into the reply
+// buffer held that thread long enough to put the small requests' p99.9 up 53x.
+// `-jam` is the mechanism, `-shared-gate` is who it lands on, `-bypass` is what
+// 9.0 does about it. Coral is the large value in all three, cyan the small
+// requests, mint the route 9.0 opens; nothing else is coloured.
+
+// A small request. One shape at one size across the three themes, so the large
+// value reads as the same kind of thing scaled up rather than as a container.
+function lotCell(x, y, w, h, color, opacity) {
+  return (
+    `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="14" ` +
+    `fill="${color}" opacity="${n(opacity)}"/>`
+  );
+}
+
+// The large value: the focal element of all three themes, so it is the only
+// thing carrying a halo, drawn the way `large-key` draws its outsized key.
+function lotBigValue(x, y, w, h) {
+  const box = `x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="34"`;
+  return (
+    // Half-filled rather than a thin outline: at 0.32, on its own on the gradient,
+    // it read as an empty glass panel instead of as a heavy object.
+    `<rect ${box} fill="${C.coral}" opacity="0.46"/>` +
+    `<rect ${box} fill="none" stroke="${C.coral}" stroke-width="18" opacity="0.3" filter="url(#blur18)"/>` +
+    `<rect ${box} fill="none" stroke="${C.coral}" stroke-width="5" opacity="0.95"/>`
+  );
+}
+
+const LOT_CYAN = [[C.cyan, 6], [C.cyanLt, 4]];
+
+// The tail. Bar length is how long a request took, so an even field of short
+// bars is the workload behaving and the few bars dragged out of the large value
+// are the fraction of it that did not.
+function largeObjectTailWake(r) {
+  // Idea: a large value makes only a handful of the small requests around it
+  // late, and those few are late out of all proportion to the rest.
+  // Focal: the oversized coral value with the long waits trailing out of it.
+  const rows = [258, 320, 382, 444, 506, 568, 630, 692, 754, 816];
+  const bw = 48;
+  const bh = 22;
+  const pitch = 72;
+  const big = { x: 560, y: 372, w: 280, h: 352 };
+  const dragged = rows.filter((y) => y > big.y && y < big.y + big.h);
+
+  // How far past the large value each stuck request finally completed. Uneven,
+  // because a tail is a spread and not one number. Capped so the longest wait
+  // still ends inside the narrow crop rather than running out of it.
+  const drag = new Map(dragged.map((y) => [y, 250 + r() * 330]));
+
+  const field = [];
+  for (const y of rows) {
+    const end = drag.has(y) ? big.x + big.w + drag.get(y) : big.x + big.w;
+    for (let x = 280; x < 1660; x += pitch) {
+      // Cells the value or one of its waits stands on are removed rather than
+      // drawn under, so the field stays aligned around them.
+      if (x + bw > big.x - 8 && x < end + 12) continue;
+      field.push(lotCell(x, y, bw, bh, weighted(r, LOT_CYAN), 0.42 + r() * 0.14));
+    }
+  }
+
+  const waits = dragged
+    .map((y) => `<rect x="${n(big.x + big.w)}" y="${y}" width="${n(drag.get(y))}" height="${bh}" rx="11" fill="${C.coral}" opacity="0.9"/>`)
+    .join('');
+
+  return [
+    `  <ellipse cx="${n(big.x + big.w / 2)}" cy="${n(big.y + big.h / 2)}" rx="420" ry="330" fill="url(#h-coral)" opacity="0.18"/>`,
+    `  <g>${field.join('')}</g>`,
+    `  <g filter="url(#blur18)" opacity="0.4">${waits}</g>`,
+    `  <g>${waits}</g>`,
+    `  <g>${lotBigValue(big.x, big.y, big.w, big.h)}</g>`,
+  ].join('\n');
+}
+
+// The blast radius. Six clients on their own lanes, one window they all go
+// through, and one client's large value occupying it.
+function largeObjectTailSharedGate(r) {
+  // Idea: the large value sits in the one window every client shares, so every
+  // client waits for it and every lane comes out with a hole in it.
+  // Focal: the oversized coral value wedged across the shared window.
+  const lanes = [285, 393, 501, 609, 717, 825];
+  const cw = 36;
+  const ch = 56;
+  // The window is two rails, not a box: a rounded box behind the value showed as
+  // a second rounded rectangle peeking out above and below it, which read as a
+  // rendering fault rather than as a window.
+  const gate = { x0: 832, x1: 1088, y0: 225, y1: 885 };
+  const big = { x: 850, y: 290, w: 220, h: 510 };
+
+  const queued = [];
+  const past = [];
+  for (const cy of lanes) {
+    const y = cy - ch / 2;
+    // Each lane backs up by a different amount: the wait lands on whoever was
+    // unlucky enough to be behind it.
+    const growth = 1.3 + r() * 1.7;
+    let x = big.x - 16 - cw;
+    for (let i = 0; x > 150; i++) {
+      queued.push(lotCell(x, y, cw, ch, weighted(r, LOT_CYAN), 0.46 + r() * 0.14));
+      x -= cw + 10 + growth * i * i;
+    }
+    let sx = big.x + big.w + 140 + r() * 110;
+    while (sx < 1700) {
+      past.push(lotCell(sx, y, cw, ch, weighted(r, LOT_CYAN), 0.46 + r() * 0.14));
+      sx += 100 + r() * 22;
+    }
+  }
+
+  const rails = lanes
+    .map(
+      (cy) =>
+        `<line x1="200" y1="${cy}" x2="1720" y2="${cy}" stroke="${C.ice}" stroke-width="3" opacity="0.15"/>`
+    )
+    .join('');
+
+  return [
+    `  <ellipse cx="960" cy="545" rx="330" ry="420" fill="url(#h-coral)" opacity="0.18"/>`,
+    `  <g>${rails}</g>`,
+    `  <g>${queued.join('')}</g>`,
+    `  <g>${past.join('')}</g>`,
+    `  <g stroke="${C.ice}" stroke-width="4" opacity="0.26">` +
+      `<line x1="${gate.x0}" y1="${gate.y0}" x2="${gate.x0}" y2="${gate.y1}"/>` +
+      `<line x1="${gate.x1}" y1="${gate.y0}" x2="${gate.x1}" y2="${gate.y1}"/></g>`,
+    `  <g>${lotBigValue(big.x, big.y, big.w, big.h)}</g>`,
+  ].join('\n');
+}
+
+// The fix. The large value never enters the lane: it leaves before it and
+// rejoins past it, so the small requests keep their cadence.
+function largeObjectTailBypass(r) {
+  // Idea: routing the large value around the lane instead of through it leaves
+  // the stream of small requests unbroken.
+  // Focal: the oversized coral value riding the route above the lane.
+  const laneY = 750;
+  const cw = 40;
+  const ch = 68;
+  const big = { x: 690, y: 250, w: 540, h: 350 };
+  // A ramp up to the value and back down, not an arc through it: an arc put its
+  // apex behind the value, and what was left read as a hill drawn underneath it.
+  // Dashed, because the payload is referenced along this route rather than copied.
+  const route =
+    'M 540 750 Q 640 750 700 662 Q 744 600 812 600 L 1108 600 Q 1176 600 1220 662 Q 1280 750 1380 750';
+
+  const cells = [];
+  for (let x = 212; x < 1700; x += 74) {
+    cells.push(lotCell(x, laneY - ch / 2, cw, ch, weighted(r, LOT_CYAN), 0.46 + r() * 0.14));
+  }
+
+  const rail = (y) =>
+    `<line x1="200" y1="${y}" x2="1720" y2="${y}" stroke="${C.ice}" stroke-width="4" opacity="0.2"/>`;
+
+  return [
+    `  <ellipse cx="960" cy="420" rx="470" ry="330" fill="url(#h-coral)" opacity="0.18"/>`,
+    `  ${rail(laneY - 50)}${rail(laneY + 50)}`,
+    `  <g>${cells.join('')}</g>`,
+    // 0.8, not the 0.55 a supporting element would get: at 0.55 the dashes read
+    // grey rather than green, and the route being the new one is half the picture.
+    `  <path d="${route}" fill="none" stroke="${C.mint}" stroke-width="9" stroke-linecap="round" stroke-dasharray="26 20" opacity="0.8"/>`,
+    `  <g>${lotBigValue(big.x, big.y, big.w, big.h)}</g>`,
+  ].join('\n');
+}
+
 const BASE_THEMES = [
   { name: 'community', seed: 1041, zoom: 1.32, center: [960, 540], title: 'Valkey community', desc: 'An abstract constellation of connected nodes, the best-connected of them drawn as the white Valkey hexagon mark, representing the Valkey community.', art: community },
   { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
@@ -4313,6 +4477,9 @@ const BASE_THEMES = [
   // x 469. That puts the ceiling at 920 scaled units, and colPitch 168 with spread 62
   // spends it: the columns get 24 more units between them and the panel-to-shard span gets
   // the rest. It is not a dramatic stretch, because the frame is the frame.
+  { name: 'large-object-tail-wake', seed: 63011, zoom: 1.38, center: [960, 540], title: 'Valkey large objects drag the tail', desc: 'An even field of short blue bars, one per small request, with one oversized red value standing in the middle of the field and six long red bars trailing out of it across the rows it covers, representing a handful of very large objects making a small fraction of the small requests late out of all proportion to the rest of them.', art: largeObjectTailWake },
+  { name: 'large-object-tail-shared-gate', seed: 63023, zoom: 1.34, center: [960, 545], title: 'Valkey large objects stall every client', desc: 'Six lanes of small blue requests all running into one narrow shared window, with a single oversized red value wedged across that window, every lane packed tight in front of it and a wide gap in every lane just past it, representing large objects from one client delaying every other client that shares the same main thread.', art: largeObjectTailSharedGate },
+  { name: 'large-object-tail-bypass', seed: 63037, zoom: 1.44, center: [960, 540], title: 'Valkey large objects out of the line', desc: 'One oversized red value lifted clear of the lane onto a dashed green route that leaves the lane and rejoins it further along, with the row of small blue requests below running unbroken and evenly spaced, representing a large object sent past the reply path instead of through it so the small requests never stall.', art: largeObjectTailBypass },
   { name: 'key-size-card-flat', seed: 43049, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three widely spaced shard enclosures of servers drawn as the white Valkey hexagon mark, the whole chart sitting in a shallow band clear above the title blocks.', art: keySizeCard({ scale: 0.8, spread: 62, colPitch: 168, clearY: 748 }) },
   { name: 'glide-compress-press', seed: 47011, zoom: 1.36, center: [980, 540], title: 'Valkey GLIDE compression', desc: 'Two heavy pale plates converging from left to right on four lanes of blue data cells, closing them into a single block of dense green cells that carries on to the white Valkey hexagon mark, representing a client library compressing a value before it crosses the network.', art: glideCompressPress },
   { name: 'glide-compress-fold', seed: 47021, zoom: 1.3, center: [960, 540], title: 'Valkey compressed on the wire', desc: 'A long blue ribbon of data cells arriving from the left and folded into a compact green stack of seven layers, its last fold running on to the white Valkey hexagon mark, representing a client library packing a value down before it crosses the network.', art: glideCompressFold },
