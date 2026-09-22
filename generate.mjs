@@ -3010,81 +3010,6 @@ function globe(cx, cy, rad, { width = 3.6, opacity = 0.55 } = {}) {
 // ever existed as an instant becomes a history.
 
 
-// One screen, every series: the stored metrics come back as a wall of panels, and
-// the reason to have them is that the one that has gone wrong is the only thing on
-// the wall that is not flat.
-function prometheusScrapeWall(r) {
-  const smallW = 222;
-  const smallH = 200;
-  const smallX = [460, 700];
-  const smallY = [232, 446, 660];
-  const bx0 = 950;
-  const bx1 = 1460;
-  const byTop = 285;
-  const byBottom = 805;
-
-  // A quiet series: it wanders around its own level and stays there.
-  const trace = (x0, x1, level, amp, steps) => {
-    const pts = [];
-    let v = level;
-    for (let i = 0; i <= steps; i++) {
-      v += (level - v) * 0.5 + (r() - 0.5) * amp;
-      pts.push([x0 + ((x1 - x0) * i) / steps, v]);
-    }
-    return pts;
-  };
-  const path = (pts) => pts.map(([x, y], i) => `${i ? 'L' : 'M'} ${n(x)} ${n(y)}`).join(' ');
-
-  const panels = [];
-  for (const y of smallY) {
-    for (const x of smallX) {
-      const pts = trace(x + 24, x + smallW - 24, y + smallH * 0.66, 26, 9);
-      panels.push(
-        `<rect x="${x}" y="${y}" width="${smallW}" height="${smallH}" rx="18" fill="${C.ink}" ` +
-          `fill-opacity="0.42" stroke="${C.cyanLt}" stroke-width="2.6" opacity="0.5"/>`,
-        `<rect x="${x + 24}" y="${y + 26}" width="${n(58 + r() * 46)}" height="12" rx="6" fill="${C.ice}" opacity="0.4"/>`,
-        `<path d="${path(pts)}" fill="none" stroke="${C.cyan}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>`
-      );
-    }
-  }
-
-  // The panel that is why you built the wall: flat, then away it goes.
-  const bPts = [];
-  const bx = (t) => bx0 + 40 + t * (bx1 - bx0 - 110);
-  const flatY = byBottom - 120;
-  let v = flatY;
-  for (let i = 0; i <= 8; i++) {
-    v += (flatY - v) * 0.5 + (r() - 0.5) * 30;
-    bPts.push([bx(i / 16), v]);
-  }
-  for (let i = 1; i <= 8; i++) {
-    const t = i / 8;
-    bPts.push([bx(0.5 + t * 0.5), flatY - Math.pow(t, 1.7) * (flatY - byTop - 152)]);
-  }
-  const bDraw = path(bPts);
-  const bFill =
-    `<path d="${bDraw} L ${n(bx(1))} ${n(byBottom - 34)} L ${n(bx(0))} ${n(byBottom - 34)} Z" ` +
-    `fill="${C.coral}" opacity="0.16"/>`;
-  const bEnd = bPts[bPts.length - 1];
-
-  const big =
-    `<rect x="${bx0}" y="${byTop}" width="${bx1 - bx0}" height="${byBottom - byTop}" rx="22" fill="${C.ink}" ` +
-      `fill-opacity="0.5" stroke="${C.ice}" stroke-width="5" opacity="0.92"/>` +
-    `<line x1="${bx0 + 30}" y1="${byTop + 84}" x2="${bx1 - 30}" y2="${byTop + 84}" stroke="${C.ice}" ` +
-      `stroke-width="2.6" opacity="0.45"/>` +
-    `<g opacity="0.9">${mark(bx0 + 66, byTop + 44, 44)}</g>` +
-    `<rect x="${bx0 + 108}" y="${byTop + 34}" width="150" height="14" rx="7" fill="${C.ice}" opacity="0.45"/>`;
-
-  return [
-    `  <ellipse cx="${n((bx0 + bx1) / 2)}" cy="${n((byTop + byBottom) / 2)}" rx="360" ry="360" fill="url(#h-coral)" opacity="0.2"/>`,
-    `  <g>${panels.join('')}</g>`,
-    `  ${big}`,
-    `  ${bFill}`,
-    `  <path d="${bDraw}" fill="none" stroke="${C.coral}" stroke-width="20" stroke-linecap="round" opacity="0.28" filter="url(#blur8)"/>`,
-    `  <path d="${bDraw}" fill="none" stroke="${C.coral}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>`,
-    `  ${dot(bEnd[0], bEnd[1], 13, C.coral, 'coral', 0.95)}`,
-  ].join('\n');
-}
 
 
 // The large value: the focal element of all three themes, so it is the only
@@ -3149,181 +3074,12 @@ function die(x, y, w, h, r, { slots = 0, slotY = 0, slotH = 0 } = {}) {
   );
 }
 
-// Idea: only the new tail of a prompt is computed, because the KV for everything
-// ahead of it is loaded back out of Valkey instead of being processed again.
-// Focal: the long mint run of loaded chunks that makes up most of the prompt bar.
-function kvCacheNewTail(r) {
-  const x0 = 340;
-  const x1 = 1560;
-  const chunks = 22;
-  const split = 15; // chunks before this one are loaded, the rest are computed
-  const pitch = (x1 - x0) / chunks;
-  const cw = pitch - 9;
-  const barTop = 496;
-  const cellH = 104;
-  const boundary = x0 + split * pitch;
-
-  // A gap at the split, so the two provenances read as two runs rather than as a
-  // gradient across one.
-  const gap = 20;
-  const cells = [];
-  for (let i = 0; i < chunks; i++) {
-    const loaded = i < split;
-    cells.push(
-      `<rect x="${n(x0 + i * pitch + (loaded ? 0 : gap))}" y="${barTop}" width="${n(cw)}" height="${cellH}" rx="12" ` +
-        `fill="${loaded ? C.mint : C.cyan}" opacity="${n(loaded ? 0.9 + r() * 0.1 : 0.72 + r() * 0.12)}"/>`
-    );
-  }
-
-  // The compute side, sitting over the tail and only as wide as the tail.
-  const chip = die(1120, 220, 340, 160, r);
-  const feed = (x, color, y0, y1) =>
-    `<line x1="${n(x)}" y1="${n(y0)}" x2="${n(x)}" y2="${n(y1)}" stroke="${color}" stroke-width="11" ` +
-    `stroke-linecap="round" opacity="0.5"/>`;
-  const feeds = [1210, 1300, 1390].map((x) => feed(x, C.cyan, 400, 490)).join('');
-
-  // The store, sitting under the loaded run, feeding it the same way.
-  const sy = 716;
-  const sh = 150;
-  const store =
-    `<rect x="556" y="${sy}" width="400" height="${sh}" rx="30" fill="${C.cyan}" fill-opacity="0.14" ` +
-      `stroke="${C.ice}" stroke-width="3.4" opacity="0.6"/>` +
-    `<circle cx="756" cy="${sy + sh / 2}" r="84" fill="url(#scrim)"/>` +
-    mark(756, sy + sh / 2, 108);
-  const loads = [640, 756, 872].map((x) => feed(x, C.mint, barTop + cellH + 6, sy - 6)).join('');
-
-  return [
-    `  <ellipse cx="${n((x0 + boundary) / 2)}" cy="${n(barTop + cellH / 2)}" rx="470" ry="215" fill="url(#h-mint)" opacity="0.22"/>`,
-    `  <g>${chip}</g>`,
-    `  <g>${feeds}</g>`,
-    `  <g>${store}</g>`,
-    `  <g>${loads}</g>`,
-    `  <g>${cells.join('')}</g>`,
-  ].join('\n');
-}
 
 
 
 
 
-// Idea: the per-node exporter hands you one readout per node, the cluster exporter
-// hands you a single readout for the whole cluster, and they are not the same shape.
-// Focal: the one large cluster readout, its hottest slot picked out in red.
-function exporterManyAndOne(r) {
-  const cw = 320; // the per-node readouts, one per node, fanned as a deck
-  const ch = 140;
-  const deck = [];
-  for (let i = 0; i < 5; i++) {
-    const x = 500 + i * 24;
-    const y = 380 + i * 42;
-    const top = i === 4;
-    deck.push(
-      `<rect x="${x}" y="${y}" width="${cw}" height="${ch}" rx="18" fill="${C.ink}" ` +
-        `fill-opacity="0.6" stroke="${C.cyanLt}" stroke-width="4" opacity="${top ? 0.6 : 0.5}"/>`
-    );
-    if (top) {
-      deck.push(`<g opacity="0.55">${mark(x + 46, y + 70, 46)}</g>`);
-      for (let j = 0; j < 3; j++) {
-        deck.push(
-          `<rect x="${x + 92}" y="${n(y + 37 + j * 28)}" width="${n(90 + r() * 100)}" height="11" ` +
-            `rx="5.5" fill="${C.cyanLt}" opacity="0.5"/>`
-        );
-      }
-    }
-  }
 
-  // The single cluster readout: per-slot counters, which is the series the per-node
-  // exporter has no equivalent for, with the hottest slot standing out.
-  const bars = [];
-  const hot = 7;
-  for (let i = 0; i < 12; i++) {
-    const h = i === hot ? 396 : 96 + r() * 250;
-    bars.push(
-      `<rect x="${n(1032 + i * 30)}" y="${n(790 - h)}" width="22" height="${n(h)}" rx="5" ` +
-        `fill="${i === hot ? C.coral : C.cyan}" opacity="${i === hot ? 0.95 : n(0.5 + r() * 0.25)}"/>`
-    );
-  }
-
-  return [
-    `  <circle cx="1207" cy="540" r="360" fill="url(#h-ice)" opacity="0.2"/>`,
-    `  <g>${deck.join('')}</g>`,
-    `  <rect x="996" y="230" width="422" height="620" rx="24" fill="${C.ink}" fill-opacity="0.5" ` +
-      `stroke="${C.ice}" stroke-width="8" opacity="0.95"/>`,
-    `  <g opacity="0.85">${mark(1048, 280, 44)}</g>`,
-    `  <line x1="1020" y1="312" x2="1394" y2="312" stroke="${C.ice}" stroke-width="1.8" opacity="0.45"/>`,
-    `  <g>${bars.join('')}</g>`,
-    `  <line x1="1020" y1="790" x2="1394" y2="790" stroke="${C.ice}" stroke-width="2.4" opacity="0.5"/>`,
-  ].join('\n');
-}
-
-// --------------------------------------- browsing a keyspace safely from a GUI
-//
-// Three readings of one post about pointing a graphical client at a server that
-// is taking traffic. `keyspace-gui-safe-refusal` is the enforcement: the write is
-// turned back by the server, not by a switch in the client. `keyspace-gui-safe-grant`
-// is the grant itself: one slice of the command surface, with the dangerous part
-// taken back out of the middle of it. `keyspace-gui-safe-readout` is what that
-// leaves the client to be: panels, each one read command's reply.
-//
-// `keyspace-scan` already owns the cursor over a key field, so none of the three
-// draws one, and `security-shield-clean` owns the shield.
-
-// Idea: the reads a client sends carry on across the server's boundary, and the
-// write it sends is turned back at that same boundary.
-// Focal: the thick coral write lane, doubling back on itself where it arrives.
-function keyspaceGuiSafeRefusal() {
-  const wall = 1000;
-  const top = 258;
-  const bottom = 866;
-  const mid = 562;
-  const reads = [312, 420, 700, 808];
-  const LANE = 9;
-  const FACE = 14; // half the boundary's thickness
-
-  // The boundary, one unbroken bar the height of the frame. Two earlier passes cut
-  // openings in it where the permitted commands cross, and both read as a dashed
-  // rule at banner size rather than as something a command has to get past. A lane
-  // simply drawn over a solid bar reads as passing through it, which is cheaper and
-  // truer: the boundary is one rule and what happens at it depends on the caller.
-  const barrier = (w, fill, op, filter) =>
-    `<rect x="${n(wall - w / 2)}" y="${top}" width="${n(w)}" height="${bottom - top}" rx="${n(w / 2)}" ` +
-    `fill="${fill}" opacity="${op}"${filter ? ` filter="url(#${filter})"` : ''}/>`;
-
-  // One direction device for the whole image: a chevron at the end of each lane.
-  const chevron = (x, y, dx, wing, color, w, op) =>
-    `<path d="M ${n(x)} ${n(y - wing)} L ${n(x + dx)} ${n(y)} L ${n(x)} ${n(y + wing)}" fill="none" ` +
-    `stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity="${op}"/>`;
-
-  const lanes = reads
-    .map(
-      (y) =>
-        `<line x1="200" y1="${y}" x2="1720" y2="${y}" stroke="${C.cyanLt}" stroke-width="${LANE}" ` +
-        `stroke-linecap="round" opacity="0.5"/>` +
-        chevron(1100, y, 46, 24, C.cyanLt, LANE, '0.5')
-    )
-    .join('');
-
-  // The write. It arrives, the boundary refuses it, and the refusal is what goes
-  // back to the caller: one lane in, the same lane out, tangent to the wall.
-  const inY = mid - 58;
-  const outY = mid + 58;
-  const turn = wall - FACE - 58; // puts the arc's apex on the boundary's near face
-  const write = `M 200 ${inY} L ${turn} ${inY} A 58 58 0 0 1 ${turn} ${outY} L 660 ${outY}`;
-
-  return [
-    `  <circle cx="920" cy="${mid}" r="380" fill="url(#h-coral)" opacity="0.26"/>`,
-    `  ${barrier(FACE * 2 + 22, C.ice, '0.16', 'blur18')}`,
-    `  ${barrier(FACE * 2, C.ice, '0.55')}`,
-    `  <g>${lanes}</g>`,
-    // The boundary lit where it did the refusing.
-    `  <rect x="${n(wall - FACE)}" y="${n(inY - 22)}" width="${FACE * 2}" ` +
-      `height="${n(outY - inY + 44)}" rx="${FACE}" fill="${C.coral}" opacity="0.9"/>`,
-    `  <path d="${write}" fill="none" stroke="${C.coral}" stroke-width="36" opacity="0.32" filter="url(#blur18)"/>`,
-    `  <path d="${write}" fill="none" stroke="${C.coral}" stroke-width="20" stroke-linecap="round"/>`,
-    `  ${chevron(660, outY, -52, 34, C.coral, 20, '1')}`,
-    `  <g opacity="0.6">${mark(1290, mid, 180)}</g>`,
-  ].join('\n');
-}
 
 
 
@@ -3362,116 +3118,7 @@ function chevronHead(x, y, ux, uy, size, color, width, opacity = 0.9) {
   );
 }
 
-// Idea: the conditional update that took a four-message exchange now takes one
-// call, because the call carries the condition.
-// Focal: the single thick green call along the bottom, with the check on it.
-function commandsRoundTrips() {
-  const cx = 596; // the caller's rail
-  const sx = 1324; // the server's rail
-  const endY = 222;
-  const callY = 778;
 
-  const rails = [cx, sx]
-    .map(
-      (x) =>
-        `<line x1="${x}" y1="${endY + 60}" x2="${x}" y2="${callY + 46}" stroke="${C.cyanLt}" ` +
-        `stroke-width="4" stroke-dasharray="12 16" opacity="0.3"/>`
-    )
-    .join('');
-
-  // The old exchange: ask, get the value back, decide, write, get the reply.
-  // Violet because it is the retired way of doing it, and thin because it is not
-  // what the picture is about.
-  const hops = [340, 444, 548, 652]
-    .map((y, i) => {
-      const rightward = i % 2 === 0;
-      const tip = rightward ? sx - 8 : cx + 8;
-      const u = rightward ? 1 : -1;
-      return (
-        `<line x1="${cx}" y1="${y}" x2="${sx}" y2="${y}" stroke="${C.violet}" stroke-width="7" opacity="0.5"/>` +
-        chevronHead(tip, y, u, 0, 26, C.violet, 7, 0.5)
-      );
-    })
-    .join('');
-
-  // The one call. Everything about it is heavier: the lane, its halo, its head.
-  const call =
-    `<line x1="${cx}" y1="${callY}" x2="${sx}" y2="${callY}" stroke="${C.mint}" stroke-width="60" ` +
-      `opacity="0.2" filter="url(#blur18)"/>` +
-    `<line x1="${cx}" y1="${callY}" x2="${sx}" y2="${callY}" stroke="${C.mint}" stroke-width="24" opacity="0.95"/>` +
-    chevronHead(sx - 6, callY, 1, 0, 40, C.mint, 24, 0.95);
-
-  return [
-    `  <ellipse cx="960" cy="${callY}" rx="480" ry="150" fill="url(#h-mint)" opacity="0.3"/>`,
-    `  <g>${rails}</g>`,
-    `  <g>${hops}</g>`,
-    // The two ends of the exchange, differently shaped so the direction reads: a
-    // caller on the left, the server on the right.
-    `  <rect x="${cx - 48}" y="${endY - 48}" width="96" height="96" rx="24" fill="${C.cyan}" ` +
-      `fill-opacity="0.18" stroke="${C.cyanLt}" stroke-width="5" opacity="0.8"/>`,
-    `  <g opacity="0.85">${mark(sx, endY, 96)}</g>`,
-    `  <g>${call}</g>`,
-    `  <g>${conditionGlyph(952, callY, 196, 124, C.ice)}</g>`,
-  ].join('\n');
-}
-
-// Idea: the Lua script written for a conditional write collapses into one plain
-// command with the condition hung on the end of it.
-// Focal: the single wide command bar and the green condition seated at its tail.
-function commandsOneLine(r) {
-  // Kept clear of the corner lockup, which reaches x 521 and y 247 at this zoom.
-  const px = 580;
-  const pw = 336;
-  const pTop = 200;
-  const pH = 300;
-
-  // The script, suggested as ragged indented lines rather than written out. Quiet
-  // and violet: it is what is being replaced.
-  const lines = [];
-  let ly = pTop + 46;
-  while (ly < pTop + pH - 30) {
-    const indent = weighted(r, [[0, 3], [1, 5], [2, 3]]) * 26;
-    const w = 58 + r() * (pw - 126 - indent);
-    lines.push(
-      `<rect x="${n(px + 32 + indent)}" y="${n(ly)}" width="${n(w)}" height="11" rx="5.5" ` +
-        `fill="${C.violet}" opacity="${n(0.42 + r() * 0.18)}"/>`
-    );
-    ly += 38;
-  }
-  const script =
-    `<rect x="${px}" y="${pTop}" width="${pw}" height="${pH}" rx="20" fill="${C.ink}" fill-opacity="0.35" ` +
-      `stroke="${C.violet}" stroke-width="3" opacity="0.55"/>` +
-    lines.join('');
-
-  // One command: a run of pale words on a single bar, and the option that carries
-  // the condition sitting at the end of it.
-  const bx = 510;
-  const bw = 900;
-  const by = 716;
-  const bh = 196;
-  const words = [[bx + 56, 240], [bx + 320, 150], [bx + 500, 130]]
-    .map(
-      ([x, w]) =>
-        `<rect x="${n(x)}" y="${n(by - 19)}" width="${n(w)}" height="38" rx="19" fill="${C.ice}" opacity="0.82"/>`
-    )
-    .join('');
-
-  const arrowX = px + pw / 2;
-  const arrow =
-    `<line x1="${n(arrowX)}" y1="${pTop + pH + 34}" x2="${n(arrowX)}" y2="${by - bh / 2 - 44}" ` +
-      `stroke="${C.mint}" stroke-width="9" opacity="0.7"/>` +
-    chevronHead(arrowX, by - bh / 2 - 36, 0, 1, 30, C.mint, 9, 0.7);
-
-  return [
-    `  <ellipse cx="${n(bx + bw / 2)}" cy="${by}" rx="600" ry="200" fill="url(#h-cyan)" opacity="0.26"/>`,
-    `  <g>${script}</g>`,
-    `  <g>${arrow}</g>`,
-    `  <rect x="${bx}" y="${n(by - bh / 2)}" width="${bw}" height="${bh}" rx="${bh / 2}" fill="${C.cyan}" ` +
-      `fill-opacity="0.22" stroke="${C.ice}" stroke-width="6"/>`,
-    `  <g>${words}</g>`,
-    `  <g>${conditionGlyph(bx + bw - 140, by, 216, 132, C.mint)}</g>`,
-  ].join('\n');
-}
 
 
 // ------------------------------------------------ advisories in the AI era
@@ -3486,99 +3133,7 @@ function commandsOneLine(r) {
 // `security-shield-clean` already owns security in general.
 
 
-function aiAdvisorySurgeReproducer(r) {
-  // Idea: the project proposes its own candidate bugs, and only the one that comes with a reproducing crash survives a second reading.
-  // Focal: the reproducer panel under the surviving candidate.
-  const cx = 960;
-  const rowY = 300;
-  const pitch = 175;
-  const cw = 130;
-  const ch = 86;
 
-  // Four candidates struck out on the second reading. One line weight for the
-  // cross, one size for the card, everywhere.
-  const struck = [];
-  for (const i of [0, 1, 3, 4]) {
-    const x = cx + (i - 2) * pitch;
-    struck.push(
-      `<rect x="${n(x - cw / 2)}" y="${n(rowY - ch / 2)}" width="${cw}" height="${ch}" rx="14" fill="${C.cyan}" opacity="0.3"/>`,
-      `<rect x="${n(x - cw / 2)}" y="${n(rowY - ch / 2)}" width="${cw}" height="${ch}" rx="14" fill="none" stroke="${C.cyanLt}" stroke-width="3" opacity="0.4"/>`,
-      `<g stroke="${C.coral}" stroke-width="12" stroke-linecap="round" opacity="0.6">` +
-        `<line x1="${n(x - 40)}" y1="${n(rowY - 26)}" x2="${n(x + 40)}" y2="${n(rowY + 26)}"/>` +
-        `<line x1="${n(x + 40)}" y1="${n(rowY - 26)}" x2="${n(x - 40)}" y2="${n(rowY + 26)}"/></g>`
-    );
-  }
-
-  const survivor =
-    `<rect x="${n(cx - 75)}" y="${n(rowY - 50)}" width="150" height="100" rx="16" fill="${C.mint}" opacity="0.85"/>` +
-    `<rect x="${n(cx - 75)}" y="${n(rowY - 50)}" width="150" height="100" rx="16" fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.9"/>`;
-
-  // The evidence it carries: a run of lines and, at the end, the crash they produce.
-  const px0 = 720;
-  const py0 = 500;
-  const bars = [];
-  for (let i = 0; i < 4; i++) {
-    bars.push(
-      `<rect x="${px0 + 42}" y="${n(py0 + 46 + i * 46)}" width="${n(210 + r() * 150)}" height="18" rx="9" fill="${C.ice}" opacity="0.75"/>`
-    );
-  }
-  bars.push(
-    `<rect x="${px0 + 42}" y="${n(py0 + 236)}" width="300" height="18" rx="9" fill="${C.coral}" opacity="0.9"/>`
-  );
-
-  return [
-    `  <ellipse cx="${cx}" cy="670" rx="340" ry="250" fill="url(#h-mint)" opacity="0.35"/>`,
-    `  <g>${struck.join('')}</g>`,
-    `  <line x1="${cx}" y1="${rowY + 50}" x2="${cx}" y2="${py0}" stroke="${C.mint}" stroke-width="10" opacity="0.7"/>`,
-    `  <g>${survivor}</g>`,
-    `  <rect x="${px0}" y="${py0}" width="480" height="300" rx="22" fill="${C.ink}" opacity="0.45"/>`,
-    `  <rect x="${px0}" y="${py0}" width="480" height="300" rx="22" fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.9"/>`,
-    `  <g>${bars.join('')}</g>`,
-  ].join('\n');
-}
-
-function aiAdvisorySurgeBackportRails(r) {
-  // Idea: one verified fix lands on every supported version at the same time instead of being carried to them one at a time.
-  // Focal: the vertical run of the same fix, one node on every branch.
-  const RAILS = [290, 425, 560, 695, 830];
-  const branchX = [200, 420, 560, 700, 840];
-  const right = 1700;
-  const fixX = 1010;
-
-  const rails = RAILS.map(
-    (y, i) =>
-      `<line x1="${branchX[i]}" y1="${y}" x2="${right}" y2="${y}" stroke="${C.ice}" stroke-width="7" opacity="0.32"/>`
-  );
-
-  // Where each maintenance line left the one above it, so the rails read as
-  // supported versions rather than as rows.
-  const branches = RAILS.slice(1).map((y, k) => {
-    const bx = branchX[k + 1];
-    const yp = RAILS[k];
-    return `<path d="M ${bx - 96} ${yp} C ${bx - 40} ${yp} ${bx - 56} ${y} ${bx} ${y}" fill="none" stroke="${C.ice}" stroke-width="6" opacity="0.22"/>`;
-  });
-
-  const commits = [];
-  for (let i = 0; i < RAILS.length; i++) {
-    for (let x = branchX[i] + 104; x < right - 50; x += 116) {
-      if (Math.abs(x - fixX) < 84) continue;
-      commits.push(dot(x, RAILS[i], 9, C.cyanLt, 'cyan', 0.42 + r() * 0.12, 2.2));
-    }
-  }
-
-  const spine = `<line x1="${fixX}" y1="275" x2="${fixX}" y2="845" stroke="${C.mint}" stroke-width="11" opacity="0.85"/>`;
-  const nodes = RAILS.map((y) => dot(fixX, y, 21, C.mint, 'mint', 1, 3.2));
-
-  return [
-    `  <ellipse cx="${fixX}" cy="560" rx="205" ry="370" fill="url(#h-mint)" opacity="0.3"/>`,
-    `  <g>${branches.join('')}</g>`,
-    `  <g>${rails.join('')}</g>`,
-    `  <g>${commits.join('')}</g>`,
-    `  <g filter="url(#blur18)" opacity="0.4"><line x1="${fixX}" y1="275" x2="${fixX}" y2="845" stroke="${C.mint}" stroke-width="28"/></g>`,
-    `  ${spine}`,
-    `  <g>${nodes.join('')}</g>`,
-  ].join('\n');
-}
 
 
 
@@ -3617,71 +3172,7 @@ function bvlPayload(x, y, w, h, rx = 12) {
   return `<rect ${box} fill="${C.coral}"/><rect ${box} fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.35"/>`;
 }
 
-function bvlCopyBlock(r) {
-  // Idea: the one big copy owns the thread for as long as it takes, and the small
-  // requests underneath it wait exactly that long.
-  // Focal: the coral block of occupied thread time.
-  const axis = 400;
-  const pitch = 74;
-  const big = { x: 760, w: 390, h: 180 };
 
-  // Every small request's wait, hanging off the thread's own timeline at the rate
-  // they arrive. An even row of stubs is the workload behaving.
-  const waits = [];
-  const wait = (x, depth) =>
-    `<rect x="${n(x)}" y="${n(axis + 14)}" width="30" height="${n(depth)}" rx="15" fill="${C.cyan}" opacity="0.6"/>`;
-
-  for (let x = 240; x < 1720; x += pitch) {
-    if (x + 30 > big.x && x < big.x + big.w) continue;
-    waits.push(wait(x, 58 + r() * 16));
-  }
-
-  // The requests that arrive while the copy runs. The first one waits out the
-  // whole copy, the last one almost none of it, so the wedge is deepest against
-  // the block's leading edge and its span is the block's span.
-  // A clean ramp, not a jittered one: a blind read called the varying heights
-  // inside the wedge arbitrary, and the ramp is the whole point.
-  for (let i = 0; i < 5; i++) {
-    waits.push(wait(big.x + 12 + i * pitch, 390 - i * 76));
-  }
-
-  return [
-    `  <ellipse cx="${n(big.x + big.w / 2)}" cy="${n(axis - big.h / 2)}" rx="420" ry="290" fill="url(#h-coral)" opacity="0.2"/>`,
-    `  <g>${waits.join('')}</g>`,
-    `  <line x1="200" y1="${axis}" x2="1720" y2="${axis}" stroke="${C.ice}" stroke-width="10" opacity="0.75"/>`,
-    `  <g>${bvlPayload(big.x, axis - big.h, big.w, big.h)}</g>`,
-  ].join('\n');
-}
-
-function bvlStalledQueue() {
-  // Idea: there is one channel out of the server, and while the large value is in
-  // it nothing else moves through.
-  // Focal: the coral value filling the channel.
-  const lanes = [330, 540, 750];
-  const bh = 96;
-  const bw = 80;
-  const plug = { x: 1000, w: 370, y: 236, h: 608 };
-
-  // One fill for every request. A blind read read the two-tone version as shading
-  // for its own sake, and nothing here differs in kind.
-  const block = (x, cy) =>
-    `<rect x="${n(x)}" y="${n(cy - bh / 2)}" width="${bw}" height="${bh}" rx="20" ` +
-    `fill="${C.cyan}" opacity="0.55"/>`;
-
-  // Held: single file, packed nose to tail back from the value's near face. The
-  // run ends inside the frame rather than bleeding, so the queue has a visible
-  // tail and the narrow crop is not cutting a column in half.
-  const held = [];
-  for (const cy of lanes) {
-    for (let x = plug.x - 8 - bw; x > 470; x -= bw + 14) held.push(block(x, cy));
-  }
-
-  return [
-    `  <ellipse cx="${n(plug.x + plug.w / 2)}" cy="540" rx="330" ry="420" fill="url(#h-coral)" opacity="0.2"/>`,
-    `  <g>${held.join('')}</g>`,
-    `  <g>${bvlPayload(plug.x, plug.y, plug.w, plug.h, 8)}</g>`,
-  ].join('\n');
-}
 
 // -------------------------------------------- client-side compression (GLIDE)
 //
@@ -3708,215 +3199,11 @@ function ccRun(cx, cy, fieldW, h, { fields = 8, gap = 4, color, opacity = 1 }) {
   ).join('');
 }
 
-// Idea: the client shrinks the value before it leaves the application, so what
-// crosses the network and lands in the server is a fraction of what the
-// application holds.
-// Focal: the short dense green run, the value as it now travels.
-//
-// Both rows start at the same x and end at the same x, so the row is the measure and
-// the fill is the message: the top row is the value filling it, the bottom row is the
-// same eight fields taking a fifth of it and the rest of the row is the saving. An
-// earlier pass ran a long lane down from one row to the other; the blind read went to
-// that lane first and took it as one column feeding down rather than the whole value
-// getting narrower, so the lane is gone and the rows moved together instead.
-function clientCompressionPackedRun() {
-  const FIELDS = 8;
-  const H = 220;
-  const appY = 330; // the value as the application holds it
-  const outY = 685; // the value on the wire
-  const wide = FIELDS * 106 - 6;
-  const packed = FIELDS * 30 - 4;
-  const left = 960 - wide / 2;
-  const markX = left + wide - 83;
-
-  // The one direction device: what leaves for the server is the short run.
-  const send =
-    `<line x1="${n(left + packed + 22)}" y1="${outY}" x2="${n(markX - 120)}" y2="${outY}" ` +
-      `stroke="${C.mint}" stroke-width="26" opacity="0.5"/>` +
-    chevronHead(markX - 114, outY, 1, 0, 34, C.mint, 26, 0.5);
-
-  return [
-    `  <ellipse cx="${n(left + packed / 2)}" cy="${outY}" rx="250" ry="200" fill="url(#h-mint)" opacity="0.3"/>`,
-    `  <g>${ccRun(960, appY, 100, H, { fields: FIELDS, gap: 6, color: C.cyanLt, opacity: 0.5 })}</g>`,
-    `  <g>${send}</g>`,
-    `  <g>${ccRun(left + packed / 2, outY, 26, H, { fields: FIELDS, color: C.mint, opacity: 0.95 })}</g>`,
-    `  <g opacity="0.55">${mark(markX, outY, 190)}</g>`,
-  ].join('\n');
-}
-
-// Idea: the same value sent by the same unchanged application code crosses the
-// network at a third of the size once the client compresses it.
-// Focal: the short green send, the one bright thing in the frame.
-//
-// Both sends get the same length of wire, drawn as a pale channel, because the
-// journey is what does not change. An earlier pass drew the wire as a plain arrow
-// per send, and the blind read compared the two arrows instead of the two payloads:
-// equal arrows read as "the same", which is the opposite of the point. As a channel
-// the equal length is the measure and the fill is the message.
-//
-// Both runs use the same gap so the field count can be counted at crop size: a blind
-// read miscounted them at gap 4 and asked whether the point was fewer fields or
-// narrower ones. It is narrower ones, and the equal count is what says so.
-//
-// No hexagon mark in the art. It sat in the empty band between the two channels with
-// nothing arriving at it, and two blind reads in a row called it decoration; the
-// corner lockup already says whose wire this is.
-function clientCompressionTwinSends() {
-  const FIELDS = 6;
-  const H = 150;
-  const left = 600; // both sends start here: the same call site, the same code
-  const wireEnd = 1352; // the chevron tip past this has to stay inside the narrow crop
-  const newY = 340; // what crosses now
-  const oldY = 720; // what used to cross
-
-  const wire = (y) =>
-    `<rect x="${left}" y="${n(y - H / 2)}" width="${wireEnd - left}" height="${H}" rx="${H / 2}" ` +
-    `fill="${C.ice}" opacity="0.1"/>`;
-
-  // Inset from the channel's rounded cap, or the run's square corners poke out of it.
-  const send = (y, fieldW, gap, color, opacity) =>
-    ccRun(left + 14 + (FIELDS * (fieldW + gap) - gap) / 2, y, fieldW, H, { fields: FIELDS, gap, color, opacity }) +
-    chevronHead(wireEnd + 54, y, 1, 0, 44, color, 26, n(opacity * 0.85));
-
-  return [
-    `  <ellipse cx="${left + 120}" cy="${newY}" rx="300" ry="210" fill="url(#h-mint)" opacity="0.3"/>`,
-    `  ${wire(newY)}`,
-    `  ${wire(oldY)}`,
-    `  <g>${send(oldY, 85, 9, C.violet, 0.45)}</g>`,
-    `  <g>${send(newY, 27, 9, C.mint, 0.95)}</g>`,
-  ].join('\n');
-}
 
 
-// ------------------------------------------------------- SCAN, page by page
-//
-// One sentence: a scan walks a keyspace a page at a time under a cursor, so a client
-// reads every key without ever asking for all of them at once. `scan-cursor-pages`
-// draws that as a partition. The pages stack up to make the keyspace, so they visibly
-// cover all of it, and exactly one of them is lit.
-//
-// The keys are content here, not texture: they sit on a declared pitch at 0.45 and
-// above, which is what the deleted `keyspace-scan` got wrong by scattering dots
-// under a translucent panel until the field read as a starfield.
-//
-// Two other readings were built and dropped; see README's Rejected section. Both were
-// after the same thing, the bounded reply and the cursor you resume from, and both lost
-// the keys in the process. Lifting pages out of the field needs two pages to say "again"
-// and they can then only differ by colour, and closing the pages into a ring shrinks a
-// key to a dash. The flat partition keeps the keys full size, which is the constraint
-// that matters most here.
-
-// Idea: a scan hands back one bounded page of the keyspace at a time, and the pages
-// together tile the whole of it.
-// Focal: the lit page, one band of gold keys across a field of resting ones.
-function scanCursorPages(r) {
-  const PAGES = 5;
-  const LIT = 2; // the page under the cursor: two pages behind it, two still ahead
-  const ROWS = 2;
-  const left = 480;
-  const right = 1440;
-  const gap = 22;
-  const rowPitch = 50;
-  // The gutter between pages has to beat the 20 gap between rows by a lot, or the
-  // stack reads as one even list rather than as five pages.
-  const pagePitch = 132;
-  const y0 = 240;
-  const keyH = 30; // 30 framed units is ~7px in the narrow crop: content, not texture
-
-  // Keys are laid end to end and wrapped, the way names of different lengths actually
-  // sit in a list. An earlier pass put them on four fixed columns and the blind read
-  // took the columns for page boundaries, which is exactly the wrong reading: a page
-  // here is a contiguous run of keys, not a column of them. Rows share a baseline, a
-  // height and a gap; only the length of a key varies.
-  const keys = [];
-  for (let p = 0; p < PAGES; p++) {
-    for (let row = 0; row < ROWS; row++) {
-      const y = y0 + p * pagePitch + row * rowPitch;
-      let x = left;
-      for (;;) {
-        const w = 96 + r() * 94;
-        if (x + w > right) break;
-        keys.push({ p, x, y, w });
-        x += w + gap;
-      }
-    }
-  }
-
-  const pill = (k, fill, op) =>
-    `<rect x="${n(k.x)}" y="${n(k.y)}" width="${n(k.w)}" height="${keyH}" rx="${keyH / 2}" ` +
-    `fill="${fill}" opacity="${op}"/>`;
-
-  // Every page not under the cursor is drawn the same: data at rest. An earlier pass
-  // coloured the pages above the cursor mint for "already returned", and the blind read
-  // called that split decoration, because a stack of pages is a sequence whether or not
-  // the drawing says which way it runs. One system, one exception.
-  const resting = keys.filter((k) => k.p !== LIT).map((k) => pill(k, C.cyanLt, '0.45'));
-  const held = keys.filter((k) => k.p === LIT);
-
-  const bandY = y0 + LIT * pagePitch;
-  const bandH = rowPitch + keyH;
-
-  return [
-    `  <ellipse cx="960" cy="${n(bandY + bandH / 2)}" rx="600" ry="168" fill="url(#h-gold)" opacity="0.34"/>`,
-    `  <g>${resting.join('')}</g>`,
-    `  <g filter="url(#blur18)" opacity="0.55">${held.map((k) => pill(k, C.gold, '1')).join('')}</g>`,
-    `  <g>${held.map((k) => pill(k, C.gold, '1')).join('')}</g>`,
-  ].join('\n');
-}
 
 
-// Idea: an agent keeps its whole conversation in Valkey and reads back only the
-// turns that matter for the next one, so the context holds the recent run plus a
-// few recalled older turns.
-// Focal: the one older turn far down the transcript, lit, with a thick band
-// carrying it back up into the newest turns.
-function agentContextRecallArc() {
-  const turns = 12;
-  // Pitch and start are set so the whole column clears the caption blocks: a bar
-  // half-hidden behind one reads as an accidental crop.
-  const pitch = 42;
-  const cy0 = 165;
-  const dimH = 26;
-  const onH = 36; // under the pitch, so the three newest turns stay three bars
-  const barX = 680;
-  const barW = 320;
-  const recent = 3; // the newest turns, still in the window
-  const pulled = 9; // the older turn fetched back for this turn
 
-  const cy = (i) => cy0 + i * pitch;
-  const bar = (i, fill, opacity, h) =>
-    `<rect x="${barX}" y="${n(cy(i) - h / 2)}" width="${barW}" height="${h}" rx="${n(h / 2)}" ` +
-    `fill="${fill}" opacity="${opacity}"/>`;
-
-  const rest = [];
-  for (let i = recent; i < turns; i++) {
-    if (i !== pulled) rest.push(bar(i, C.cyan, 0.45, dimH));
-  }
-  // One code for every turn in the window: the blind read read two brightnesses
-  // of mint as a gradient artifact rather than as a distinction.
-  const held = [];
-  for (let i = 0; i < recent; i++) held.push(bar(i, C.mint, 0.95, onH));
-
-  // The one connector, thick enough to survive the narrow crop: out of the
-  // recalled turn, up the outside of the transcript, into the newest ones. The
-  // head overlaps the newest bar so it lands on a turn, not above the column.
-  const end = barX + barW;
-  const base = end + 64;
-  const band =
-    `M ${n(end)} ${n(cy(pulled))} C 1250 ${n(cy(pulled) - 40)} 1250 ${n(cy(0))} ${n(base)} ${n(cy(0))}`;
-  const head =
-    `M ${n(end - 8)} ${n(cy(0))} L ${n(base)} ${n(cy(0) - 26)} ` +
-    `L ${n(base)} ${n(cy(0) + 26)} Z`;
-
-  return [
-    `  <g>${rest.join('')}</g>`,
-    `  <g>${held.join('')}</g>`,
-    `  <g fill="none" stroke="${C.mint}" stroke-linecap="round" stroke-linejoin="round">` +
-      `<path d="${band}" stroke-width="24" opacity="0.9"/>` +
-      `<path d="${head}" fill="${C.mint}" opacity="0.95"/></g>`,
-    `  ${bar(pulled, C.mint, 0.95, onH)}`,
-  ].join('\n');
-}
 
 // --------------------------------------------------- primitives, and what is built
 //
@@ -4014,294 +3301,891 @@ function fbsInner(x, y, w, h, slots, stroke, opacity) {
   return parts.join('');
 }
 
-function fbtreeSoftWideTree(r) {
-  // Idea: the ordered index behind a large sorted set is one wide node of separator keys over a single row of leaves holding their members packed side by side and linked to their neighbours.
-  // Focal: the two-level shape itself, per DESIGN.md 15 — nothing in it is drawn at focal weight.
-  // Four leaves, not five, and the row 640 grid units wide rather than 900. Framing was
-  // exhausted at zoom 1.401, and the next move is DESIGN.md 12 step 2: a narrower drawing
-  // takes more zoom and says the same thing. Four leaves of three entries is still a
-  // fanout no binary tree has.
-  //
-  // Only ratios matter here, because the zoom is then set to put the row's edges on
-  // 0.17/0.83 whatever `SPAN` is: every element renders at `0.66 * w / SPAN` of the framed
-  // width, and the height the drawing fills is `450.6 / SPAN`. So `SPAN` alone buys the
-  // fill, and the grid sizes below are chosen to hold each leaf and each gap at the share
-  // of the row they already had. The entries are still 36 wide on the grid and land 41%
-  // larger in frame; growing them in grid units would have bought the same pixels and
-  // spent the zoom that pays for them.
-  const LEAVES = 4;
-  const ENTRIES = 3;
-  const EW = 36;
-  const EH = 24;
-  const EPITCH = 42;
-  const PAD = 9;
-  const LEAF_W = PAD * 2 + (ENTRIES - 1) * EPITCH + EW;
-  const LEAF_H = 64;
-  const LEAF_Y = 620;
-  const SPAN = 640;
-  const GAP = (SPAN - LEAVES * LEAF_W) / (LEAVES - 1);
-  const X0 = 960 - SPAN / 2;
-  const leafX = [];
-  for (let i = 0; i < LEAVES; i++) leafX.push(X0 + i * (LEAF_W + GAP));
 
-  // The root: one allocation wide enough to route the whole set, a child slot per
-  // leaf. Narrower than the leaf row it feeds, so the child pointers fan; drawn at
-  // the same weight as the leaves, because the shape and not the node is the subject.
-  const ROOT_Y = 300;
-  const ROOT_H = 72;
-  const SLOT = 100;
-  const ROOT_W = LEAVES * SLOT;
-  const ROOT_X = 960 - ROOT_W / 2;
-  const slotCx = [];
-  for (let i = 0; i < LEAVES; i++) slotCx.push(ROOT_X + (i + 0.5) * SLOT);
 
-  // One child pointer per slot, leaving the node's baseline for its leaf. Straight
-  // lines: descending into a child and running along the leaf level are different
-  // moves, and the second is the whole difference from a B tree.
-  const links = slotCx
-    .map(
-      (cx, i) =>
-        `<line x1="${n(cx)}" y1="${ROOT_Y + ROOT_H}" x2="${n(leafX[i] + LEAF_W / 2)}" y2="${LEAF_Y}" ` +
-        `stroke="${C.mint}" stroke-width="${n(1.3 + r() * 0.3)}" opacity="${n(0.22 + r() * 0.18)}"/>`
-    )
-    .join('');
 
-  const leaves = leafX
-    .map((x) => {
-      const cells = [];
-      for (let j = 0; j < ENTRIES; j++) {
-        cells.push(fbsCell(r, x + PAD + j * EPITCH, LEAF_Y + (LEAF_H - EH) / 2, EW, EH));
-      }
-      return fbsNode(x, LEAF_Y, LEAF_W, LEAF_H, 1.3 + r() * 0.4, 0.34 + r() * 0.2) + cells.join('');
-    })
-    .join('');
-
-  // Sibling links: the leaves are a linked list, so an ordered read walks along them
-  // instead of climbing back into the root between members. Above the 1.8px the rest of
-  // the structure holds to, because it is the one fact a B tree would not have and at
-  // 1.8px across a 40-unit gap the blind read said it nearly disappeared.
-  const chain = leafX
-    .slice(0, -1)
-    .map(
-      (x) =>
-        `<line x1="${n(x + LEAF_W)}" y1="${n(LEAF_Y + LEAF_H / 2)}" x2="${n(x + LEAF_W + GAP)}" ` +
-        `y2="${n(LEAF_Y + LEAF_H / 2)}" stroke="${C.mint}" stroke-width="2.6" opacity="0.72"/>`
-    )
-    .join('');
-
-  // One halo, not the two DESIGN.md 15 allows. A second one sat behind the root, and the
-  // deletion test took it out with nothing lost — the blind read had been attaching the
-  // root's importance to "the brightest part of the background glow" rather than to the
-  // node, which is DESIGN.md 3's ambient wash earning its ban.
-  //
-  // The remaining one shrinks with the drawing. At r="430" and the new zoom it reached
-  // past every edge of the frame, which turns a glow behind the motif into the wash the
-  // same rule bans; 305 keeps the footprint it had at zoom 1.401.
-  return [
-    `  <circle cx="960" cy="${LEAF_Y + LEAF_H / 2}" r="305" fill="url(#h-cyan)" opacity="0.18"/>`,
-    `  <g>${links}</g>`,
-    `  <g>${leaves}</g>`,
-    `  <g>${chain}</g>`,
-    `  ${fbsInner(ROOT_X, ROOT_Y, ROOT_W, ROOT_H, LEAVES, 1.8, 0.55)}`,
-  ].join('\n');
+// The planet body plus its wireframe plus the mark, the object all three planet
+// candidates are built around.
+function planetBody(cx, cy, rad, markH) {
+  return (
+    // The body is lit from the upper left, which is what makes a wireframe read as a
+    // sphere rather than as a wire ball. The gradient interpolates within C.
+    `<radialGradient id="p-lit" cx="0.36" cy="0.3" r="0.82">` +
+      `<stop offset="0" stop-color="${C.cyan}" stop-opacity="0.3"/>` +
+      `<stop offset="0.5" stop-color="${C.mid}" stop-opacity="0.72"/>` +
+      `<stop offset="1" stop-color="${C.ink}" stop-opacity="0.94"/>` +
+    `</radialGradient>` +
+    // An opaque backing under the gradient, or whatever passes behind the planet
+    // shows through it.
+    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(rad)}" fill="${C.ink}"/>` +
+    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(rad)}" fill="url(#p-lit)"/>` +
+    globe(cx, cy, rad) +
+    // The limb is the planet's edge, not part of the graticule, so it gets its own
+    // weight and the only bright stroke on the object.
+    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(rad)}" fill="none" stroke="${C.ice}" ` +
+      `stroke-width="5" opacity="0.8"/>` +
+    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(markH * 0.72)}" fill="url(#scrim)"/>` +
+    mark(cx, cy, markH)
+  );
 }
-
-function fbtreeSoftOrderedWalk(r) {
-  // Idea: an ordered read of a large sorted set runs along the leaf level itself, from one leaf into the next, instead of climbing back into the tree between members.
-  // Focal: the rail through the leaf row, the one element above 0.6 opacity and the only one with a halo.
-  // Three leaves, for the reason `fbtreeSoftWideTree` drops to four: DESIGN.md 12 step 2,
-  // a narrower drawing takes more zoom. The rail is the subject and it wants length at
-  // scale, not more leaves to pass through. Three is still a row, and the entries go from
-  // 40 to 44 on the grid inside a frame zoomed in by a further third, so each one lands
-  // 47% larger and the packing reads where it used to be implied.
-  //
-  // Here the drawn width is the rail and its arrowhead, not the leaf row: it overhangs by
-  // 20 on the left (the round cap) and 41 on the right (the tip), so the zoom is set from
-  // `SPAN + 61`. The overhangs shrank with everything else to hold the share of the width
-  // they had, which keeps the tip's lead past the last leaf at the length it read at.
-  const LEAVES = 3;
-  const ENTRIES = 3;
-  const EW = 44;
-  const EH = 24;
-  const EPITCH = 52;
-  const PAD = 13;
-  const LEAF_W = PAD * 2 + (ENTRIES - 1) * EPITCH + EW;
-  const LEAF_H = 64;
-  const LEAF_Y = 620;
-  const SPAN = 612;
-  const GAP = (SPAN - LEAVES * LEAF_W) / (LEAVES - 1);
-  const X0 = 960 - SPAN / 2;
-  const leafX = [];
-  for (let i = 0; i < LEAVES; i++) leafX.push(X0 + i * (LEAF_W + GAP));
-
-  // The root is drawn quieter than anything else here, and its pointers quieter still,
-  // because the point of the picture is that the read does not use them.
-  const ROOT_Y = 300;
-  const ROOT_H = 68;
-  const SLOT = 130;
-  const ROOT_W = LEAVES * SLOT;
-  const ROOT_X = 960 - ROOT_W / 2;
-  const slotCx = [];
-  for (let i = 0; i < LEAVES; i++) slotCx.push(ROOT_X + (i + 0.5) * SLOT);
-
-  const links = slotCx
-    .map(
-      (cx, i) =>
-        `<line x1="${n(cx)}" y1="${ROOT_Y + ROOT_H}" x2="${n(leafX[i] + LEAF_W / 2)}" y2="${LEAF_Y}" ` +
-        `stroke="${C.mint}" stroke-width="${n(1.2 + r() * 0.3)}" opacity="${n(0.2 + r() * 0.1)}"/>`
-    )
-    .join('');
-
-  const leaves = leafX
-    .map((x) => {
-      const cells = [];
-      for (let j = 0; j < ENTRIES; j++) {
-        cells.push(fbsCell(r, x + PAD + j * EPITCH, LEAF_Y + 20, EW, EH));
-      }
-      return fbsNode(x, LEAF_Y, LEAF_W, LEAF_H, 1.2 + r() * 0.4, 0.28 + r() * 0.16) + cells.join('');
-    })
-    .join('');
-
-  // The rail: one continuous path at the leaf level, running through every leaf and out
-  // the far side behind a single arrowhead. Still 24 units, which is 8px in the narrow crop
-  // at this zoom rather than the 6px it was: the number is a floor in DESIGN.md 4, and
-  // thinning it to hold 6px would have made the one focal element the only thing in the
-  // picture that did not get crisper.
-  const railY = LEAF_Y + LEAF_H;
-  const railX0 = leafX[0] - 8;
-  const railX1 = leafX[LEAVES - 1] + LEAF_W + 8;
-  const tip = railX1 + 33;
-  const rail =
-    `<line x1="${n(railX0)}" y1="${n(railY)}" x2="${n(railX1)}" y2="${n(railY)}" stroke="${C.mint}" ` +
-    `stroke-width="24" stroke-linecap="round" opacity="0.78"/>` +
-    `<path d="M ${n(tip)} ${n(railY)} L ${n(railX1 + 4)} ${n(railY - 26)} L ${n(railX1 + 4)} ` +
-    `${n(railY + 26)} Z" fill="${C.mint}" opacity="0.9"/>`;
-
-  return [
-    // Shrunk with the drawing, for the reason given in `fbtreeSoftWideTree`: at r="430"
-    // the new zoom pushes the glow past every edge and it becomes an ambient wash.
-    `  <circle cx="960" cy="${n(railY)}" r="315" fill="url(#h-mint)" opacity="0.19"/>`,
-    `  <g>${links}</g>`,
-    `  ${fbsInner(ROOT_X, ROOT_Y, ROOT_W, ROOT_H, LEAVES, 1.3, 0.3)}`,
-    `  <g>${rail}</g>`,
-    `  <g>${leaves}</g>`,
-  ].join('\n');
+// Half of an ellipse, so an orbit or a ring can pass behind the planet: `top`
+// draws the far half, the other draws the near one.
+function ellipseHalf(cx, cy, rx, ry, top) {
+  // Sweep is 1 either way: clockwise from the left point goes over the top, and
+  // clockwise from the right point goes under the bottom.
+  const [x0, x1] = top ? [cx - rx, cx + rx] : [cx + rx, cx - rx];
+  return `M ${n(x0)} ${n(cy)} A ${n(rx)} ${n(ry)} 0 0 1 ${n(x1)} ${n(cy)}`;
 }
-
-function fbtreeSoftScatterRun(r) {
-  // Idea: the same ordered members that each needed their own allocation and its own tower of forward pointers now sit packed inside a few wide nodes.
-  // Focal: the density difference between the two rows, which is the shape of the whole and not any one object.
-  const MEMBERS = 12;
-  const CW = 40;
-  const CH = 24;
-  const SPAN = 800;
-  const X0 = 960 - SPAN / 2;
-  const mPitch = (SPAN - CW) / (MEMBERS - 1);
-
-  // What it replaced, drawn the way a skiplist is drawn: the members in order with
-  // heap between them, one allocation each, every one carrying its own tower of
-  // forward pointers, and a link at each level skipping to the next tall enough node.
-  const BASE_Y = 265;
-  const LVL_H = 14;
-  const LVL_PITCH = 18;
-  const nodes = [];
-  for (let i = 0; i < MEMBERS; i++) {
-    let levels = 1;
-    while (levels < 3 && r() < 0.42) levels++;
-    nodes.push({ x: X0 + i * mPitch, levels });
-  }
-  const towerY = (l) => BASE_Y - 4 - (l + 1) * LVL_PITCH;
-
-  const towers = nodes
-    .map((nd) => {
-      const out = [fbsCell(r, nd.x, BASE_Y, CW, CH)];
-      for (let l = 0; l < nd.levels; l++) {
-        out.push(
-          `<rect x="${n(nd.x)}" y="${n(towerY(l))}" width="${CW}" height="${LVL_H}" rx="4" ` +
-            `fill="${C.violet}" opacity="${n(0.3 + r() * 0.2)}"/>`
+// Idea: Planet Valkey collects what the community writes, and the writing goes
+// round the project in a ring.
+// Focal: the wireframe globe carrying the mark.
+//
+// Planet Valkey is an aggregator, so the ring is made of the things it aggregates.
+// Each is one article card holding one data structure: a list, a hash, a set, a
+// sorted set. Four kinds cycled rather than twelve different ones, so the ring reads
+// as one band of content and not as a legend.
+function articleCard(cx, cy, size, kind, tilt) {
+  const half = size / 2;
+  const g = size * 0.3; // the glyph's half-extent inside the card
+  const line = (body) => `<${body} fill="none" stroke="${C.cyanLt}" stroke-width="${n(size * 0.05)}"/>`;
+  const glyph = [];
+  if (kind === 0) {
+    // List: three stacked entries.
+    for (let i = -1; i <= 1; i++) {
+      glyph.push(
+        line(
+          `rect x="${n(cx - g)}" y="${n(cy + i * g * 0.72 - g * 0.2)}" ` +
+            `width="${n(g * 2)}" height="${n(g * 0.4)}" rx="${n(g * 0.2)}"`
+        )
+      );
+    }
+  } else if (kind === 1) {
+    // Hash: a 2x2 of buckets.
+    for (const ax of [-1, 1]) {
+      for (const ay of [-1, 1]) {
+        glyph.push(
+          line(
+            `rect x="${n(ax < 0 ? cx - g : cx + g - g * 0.82)}" ` +
+              `y="${n(ay < 0 ? cy - g : cy + g - g * 0.82)}" ` +
+              `width="${n(g * 0.82)}" height="${n(g * 0.82)}" rx="${n(g * 0.16)}"`
+          )
         );
       }
-      return out.join('');
-    })
-    .join('');
+    }
+  } else if (kind === 2) {
+    // Set: four unordered members.
+    for (const [ax, ay] of [[-0.55, -0.5], [0.6, -0.6], [-0.6, 0.55], [0.5, 0.5]]) {
+      glyph.push(`<circle cx="${n(cx + ax * g)}" cy="${n(cy + ay * g)}" r="${n(g * 0.3)}" fill="${C.cyanLt}"/>`);
+    }
+  } else {
+    // Sorted set: members ranked by score.
+    [0.45, 0.72, 1].forEach((f, i) => {
+      const bh = g * 1.7 * f;
+      glyph.push(
+        line(
+          `rect x="${n(cx + (i - 1.2) * g * 0.75)}" y="${n(cy + g * 0.85 - bh)}" ` +
+            `width="${n(g * 0.5)}" height="${n(bh)}" rx="${n(g * 0.12)}"`
+        )
+      );
+    });
+  }
+  return (
+    `<g transform="rotate(${n(tilt)} ${n(cx)} ${n(cy)})" opacity="0.85">` +
+    `<rect x="${n(cx - half)}" y="${n(cy - half)}" width="${n(size)}" height="${n(size)}" ` +
+      `rx="${n(size * 0.16)}" fill="${C.ink}" fill-opacity="0.72" stroke="${C.cyanLt}" ` +
+      `stroke-width="${n(size * 0.038)}" opacity="0.9"/>` +
+    glyph.join('') +
+    `</g>`
+  );
+}
+// Performance: command traffic streaking toward a vanishing point, the same
+// gesture as the hero background but without the command names.
+function performance(r) {
+  const fx = 1530;
+  const fy = 505;
+  const squash = 0.4;
+  // Every streak rides the same spiral, so the field reads as one warp rather
+  // than as noise. Twist accumulates with distance from the mark, which means
+  // streaks straighten out as they arrive and bend hardest way out in the tail.
+  const TWIST = -0.00018;
+  const MAX_SWEEP = 0.15; // radians, or long tails curl right round
+  const streaks = [];
+  const grads = [];
 
-  // The forward links sit at the top of the structural band, not the middle of it: the
-  // levels skipping over shorter nodes are what makes the top row a skiplist rather than
-  // a queue, and at 0.32 the blind read called the top structure's topology unreadable.
-  const forwards = [];
-  for (let l = 0; l < 3; l++) {
-    const have = nodes.filter((nd) => nd.levels > l);
-    for (let k = 0; k < have.length - 1; k++) {
-      const y = towerY(l) + LVL_H / 2;
-      forwards.push(
-        `<line x1="${n(have[k].x + CW)}" y1="${n(y)}" x2="${n(have[k + 1].x)}" y2="${n(y)}" ` +
-          `stroke="${C.violet}" stroke-width="${n(1.6 + r() * 0.2)}" opacity="${n(0.44 + r() * 0.16)}"/>`
+  for (let i = 0; i < 240; i++) {
+    const hero = i < 12;
+    const angle = Math.PI + (r() * 2 - 1) * 0.62;
+    const r0 = 30 + Math.pow(r(), 1.6) * 1600;
+    const len = 50 + r0 * (0.2 + r() * 0.55);
+    const twist = TWIST * (0.6 + r() * 0.8);
+    const bend = -Math.min(Math.abs(twist), MAX_SWEEP / len);
+
+    // Sample the spiral at both ends and the middle, then fit one quadratic
+    // through the true midpoint: B(0.5) = (P0 + 2C + P2) / 4.
+    const at = (rad) => {
+      const a = angle + bend * (rad - r0);
+      return [fx + Math.cos(a) * rad, fy + Math.sin(a) * rad * squash];
+    };
+    const [x1, y1] = at(r0);
+    const [mx, my] = at(r0 + len / 2);
+    const [x2, y2] = at(r0 + len);
+    const qx = 2 * mx - (x1 + x2) / 2;
+    const qy = 2 * my - (y1 + y2) / 2;
+    if (x2 < -200) continue;
+
+    const width = (hero ? 5 : 1) + (r0 / 700) * (0.5 + r() * 1.4);
+    const op = clamp(0.3 + 0.55 * (1 - r0 / 1700) + r() * 0.25, 0.15, 1);
+    const color = weighted(r, [
+      [C.cyanLt, 46],
+      [C.ice, 22],
+      [C.mint, 14],
+      [C.coral, 9],
+      [C.gold, 4],
+      [C.violet, 5],
+    ]);
+
+    // Taper each streak along its own length: hottest at the leading edge
+    // nearest the vanishing point, trailing off into nothing. Hero streaks also
+    // cool from ice through their own colour into violet.
+    const id = `pf${i}`;
+    grads.push(
+      `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}">` +
+        (hero
+          ? `<stop offset="0" stop-color="${C.ice}" stop-opacity="1"/>` +
+            `<stop offset="0.3" stop-color="${color}" stop-opacity="0.8"/>` +
+            `<stop offset="1" stop-color="${C.violet}" stop-opacity="0"/>`
+          : `<stop offset="0" stop-color="${color}" stop-opacity="1"/>` +
+            `<stop offset="0.45" stop-color="${color}" stop-opacity="0.55"/>` +
+            `<stop offset="1" stop-color="${color}" stop-opacity="0"/>`) +
+        `</linearGradient>`
+    );
+
+    streaks.push({
+      hero,
+      s: `<path d="M ${n(x1)} ${n(y1)} Q ${n(qx)} ${n(qy)} ${n(x2)} ${n(y2)}" fill="none" stroke="url(#${id})" stroke-width="${n(width)}" stroke-linecap="round" opacity="${n(op)}"/>`,
+    });
+  }
+
+  const heroes = streaks.filter((s) => s.hero).map((s) => s.s).join('');
+  const rest = streaks.filter((s) => !s.hero).map((s) => s.s).join('');
+
+  return [
+    `  <defs>${grads.join('')}</defs>`,
+    `  <ellipse cx="${fx}" cy="${fy}" rx="820" ry="150" fill="url(#h-cyan)" opacity="0.35"/>`,
+    `  <g opacity="0.45" filter="url(#blur18)">${heroes}</g>`,
+    `  <g>${rest}</g>`,
+    `  <g>${heroes}</g>`,
+    // The mark is the light source the traffic converges on, so the bloom sits
+    // outside it rather than behind it: no hot white core to wash it out.
+    `  <circle cx="${fx}" cy="${fy}" r="330" fill="url(#h-ice)" opacity="0.5"/>`,
+    `  <ellipse cx="${fx}" cy="${fy}" rx="360" ry="10" fill="${C.ice}" opacity="0.35" filter="url(#blur18)"/>`,
+    `  <circle cx="${fx}" cy="${fy}" r="132" fill="url(#scrim)"/>`,
+    `  <g filter="url(#blur18)" opacity="0.55">${mark(fx, fy, 234)}</g>`,
+    `  <g>${mark(fx, fy, 234)}</g>`,
+  ].join('\n');
+}
+function planetRing(r) {
+  const cx = 960;
+  const cy = 540;
+  const rad = 300;
+  const rrx = 690;
+  const rry = 190;
+  const TILT = -13;
+  const COUNT = 12;
+  const SIZE = 78;
+
+  // The rail the articles ride. Thin, because the articles are the content and the
+  // rail is only what holds them in one orbit.
+  const rail = (top, opacity) =>
+    `<path d="${ellipseHalf(cx, cy, rrx, rry, top)}" fill="none" stroke="${C.ice}" ` +
+    `stroke-width="3" opacity="${opacity}"/>`;
+
+  // Position on the untilted ellipse, then rotated with it, so the cards sit on the
+  // rail rather than near it.
+  const a = (TILT * Math.PI) / 180;
+  const cards = [];
+  for (let i = 0; i < COUNT; i++) {
+    const th = (2 * Math.PI * i) / COUNT + Math.PI / COUNT;
+    const ex = rrx * Math.cos(th);
+    const ey = rry * Math.sin(th);
+    const px = cx + ex * Math.cos(a) - ey * Math.sin(a);
+    const py = cy + ex * Math.sin(a) + ey * Math.cos(a);
+    // A card whose centre falls behind the globe would show as a sliver poking out
+    // from the limb, which reads as a rendering fault. Dropping them leaves the ring
+    // openly interrupted where it passes behind the planet, which is what a ring does.
+    if (Math.hypot(px - cx, py - cy) < rad + SIZE * 0.6) continue;
+    cards.push({ far: Math.sin(th) < 0, svg: articleCard(px, py, SIZE, i % 4, TILT) });
+  }
+  const half = (far) => cards.filter((c) => c.far === far).map((c) => c.svg).join('');
+
+  return [
+    `  <g>${starfield(r, 45)}</g>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${n(rad * 1.1)}" fill="url(#h-ice)" opacity="0.4"/>`,
+    `  <g transform="rotate(${TILT} ${cx} ${cy})">${rail(true, 0.3)}</g>`,
+    `  <g>${half(true)}</g>`,
+    `  <g>${planetBody(cx, cy, rad, 260)}</g>`,
+    `  <g transform="rotate(${TILT} ${cx} ${cy})">${rail(false, 0.45)}</g>`,
+    `  <g>${half(false)}</g>`,
+  ].join('\n');
+}
+// below it steps in uneven bites, because COUNT is a hint and not a batch size.
+function keyspaceScan(r) {
+  const cx = 960; // where the cursor is
+  const half = 168; // half-width of the window it is holding
+  const top = 268;
+  const bottom = 800;
+
+  const keys = [];
+  let guard = 0;
+  while (keys.length < 185 && guard++ < 30000) {
+    const x = 50 + r() * (W - 100);
+    const y = top + r() * (bottom - top);
+    if (keys.every((k) => (k.x - x) ** 2 + (k.y - y) ** 2 > 46 ** 2)) keys.push({ x, y });
+  }
+
+  const held = [];
+  const rest = [];
+  for (const k of keys) {
+    if (Math.abs(k.x - cx) < half) {
+      held.push(dot(k.x, k.y, 6 + r() * 2.5, C.mint, 'mint', 0.95, 3.2));
+    } else if (k.x < cx) {
+      rest.push(dot(k.x, k.y, 4 + r() * 2.5, C.cyanLt, 'cyan', 0.5, 2.6));
+    } else {
+      rest.push(dot(k.x, k.y, 3.5 + r() * 2, C.violet, 'violet', 0.44, 2.8));
+    }
+  }
+
+  // Cursor hops along the bottom, deliberately uneven. Everything up to the
+  // current window is done, the rest is still pending.
+  const track = 872;
+  const hops = [200];
+  while (hops[hops.length - 1] < 1720) hops.push(hops[hops.length - 1] + 86 + r() * 178);
+  const steps = [];
+  for (let i = 0; i < hops.length - 1; i++) {
+    const [a, b] = [hops[i], Math.min(hops[i + 1], 1720)];
+    const done = b <= cx - half;
+    const current = a < cx + half && b > cx - half;
+    if (current) {
+      steps.push(
+        `<line x1="${n(a)}" y1="${track}" x2="${n(b)}" y2="${track}" stroke="${C.ice}" stroke-width="7" stroke-linecap="round" opacity="0.95"/>`
+      );
+    } else {
+      steps.push(
+        `<line x1="${n(a)}" y1="${track}" x2="${n(b)}" y2="${track}" stroke="${done ? C.mint : C.cyanLt}" ` +
+          `stroke-width="${done ? 5 : 2.4}" stroke-linecap="round" opacity="${done ? 0.7 : 0.25}"/>`
+      );
+    }
+    steps.push(
+      `<line x1="${n(a)}" y1="${track - 11}" x2="${n(a)}" y2="${track + 11}" stroke="${C.ice}" stroke-width="2" opacity="${done || current ? 0.45 : 0.16}"/>`
+    );
+  }
+
+  return [
+    starfield(r, 55),
+    `  <ellipse cx="${cx}" cy="540" rx="470" ry="400" fill="url(#h-mint)" opacity="0.16"/>`,
+    `  <line x1="180" y1="${track}" x2="1740" y2="${track}" stroke="${C.ice}" stroke-width="1.6" stroke-dasharray="9 15" opacity="0.22"/>`,
+    `  <rect x="${cx - half}" y="${top - 52}" width="${half * 2}" height="${bottom - top + 104}" rx="26" fill="${C.ice}" opacity="0.07"/>`,
+    `  <g stroke="${C.ice}" stroke-width="12" opacity="0.28" filter="url(#blur18)">` +
+      `<line x1="${cx - half}" y1="${top - 52}" x2="${cx - half}" y2="${bottom + 52}"/>` +
+      `<line x1="${cx + half}" y1="${top - 52}" x2="${cx + half}" y2="${bottom + 52}"/></g>`,
+    `  <g>${rest.join('')}</g>`,
+    `  <g stroke="${C.ice}" stroke-width="3.4" opacity="0.9">` +
+      `<line x1="${cx - half}" y1="${top - 52}" x2="${cx - half}" y2="${bottom + 52}"/>` +
+      `<line x1="${cx + half}" y1="${top - 52}" x2="${cx + half}" y2="${bottom + 52}"/></g>`,
+    `  <g>${held.join('')}</g>`,
+    `  <g>${steps.join('')}</g>`,
+    `  <line x1="${cx + half}" y1="${track - 18}" x2="${cx + half}" y2="${track + 18}" stroke="${C.ice}" stroke-width="4" stroke-linecap="round" opacity="0.95"/>`,
+    `  <path d="M ${cx + half + 52} ${track - 15} L ${cx + half + 74} ${track} L ${cx + half + 52} ${track + 15}" fill="none" stroke="${C.ice}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>`,
+  ].join('\n');
+}
+// ------------------------------------------------------------- AI workloads
+//
+// Three candidate themes, one idea each. Kept deliberately apart: `ai-agent-memory`
+// is about recency, `ai-workload-fanout` is about decomposition, `ai-vector-recall`
+// is about addressing by distance instead of by key.
+
+// Agent memory: a conversation runs left to right. The most recent turns stay
+// hot inside a lit window; everything older is parked in the archive below and
+// pulled back into the window only when it is needed.
+function aiAgentMemory(r) {
+  const tapeY = 292;
+  const cardH = 96;
+  const left = 120;
+  const right = 1400;
+  const turns = 18;
+  const hotFrom = 12;
+  const step = (right - left) / turns;
+  const cardW = step - 18;
+
+  // Cold turns are outlines, hot turns are solid: the same turn, held two ways.
+  const cold = [];
+  const hot = [];
+  for (let i = 0; i < turns; i++) {
+    const x = left + i * step;
+    const t = i / (turns - 1);
+    if (i >= hotFrom) {
+      hot.push(
+        `<rect x="${n(x)}" y="${n(tapeY - cardH / 2)}" width="${n(cardW)}" height="${cardH}" rx="10" ` +
+          `fill="${weighted(r, [[C.mint, 5], [C.ice, 4], [C.cyanLt, 2]])}" opacity="${n(0.78 + r() * 0.2)}"/>`
+      );
+    } else {
+      const h = cardH - 22 - r() * 22;
+      cold.push(
+        `<rect x="${n(x)}" y="${n(tapeY - h / 2)}" width="${n(cardW)}" height="${n(h)}" rx="8" fill="none" ` +
+          `stroke="${C.cyanLt}" stroke-width="2" opacity="${n(clamp(0.16 + t * 0.26 + (r() - 0.5) * 0.1, 0.12, 0.5))}"/>`
       );
     }
   }
 
-  // The fbtree below: the same twelve members, in the same order, three to a leaf in
-  // four leaves under one wide node. Nothing joins the two rows — an arrow between
-  // them would say the skiplist feeds the tree rather than that it was replaced.
-  const LEAVES = 4;
-  const ENTRIES = MEMBERS / LEAVES;
-  const EPITCH = 46;
-  const PAD = 14;
-  const LEAF_W = PAD * 2 + (ENTRIES - 1) * EPITCH + CW;
-  const LEAF_H = 64;
-  const LEAF_Y = 655;
-  const LEAF_SPAN = 680;
-  const GAP = (LEAF_SPAN - LEAVES * LEAF_W) / (LEAVES - 1);
-  const LX0 = 960 - LEAF_SPAN / 2;
-  const leafX = [];
-  for (let i = 0; i < LEAVES; i++) leafX.push(LX0 + i * (LEAF_W + GAP));
+  const fx0 = left + hotFrom * step - 16;
+  const fx1 = left + (turns - 1) * step + cardW + 16;
+  const fy0 = tapeY - cardH / 2 - 18;
+  const fh = cardH + 36;
 
-  const ROOT_Y = 440;
-  const ROOT_H = 68;
-  const SLOT = 130;
-  const ROOT_W = LEAVES * SLOT;
-  const ROOT_X = 960 - ROOT_W / 2;
-  const slotCx = [];
-  for (let i = 0; i < LEAVES; i++) slotCx.push(ROOT_X + (i + 0.5) * SLOT);
+  // The archive: dim cells either side of the store, older turns at rest.
+  const rows = [742, 794, 846];
+  const cellW = 40;
+  const cellH = 24;
+  const cstep = 52;
+  const cells = [];
+  for (const cx0 of [300, 1112]) {
+    for (let c = 0; c < 10; c++) {
+      for (let j = 0; j < rows.length; j++) {
+        if (r() < 0.12) continue;
+        cells.push(
+          `<rect x="${n(cx0 + c * cstep)}" y="${n(rows[j] - cellH / 2)}" width="${cellW}" height="${cellH}" rx="4" ` +
+            `fill="${weighted(r, [[C.cyanLt, 6], [C.violet, 3], [C.ice, 2]])}" opacity="${n(0.14 + r() * 0.2)}"/>`
+        );
+      }
+    }
+  }
 
-  const links = slotCx
+  // Two turns recalled on demand: lit in the archive, arced back into the window.
+  const recalls = [
+    { sx: 300 + 5 * cstep + cellW / 2, sy: rows[0], tx: 1040 },
+    { sx: 1112 + 3 * cstep + cellW / 2, sy: rows[2], tx: 1246 },
+  ];
+  const ty = fy0 + fh + 8;
+  const pulled = [];
+  for (const { sx, sy, tx } of recalls) {
+    pulled.push(
+      `<rect x="${n(sx - cellW / 2)}" y="${n(sy - cellH / 2)}" width="${cellW}" height="${cellH}" rx="4" fill="${C.mint}" opacity="0.9"/>`,
+      `<circle cx="${n(sx)}" cy="${n(sy)}" r="46" fill="url(#h-mint)" opacity="0.8"/>`,
+      `<path d="M ${n(sx)} ${n(sy - cellH / 2 - 6)} C ${n(sx + 130)} ${n(sy - 190)} ${n(tx - 170)} ${n(ty + 170)} ${n(tx)} ${n(ty)}" ` +
+        `fill="none" stroke="${C.mint}" stroke-width="3.4" stroke-dasharray="14 13" stroke-linecap="round" opacity="0.75"/>`,
+      `<path d="M ${n(tx - 17)} ${n(ty + 22)} L ${n(tx)} ${n(ty)} L ${n(tx + 17)} ${n(ty + 22)}" fill="none" ` +
+        `stroke="${C.mint}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>`
+    );
+  }
+
+  // The counter-motion: the oldest end of the tape draining into the archive.
+  const evict =
+    `<path d="M 360 ${n(tapeY + 36)} C 302 ${n(tapeY + 190)} 288 600 306 ${n(rows[0] - 20)}" fill="none" stroke="${C.cyanLt}" ` +
+    `stroke-width="2.6" stroke-dasharray="9 14" stroke-linecap="round" opacity="0.32"/>`;
+
+  return [
+    starfield(r, 55),
+    // Ambient glow behind the motif: the window is the warm end of the image.
+    `  <ellipse cx="1180" cy="${tapeY}" rx="310" ry="160" fill="url(#h-mint)" opacity="0.32"/>`,
+    `  <circle cx="960" cy="800" r="430" fill="url(#h-cyan)" opacity="0.16"/>`,
+    `  <g>${cold.join('')}</g>`,
+    `  <g>${cells.join('')}</g>`,
+    `  ${evict}`,
+    `  <g>${pulled.join('')}</g>`,
+    `  <g filter="url(#blur18)" opacity="0.45">${hot.join('')}</g>`,
+    `  <g>${hot.join('')}</g>`,
+    `  <rect x="${n(fx0)}" y="${n(fy0)}" width="${n(fx1 - fx0)}" height="${fh}" rx="26" fill="${C.mint}" fill-opacity="0.06" ` +
+      `stroke="${C.ice}" stroke-width="3.6" opacity="0.85"/>`,
+    `  <circle cx="960" cy="790" r="152" fill="url(#scrim)"/>`,
+    `  <g>${mark(960, 790, 178)}</g>`,
+  ].join('\n');
+}
+// ------------------------------------------------------------- operations
+//
+// Both ops themes carry the same one idea: at scale you are looking at a fleet,
+// not a server. `ops-fleet-triage` says the fleet is uniform and only a handful
+// of it needs you; `ops-rolling-wave` says a change crosses that fleet one group
+// at a time. Neither reuses the slot ring (`clustering`) or a chart
+// (`benchmarks`).
+
+// ------------------------------------------------------------- valkey-bundle
+//
+// One package that carries several capabilities you would otherwise install
+// one at a time. Two readings of that: containment (`bundleCrate`) and delivery
+// (`bundleOneInstall`). In both, every module has to be a *different* shape --
+// repeated identical blocks say "many of the same" instead of "several
+// different capabilities in one package".
+
+// A base course of identical primitives, with progressively fewer and larger
+// composites resting on them, ending in one thing.
+function toolingStack(r) {
+  const baseY = 880;
+  const bx0 = 524;
+  const bx1 = 1396;
+  const count = 11;
+  const step = (bx1 - bx0) / (count - 1);
+  const prim = Array.from({ length: count }, (_, i) => bx0 + i * step);
+
+  const chips = prim
     .map(
-      (cx, i) =>
-        `<line x1="${n(cx)}" y1="${ROOT_Y + ROOT_H}" x2="${n(leafX[i] + LEAF_W / 2)}" y2="${LEAF_Y}" ` +
-        `stroke="${C.mint}" stroke-width="${n(1.3 + r() * 0.4)}" opacity="${n(0.26 + r() * 0.22)}"/>`
+      (x) =>
+        `<rect x="${n(x - 22)}" y="${n(baseY - 15)}" width="44" height="30" rx="7" fill="${C.cyan}" fill-opacity="0.2" ` +
+        `stroke="${C.cyanLt}" stroke-width="2" opacity="0.85"/>` +
+        `<circle cx="${n(x)}" cy="${baseY}" r="3.4" fill="${C.cyanLt}" opacity="0.8"/>`
     )
     .join('');
 
-  const leaves = leafX
-    .map((x) => {
-      const cells = [];
-      for (let j = 0; j < ENTRIES; j++) {
-        cells.push(fbsCell(r, x + PAD + j * EPITCH, LEAF_Y + (LEAF_H - CH) / 2, CW, CH));
-      }
-      return fbsNode(x, LEAF_Y, LEAF_W, LEAF_H, 1.3 + r() * 0.4, 0.34 + r() * 0.2) + cells.join('');
+  // Level one: four tools, each standing on a run of primitives and each drawn
+  // with a different inner detail so they do not read as one block repeated.
+  const l1y = 718;
+  const l1 = [
+    { members: [0, 1, 2], glyph: 'dots', h: 62 },
+    { members: [3, 4], glyph: 'chevron', h: 50 },
+    { members: [5, 6, 7], glyph: 'wave', h: 66 },
+    { members: [8, 9, 10], glyph: 'ring', h: 56 },
+  ].map((t) => {
+    const left = prim[t.members[0]] - 28;
+    const right = prim[t.members[t.members.length - 1]] + 28;
+    return { ...t, left, right, cx: (left + right) / 2, y: l1y };
+  });
+
+  // Level two: two composites, each spanning two of the tools below.
+  const l2y = 552;
+  const l2 = [[0, 1], [2, 3]].map((pair) => {
+    const left = l1[pair[0]].left + 14;
+    const right = l1[pair[1]].right - 14;
+    return { left, right, cx: (left + right) / 2, y: l2y };
+  });
+
+  const inner = (t) => {
+    if (t.glyph === 'dots') {
+      return [-1, 0, 1].map((i) => `<circle cx="${n(t.cx + i * 26)}" cy="${t.y}" r="6" fill="${C.mint}" opacity="0.9"/>`).join('');
+    }
+    if (t.glyph === 'chevron') {
+      return (
+        `<path d="M ${n(t.cx - 13)} ${t.y - 15} L ${n(t.cx + 8)} ${t.y} L ${n(t.cx - 13)} ${t.y + 15}" ` +
+        `fill="none" stroke="${C.mint}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`
+      );
+    }
+    if (t.glyph === 'wave') {
+      const w = (t.right - t.left) * 0.5;
+      return (
+        `<path d="M ${n(t.cx - w / 2)} ${t.y + 9} L ${n(t.cx - w / 6)} ${t.y - 11} L ${n(t.cx + w / 6)} ${t.y + 6} L ${n(t.cx + w / 2)} ${t.y - 13}" ` +
+        `fill="none" stroke="${C.mint}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`
+      );
+    }
+    return (
+      `<circle cx="${n(t.cx)}" cy="${t.y}" r="15" fill="none" stroke="${C.mint}" stroke-width="4" opacity="0.9"/>` +
+      `<circle cx="${n(t.cx)}" cy="${t.y}" r="4.5" fill="${C.mint}" opacity="0.9"/>`
+    );
+  };
+
+  const l1Boxes = l1
+    .map(
+      (t) =>
+        `<rect x="${n(t.left)}" y="${n(t.y - t.h / 2)}" width="${n(t.right - t.left)}" height="${n(t.h)}" rx="14" ` +
+        `fill="${C.mint}" fill-opacity="0.1" stroke="${C.mint}" stroke-width="2.8" opacity="0.85"/>` +
+        inner(t)
+    )
+    .join('');
+
+  const l2Boxes = l2
+    .map(
+      (t) =>
+        `<rect x="${n(t.left)}" y="${n(t.y - 37)}" width="${n(t.right - t.left)}" height="74" rx="18" ` +
+        `fill="${C.gold}" fill-opacity="0.1" stroke="${C.gold}" stroke-width="3" opacity="0.85"/>` +
+        [-2, -1, 0, 1, 2]
+          .map((i) => `<rect x="${n(t.cx + i * 34 - 8)}" y="${n(t.y - 13)}" width="16" height="26" rx="5" fill="${C.gold}" opacity="${n(0.4 + r() * 0.45)}"/>`)
+          .join('')
+    )
+    .join('');
+
+  // What rests on what.
+  const legs = [];
+  for (const t of l1) {
+    for (const m of t.members) {
+      legs.push(
+        `<line x1="${n(prim[m])}" y1="${n(baseY - 15)}" x2="${n(prim[m])}" y2="${n(t.y + t.h / 2)}" stroke="${C.cyanLt}" stroke-width="2.2" opacity="0.45"/>`
+      );
+    }
+  }
+  l2.forEach((c, i) => {
+    for (const t of [l1[i * 2], l1[i * 2 + 1]]) {
+      legs.push(
+        `<line x1="${n(t.cx)}" y1="${n(t.y - t.h / 2)}" x2="${n(t.cx)}" y2="${n(c.y + 37)}" stroke="${C.mint}" stroke-width="2.4" opacity="0.5"/>`
+      );
+    }
+  });
+  const markY = 300;
+  for (const c of l2) {
+    legs.push(
+      `<line x1="${n(c.cx)}" y1="${n(c.y - 37)}" x2="960" y2="${n(markY + 76)}" stroke="${C.gold}" stroke-width="2.4" stroke-dasharray="12 10" opacity="0.5"/>`
+    );
+  }
+
+  return [
+    starfield(r, 55),
+    `  <ellipse cx="960" cy="560" rx="540" ry="360" fill="url(#h-cyan)" opacity="0.2"/>`,
+    `  <circle cx="960" cy="${markY}" r="230" fill="url(#h-gold)" opacity="0.4"/>`,
+    `  <line x1="${n(bx0 - 34)}" y1="${baseY}" x2="${n(bx1 + 34)}" y2="${baseY}" stroke="${C.cyanLt}" stroke-width="2" stroke-dasharray="8 12" opacity="0.35"/>`,
+    `  <g>${legs.join('')}</g>`,
+    `  <g>${chips}</g>`,
+    `  <g>${l1Boxes}</g>`,
+    `  <g>${l2Boxes}</g>`,
+    `  <circle cx="960" cy="${markY}" r="112" fill="url(#scrim)"/>`,
+    `  <g filter="url(#blur18)" opacity="0.5">${mark(960, markY, 152)}</g>`,
+    `  <g>${mark(960, markY, 152)}</g>`,
+  ].join('\n');
+}
+// Delivery: one install, and the four modules it puts on the server. The port is
+// what you install into; the fan is what you get.
+function bundleOneInstall(r) {
+  const px = 700;
+  const cy = 540;
+  const s = 0.92;
+
+  // json and ldap are the tallest glyphs, so they take the two ends of the fan
+  // and the whole thing stays vertically centred on the port.
+  const order = ['json', 'bloom', 'search', 'ldap'];
+  const mods = order.map((kind, i) => ({
+    ...BUNDLE_MODULES.find((m) => m.kind === kind),
+    x: 1310,
+    y: 275 + i * 178.7,
+  }));
+
+  // Four branches out of the port, each stopping at its module's edge.
+  const sx = 812;
+  const harness = mods
+    .map((m) => {
+      const ex = m.x - (GLYPH_HALF_W[m.kind] + 26) * s;
+      const d = `M ${sx} ${cy} C ${n(sx + 130)} ${cy} ${n(ex - 160)} ${n(m.y)} ${n(ex)} ${n(m.y)}`;
+      return (
+        `<path d="${d}" fill="none" stroke="${m.color}" stroke-width="14" opacity="0.22" filter="url(#blur8)"/>` +
+        `<path d="${d}" fill="none" stroke="${m.color}" stroke-width="3.4" opacity="0.75"/>` +
+        dot(ex, m.y, 5, m.color, m.key, 0.85, 3)
+      );
     })
     .join('');
 
-  const chain = leafX
-    .slice(0, -1)
+  return [
+    starfield(r, 55),
+    // Ambient glow behind everything that follows.
+    `  <circle cx="${px}" cy="${cy}" r="330" fill="url(#h-cyan)" opacity="0.18"/>`,
+    ...mods.map((m) => `  <circle cx="${n(m.x)}" cy="${n(m.y)}" r="150" fill="url(#h-${m.key})" opacity="0.22"/>`),
+    `  <g>${harness}</g>`,
+    `  <circle cx="${px}" cy="${cy}" r="150" fill="url(#scrim)"/>`,
+    `  <g filter="url(#blur18)" opacity="0.5">${mark(px, cy, 208)}</g>`,
+    `  <g>${mark(px, cy, 208)}</g>`,
+    `  <g>${mods.map((m) => moduleGlyph(m.kind, m.x, m.y, s, m.color, m.key)).join('')}</g>`,
+  ].join('\n');
+}
+// Key prefix groups: a scattered sample of keys on the left resolving into a
+// short list of prefix groups with counts on the right.
+function keyPrefixGroups(r) {
+  const ROWS = 6;
+  const anchorX = 940;
+  const rowY = [292, 392, 492, 592, 692, 792];
+  const COUNTS = [1, 0.78, 0.55, 0.4, 0.28, 0.16];
+
+  const keys = [];
+  let guard = 0;
+  while (keys.length < 92 && guard++ < 30000) {
+    const x = 400 + r() * 430;
+    const y = 250 + r() * 590;
+    if (keys.every((k) => (k.x - x) ** 2 + (k.y - y) ** 2 > 42 ** 2)) keys.push({ x, y, g: (r() * ROWS) | 0 });
+  }
+
+  const edges = keys
+    .map((k) => {
+      const ty = rowY[k.g];
+      const mx = (k.x + anchorX) / 2 + 60;
+      return `<path d="M ${n(k.x)} ${n(k.y)} C ${n(mx)} ${n(k.y)} ${n(mx)} ${n(ty)} ${n(anchorX - 18)} ${n(ty)}" fill="none" opacity="${n(0.1 + r() * 0.16)}"/>`;
+    })
+    .join('');
+
+  const dots = keys
+    .map((k) => dot(k.x, k.y, 3.4 + r() * 2.6, C.cyanLt, 'cyan', 0.4 + r() * 0.35, 2.8))
+    .join('');
+
+  const list = [];
+  for (let i = 0; i < ROWS; i++) {
+    const y = rowY[i];
+    const labelW = 118 + r() * 54;
+    const barW = 40 + COUNTS[i] * 180;
+    list.push(
+      dot(anchorX, y, 8, C.mint, 'mint', 0.95, 3.2),
+      `<rect x="${anchorX + 26}" y="${n(y - 9)}" width="${n(labelW)}" height="18" rx="9" fill="${C.ice}" opacity="0.55"/>`,
+      `<rect x="${n(anchorX + 26 + labelW + 16)}" y="${n(y - 9)}" width="24" height="18" rx="9" fill="${C.ice}" opacity="0.22"/>`,
+      `<rect x="${n(anchorX + 250)}" y="${n(y - 7)}" width="${n(barW)}" height="14" rx="7" fill="${C.mint}" opacity="${n(0.4 + 0.4 * COUNTS[i])}"/>`
+    );
+  }
+
+  return [
+    starfield(r, 55),
+    `  <ellipse cx="940" cy="540" rx="520" ry="430" fill="url(#h-cyan)" opacity="0.16"/>`,
+    `  <rect x="900" y="240" width="550" height="604" rx="30" fill="${C.ink}" opacity="0.3"/>`,
+    `  <rect x="900" y="240" width="550" height="604" rx="30" fill="none" stroke="${C.ice}" stroke-width="2" opacity="0.18"/>`,
+    `  <g stroke="${C.cyanLt}" stroke-width="1.6">${edges}</g>`,
+    `  <g>${dots}</g>`,
+    `  <g>${list.join('')}</g>`,
+  ].join('\n');
+}
+// ------------------------------------------------- a very small resource envelope
+//
+// `limits-tight-envelope` is the space itself: a whole server inside a boundary
+// several steps smaller than the room it usually gets, packed to all four walls.
+// `limits-gauge-pinned` is the reading off the same situation: filled to the last
+// few percent of the scale, with a sliver left before the stop.
+
+function limitsTightEnvelope(r) {
+  const cx = 960;
+  const cy = 540;
+  const bw = 580;
+  const bh = 420;
+  const x0 = cx - bw / 2;
+  const x1 = cx + bw / 2;
+  const y0 = cy - bh / 2;
+  const y1 = cy + bh / 2;
+
+  // The room a server usually gets, stepping down to the envelope it has here.
+  const ghosts = [[980, 820], [780, 620]]
     .map(
-      (x) =>
-        `<line x1="${n(x + LEAF_W)}" y1="${n(LEAF_Y + LEAF_H / 2)}" x2="${n(x + LEAF_W + GAP)}" ` +
-        `y2="${n(LEAF_Y + LEAF_H / 2)}" stroke="${C.mint}" stroke-width="2.6" opacity="0.72"/>`
+      ([w, h], i) =>
+        `<rect x="${n(cx - w / 2)}" y="${n(cy - h / 2)}" width="${w}" height="${h}" rx="${28 - i * 6}" ` +
+        `fill="none" stroke="${C.ice}" stroke-width="2.2" stroke-dasharray="14 20" opacity="${n(0.5 - i * 0.06)}"/>`
     )
     .join('');
 
-  // One halo, over the tree. A violet one under the skiplist row went the same way as the
-  // root halo in `fbtreeSoftWideTree`: deleted, re-rendered, and the two rows still read as
-  // two structures because their glyphs differ, which is what DESIGN.md 10 asks of them.
+  // The workload, filling the box out to both walls with almost nothing spare.
+  const packed = [];
+  for (let y = y0 + 15; y <= y1 - 13; y += 20) {
+    let x = x0 + 11;
+    while (x < x1 - 16) {
+      const len = Math.min(36 + r() * 116, x1 - 11 - x);
+      packed.push(
+        `<rect x="${n(x)}" y="${n(y - 6)}" width="${n(len)}" height="12" rx="6" ` +
+          `fill="${weighted(r, [[C.cyanLt, 6], [C.mint, 3], [C.ice, 2]])}" opacity="${n(0.4 + r() * 0.45)}"/>`
+      );
+      x += len + 6 + r() * 9;
+    }
+  }
+
+  // Hard corners, so the boundary reads as a limit rather than as a container.
+  const corners = [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]
+    .map(
+      ([x, y, dx, dy]) =>
+        `<path d="M ${n(x + dx * 54)} ${n(y)} L ${n(x)} ${n(y)} L ${n(x)} ${n(y + dy * 54)}" fill="none" ` +
+        `stroke="${C.ice}" stroke-width="8" stroke-linecap="round" opacity="0.95"/>`
+    )
+    .join('');
+
+  // The workload pushing outward on every wall.
+  const push = [];
+  for (const t of [-0.56, 0, 0.56]) {
+    const px = cx + t * (bw / 2 - 66);
+    const py = cy + t * (bh / 2 - 56);
+    const chev = (a, b, c, d, e, f) =>
+      `<path d="M ${n(a)} ${n(b)} L ${n(c)} ${n(d)} L ${n(e)} ${n(f)}" fill="none" stroke="${C.gold}" ` +
+      `stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>`;
+    push.push(
+      chev(px - 20, y0 + 21, px, y0 + 3, px + 20, y0 + 21),
+      chev(px - 20, y1 - 21, px, y1 - 3, px + 20, y1 - 21),
+      chev(x0 + 21, py - 20, x0 + 3, py, x0 + 21, py + 20),
+      chev(x1 - 21, py - 20, x1 - 3, py, x1 - 21, py + 20)
+    );
+  }
+
   return [
-    `  <circle cx="960" cy="595" r="430" fill="url(#h-mint)" opacity="0.18"/>`,
-    `  <g>${forwards.join('')}</g>`,
-    `  <g>${towers}</g>`,
-    `  <g>${links}</g>`,
-    `  <g>${leaves}</g>`,
-    `  <g>${chain}</g>`,
-    `  ${fbsInner(ROOT_X, ROOT_Y, ROOT_W, ROOT_H, LEAVES, 1.8, 0.55)}`,
+    starfield(r, 50),
+    `  <circle cx="${cx}" cy="${cy}" r="420" fill="url(#h-cyan)" opacity="0.2"/>`,
+    `  <g>${ghosts}</g>`,
+    `  <rect x="${n(x0)}" y="${n(y0)}" width="${bw}" height="${bh}" rx="16" fill="none" stroke="${C.ice}" ` +
+      `stroke-width="15" opacity="0.28" filter="url(#blur8)"/>`,
+    `  <rect x="${n(x0)}" y="${n(y0)}" width="${bw}" height="${bh}" rx="16" fill="${C.ink}" fill-opacity="0.35"/>`,
+    `  <g>${packed.join('')}</g>`,
+    `  <rect x="${n(x0)}" y="${n(y0)}" width="${bw}" height="${bh}" rx="16" fill="none" stroke="${C.ice}" ` +
+      `stroke-width="4" opacity="0.95"/>`,
+    `  <g>${corners}</g>`,
+    `  <g>${push.join('')}</g>`,
+    `  <ellipse cx="${cx}" cy="${cy}" rx="200" ry="215" fill="url(#scrim)"/>`,
+    `  <g filter="url(#blur18)" opacity="0.45">${mark(cx, cy, 340)}</g>`,
+    `  <g>${mark(cx, cy, 340)}</g>`,
+  ].join('\n');
+}
+// Keyspace scan: a cursor holding one bounded window of a large keyspace, with
+// the keys behind it already visited and the rest still ahead. The hop track
+// Slot migration under a lens: the same two-instance migration as
+// `atomic-slot-migration`, recomposed so the lens is unambiguously the subject.
+// The instances and the stream are context, drawn quiet; the only place anything
+// is bright or varied is inside the glass, where the migrating objects differ in
+// length and colour. Solid background, because a starfield and a spotlight are
+// two more textures competing with the thing you are meant to look at.
+function slotMigrationLens() {
+  const cx = 960;
+  const cy = 520;
+  const R = 268; // the glass
+  const src = 516;
+  const dst = 1404;
+  const ringR = 92;
+
+  // The two instances: a plain ring and the mark, at context weight.
+  const instance = (x) =>
+    `<circle cx="${x}" cy="${cy}" r="${ringR}" fill="none" stroke="${C.ice}" stroke-width="3" opacity="0.4"/>` +
+    `<g opacity="0.9">${mark(x, cy, 86)}</g>`;
+
+  // The stream between them, and one small arrowhead so the direction is not
+  // ambiguous. It runs behind the glass rather than around it.
+  const stream =
+    `<line x1="${src + ringR + 16}" y1="${cy}" x2="${dst - ringR - 34}" y2="${cy}" stroke="${C.cyanLt}" ` +
+      `stroke-width="3" opacity="0.4"/>` +
+    `<path d="M ${dst - ringR - 54} ${cy - 16} L ${dst - ringR - 18} ${cy} L ${dst - ringR - 54} ${cy + 16}" ` +
+      `fill="none" stroke="${C.cyanLt}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>`;
+
+  // What the glass is for: the objects in transit are not alike. Left-aligned on a
+  // common edge so the differing lengths read as differing sizes.
+  const left = 775;
+  const rowsIn = [
+    [-152, 300, C.cyanLt],
+    [-76, 400, C.mint],
+    [0, 250, C.gold],
+    [76, 380, C.ice],
+    [152, 330, C.coral],
+  ];
+  const contents = rowsIn
+    .map(
+      ([dy, len, color]) =>
+        `<rect x="${left}" y="${n(cy + dy - 22)}" width="${len}" height="44" rx="22" fill="${color}" opacity="0.95"/>`
+    )
+    .join('');
+
+  // The handle points away from the stream, so it does not read as part of it.
+  const hx = cx - R * 0.72;
+  const hy = cy + R * 0.72;
+
+  return [
+    `  <clipPath id="lensGlass"><circle cx="${cx}" cy="${cy}" r="${n(R - 14)}"/></clipPath>`,
+    `  <g>${instance(src)}${instance(dst)}</g>`,
+    `  <g>${stream}</g>`,
+    `  <line x1="${n(hx)}" y1="${n(hy)}" x2="${n(hx - 148)}" y2="${n(hy + 148)}" stroke="${C.mint}" ` +
+      `stroke-width="34" stroke-linecap="round" opacity="0.95"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${n(R - 14)}" fill="${C.ink}" fill-opacity="0.42"/>`,
+    `  <g clip-path="url(#lensGlass)">${contents}</g>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${C.mint}" stroke-width="18" opacity="0.95"/>`,
+    `  <circle cx="${cx}" cy="${cy}" r="${n(R - 24)}" fill="none" stroke="${C.ice}" stroke-width="4" opacity="0.5"/>`,
+  ].join('\n');
+}
+// Atomic slot migration, with the lens given the frame. Same composition as
+// `atomic-slot-migration`, which is left alone: two shards, a stream of slot
+// segments between them, a magnifier on the stream. What changes is the
+// hierarchy, not the drawing.
+//
+// Idea: one contiguous range of slots leaves one shard and lands on another, and
+// you can watch it move.
+// Focal: the magnifier. It is the largest object, the brightest, and the only
+// thing carrying a halo. The rings, the stream and the chevron sit under it as
+// context.
+function slotMigrationQuiet(r) {
+  const cy = 528;
+  const src = 500;
+  const dst = 1420;
+  const R = 196;
+  const SEG = 21;
+  const FROM = [15, 0, 1, 2]; // contiguous, and facing the target
+  const TO = [7, 8, 9, 10]; // the same four, arrived, facing the source
+
+  const x0 = src + R + 16;
+  const xEnd = dst - R - 16;
+
+  // Three staggered lanes of slot segments in flight. In-flight data is cyan:
+  // mint is reserved for what has arrived, which is the ring's job, and ice for
+  // the lens. The opacity ramp toward the target is the only direction cue the
+  // stream carries, so the ring stays the one device that states direction.
+  const blocks = [];
+  for (const ly of [cy - 34, cy, cy + 34]) {
+    let x = x0 + r() * 46;
+    while (x < xEnd) {
+      const len = 42 + r() * 36;
+      if (x + len > xEnd) break;
+      blocks.push({
+        x,
+        y: ly,
+        len,
+        color: weighted(r, [[C.cyan, 6], [C.cyanLt, 4]]),
+        op: 0.42 + ((x - x0) / (xEnd - x0)) * 0.3,
+      });
+      x += len + 9 + r() * 15;
+    }
+  }
+  const drawBlocks = (boost = 0) =>
+    blocks
+      .map(
+        (b) =>
+          `<rect x="${n(b.x)}" y="${n(b.y - SEG / 2)}" width="${n(b.len)}" height="${SEG}" rx="${SEG / 2}" ` +
+          `fill="${b.color}" opacity="${n(Math.min(1, b.op + boost))}"/>`
+      )
+      .join('');
+
+  // The lens: half again the radius it had, and the magnification raised so the
+  // band resolves into separate slots inside the glass. That resolution is the
+  // point of the lens, and it is what the chevron used to compete with.
+  // The ring vocabulary, drawn deterministically: neutral slots are cyan at
+  // context weight, and the moved range is violet and dashed where it left,
+  // mint and solid where it landed, both at full opacity. Dimming the whole ring
+  // was the first attempt and it buried the one thing the rings are there to say.
+  const ring = (cx, run, color, dashed) => {
+    const out = [];
+    for (let i = 0; i < SLOTS; i++) {
+      const d = arcPath(cx, cy, R, i * SLOT_STEP + 0.05, (i + 1) * SLOT_STEP - 0.05);
+      const moved = run.includes(i);
+      out.push(
+        `<path d="${d}" fill="none" stroke="${moved ? color : C.cyan}" stroke-width="${SEG}" ` +
+          `opacity="${moved ? 0.95 : 0.34}"${moved && dashed ? ' stroke-dasharray="5 7"' : ''}/>`
+      );
+    }
+    return out.join('');
+  };
+
+  const lx = 960;
+  const ly = cy;
+  const lr = 186; // leaves the stream visible either side of the glass
+  const hand = 0.75;
+  const h0 = [lx + Math.cos(hand) * (lr + 4), ly + Math.sin(hand) * (lr + 4)];
+  const h1 = [lx + Math.cos(hand) * (lr + 128), ly + Math.sin(hand) * (lr + 128)];
+
+  // One chevron, driving the stream into the destination. It is a second device
+  // for direction alongside the ring, which rule 9 argues against, so it is kept
+  // at context weight: no halo, no second ghosted copy, and a stroke well under
+  // the lens rim's. It says "into that ring" in a way the rings alone cannot.
+  const tip = dst - R - 26;
+  const chevW = 42;
+  const chevron =
+    `<path d="M ${n(tip - chevW)} ${n(cy - chevW * 1.18)} L ${tip} ${cy} L ${n(tip - chevW)} ${n(cy + chevW * 1.18)}" ` +
+    `fill="none" stroke="${C.mint}" stroke-width="12" stroke-linejoin="miter" opacity="0.6"/>`;
+
+  return [
+    `  <clipPath id="lensQuiet"><circle cx="${lx}" cy="${ly}" r="${lr}"/></clipPath>`,
+    // Context: the stream, then the two rings at 0.62 so neither competes with
+    // the glass. The vacated run is hollow, the arrived run solid, which is what
+    // tells you which way the range went.
+    `  <g>${drawBlocks()}</g>`,
+    `  ${chevron}`,
+    `  <g>${ring(src, FROM, C.violet, true)}</g>`,
+    `  <g>${ring(dst, TO, C.mint, false)}</g>`,
+    // Nothing haloes the marks any more, so they carry at 160 where 112 looked
+    // undersized inside a ring this wide.
+    `  <g>${mark(src, cy, 160)}</g>`,
+    `  <g>${mark(dst, cy, 160)}</g>`,
+    // The focal element, and the only halo in the frame.
+    `  <g clip-path="url(#lensQuiet)">` +
+      `<circle cx="${lx}" cy="${ly}" r="${lr}" fill="${C.ink}" opacity="0.62"/>` +
+      `<g transform="translate(${lx} ${ly}) scale(2) translate(${-lx} ${-ly})">${drawBlocks(0.35)}</g>` +
+      `</g>`,
+    `  <line x1="${n(h0[0])}" y1="${n(h0[1])}" x2="${n(h1[0])}" y2="${n(h1[1])}" stroke="${C.ice}" ` +
+      `stroke-width="26" stroke-linecap="round" opacity="0.3" filter="url(#blur8)"/>`,
+    `  <line x1="${n(h0[0])}" y1="${n(h0[1])}" x2="${n(h1[0])}" y2="${n(h1[1])}" stroke="${C.ice}" ` +
+      `stroke-width="20" stroke-linecap="round" opacity="0.95"/>`,
+    `  <circle cx="${lx}" cy="${ly}" r="${lr}" fill="none" stroke="${C.ice}" stroke-width="22" opacity="0.3" filter="url(#blur8)"/>`,
+    `  <circle cx="${lx}" cy="${ly}" r="${lr}" fill="none" stroke="${C.ice}" stroke-width="13" opacity="0.95"/>`,
   ].join('\n');
 }
 
@@ -4338,23 +4222,16 @@ const BASE_THEMES = [
   { name: 'blackhole-beamed', experimental: true, space: true, seed: 52011, zoom: 1.2, center: [960, 540], title: 'Valkey black hole', desc: 'A relativistic accretion disk seen almost edge on: a dark circular shadow ringed by a thin bright photon ring, the disk lensed up over the top of the shadow and crossing in front of it below, blazing white on the left where the orbiting gas comes towards the viewer and fading to dim red on the right where it recedes, the white Valkey hexagon mark at the centre.', art: blackholeAt({ incDeg: 80, outer: 24, scale: 47.6, markH: 220, beam: 1, rings: 28, segs: 108 }) },
   { name: 'key-size-card-a', seed: 43041, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three shard enclosures of servers drawn as the white Valkey hexagon mark, sitting whole down the height of the frame.', art: keySizeCard({ scale: 0.86, spread: 40 }) },
   { name: 'key-size-card-flat', seed: 43049, zoom: 1.26, center: [960, 540], title: 'Finding big keys in a running Valkey cluster with Valkey Admin', desc: 'A card layout: the Valkey lockup in the upper left, the post title on solid light blocks in the lower left, and a Valkey Admin panel ranking keys by size with the top two at tens of megabytes drawn in red, wired into three widely spaced shard enclosures of servers drawn as the white Valkey hexagon mark, the whole chart sitting in a shallow band clear above the title blocks.', art: keySizeCard({ scale: 0.8, spread: 62, colPitch: 168, clearY: 748 }) },
-  { name: 'prometheus-scrape-wall', seed: 62721, zoom: 1.3, center: [960, 545], title: 'Valkey metrics in one view', desc: 'A wall of dashboard panels: six small panels holding flat blue traces, and one much larger panel carrying the white Valkey hexagon mark in its header whose red trace runs flat and then climbs steeply off the top of its range, representing a screen of stored Valkey metrics where the one that has gone wrong is the only thing that is not flat.', art: prometheusScrapeWall },
-  { name: 'llm-kv-cache-new-tail', seed: 37011, zoom: 1.22, center: [960, 535], title: 'Valkey KV cache reuse', desc: 'One long prompt drawn as a run of identical chunks, the first fifteen of them green and fed by three lanes rising from a store marked with the white Valkey hexagon, the last seven blue and fed by three matching lanes dropping from a processor that sits only as wide as they run, representing a prompt whose repeated context is loaded from Valkey so that only its new tail is computed on the GPU.', art: kvCacheNewTail },
-  { name: 'exporter-two-views-many-and-one', seed: 64031, zoom: 1.34, center: [959, 540], title: 'Valkey metrics from two exporters', desc: 'A fanned deck of five identical small readout cards, one per Valkey node with its own memory, client and command bars, beside one large single card holding per-slot counters for the whole cluster with the hottest slot drawn in red, representing one readout per node from one exporter and a single cluster-wide readout from the other.', art: exporterManyAndOne },
-  { name: 'keyspace-gui-safe-refusal', seed: 64901, zoom: 1.36, center: [960, 562], title: 'Valkey server-side read-only', desc: 'Four blue command lanes running in from the left, crossing a tall pale boundary bar and carrying on towards the white Valkey hexagon mark on the far side, and one much thicker red lane that reaches the same boundary, turns back on itself and returns the way it came, representing a write refused by the server rather than by a setting in the client.', art: keyspaceGuiSafeRefusal },
-  { name: 'commands-replace-lua-round-trips', seed: 65911, zoom: 1.28, center: [960, 520], title: 'Valkey one round trip, not four', desc: 'A caller on the left and a Valkey server drawn as the white hexagon mark on the right, with four thin purple messages crossing back and forth between them above, and one thick green call below carrying a pale condition chip that holds two unequal values, representing a conditional update that used to take an exchange of messages and now takes one command.', art: commandsRoundTrips },
-  { name: 'commands-replace-lua-one-line', seed: 65921, zoom: 1.31, center: [960, 540], title: 'Valkey one command, no script', desc: 'A small quiet panel of ragged purple script lines above an arrow pointing down to one long bright command bar holding a run of pale words, with a green condition chip of two unequal values seated at the bar\'s end, representing a Lua script replaced by a single command with a condition option on it.', art: commandsOneLine },
-  { name: 'ai-advisory-surge-reproducer', seed: 47023, zoom: 1.5, center: [960, 525], title: 'Valkey security audits', desc: 'A row of five identical candidate bug cards, four of them crossed out in red, the middle one lit green and dropping into a large panel holding four pale lines and a red one, representing self-run adversarial audits where a candidate only reaches a person once it comes with a reproducing crash.', art: aiAdvisorySurgeReproducer },
-  { name: 'ai-advisory-surge-backport-rails', seed: 47041, zoom: 1.5, center: [960, 560], title: 'Valkey backported fixes', desc: 'Five stacked version rails, each branching off the one above it and carrying a run of small blue commits, crossed by one bright green vertical line that places the same fix node on every rail at the same point, representing one security fix shipped to every supported version at once.', art: aiAdvisorySurgeBackportRails },
-  { name: 'big-value-latency-copy-block', seed: 67101, zoom: 1.38, center: [960, 540], title: 'Valkey one big copy holds the thread', desc: 'One bright pale timeline with a solid red block sitting on it, and under the line a run of short identical blue bars at an even pitch that, along the span the red block covers, lengthen into a deep wedge deepest against the block\'s leading edge, representing small requests waiting exactly as long as one large value occupies the main thread.', art: bvlCopyBlock },
-  { name: 'big-value-latency-stalled-queue', seed: 67111, zoom: 1.34, center: [923, 540], title: 'Valkey one big value blocks the rest', desc: 'A tall solid red value standing across three lanes, with identical blue request blocks packed nose to tail behind it in every lane and nothing at all beyond it, representing every small request held up while one large value occupies the only path out.', art: bvlStalledQueue },
-  { name: 'client-compression-packed-run', seed: 48111, zoom: 1.36, center: [960, 540], title: 'Valkey compressed before the wire', desc: 'Two rows of the same eight fields spanning the same width: above, a wide dim blue run filling its row, and below, the same eight fields in bright green taking a fifth of it, with a green arrow crossing the empty remainder to the white Valkey hexagon mark, representing a client library shrinking a value before it leaves the application so the smaller form is what crosses the network and what the server stores.', art: clientCompressionPackedRun },
-  { name: 'client-compression-twin-sends', seed: 48121, zoom: 1.4, center: [1010, 530], title: 'Valkey a third of the bytes on the wire', desc: 'Two pale capsule-shaped wires of equal length, one above the other, each ending in a chevron: the upper wire holds six narrow bright green fields filling a quarter of its length, and the lower holds the same six fields in dim purple filling most of it, representing the same value crossing the network at a fraction of the size once the client compresses it.', art: clientCompressionTwinSends },
-  { name: 'scan-cursor-pages', seed: 67501, zoom: 1.35, center: [960, 544], title: 'Valkey scan by page', desc: 'A field of key pills on an even pitch, grouped into five stacked pages, with the middle page lit in gold and the other four blue at rest, representing a scan that hands back one bounded page of the keyspace at a time.', art: scanCursorPages },
-  { name: 'agent-context-recall-arc', seed: 51021, zoom: 1.54, center: [944, 421], title: 'Valkey recalling an older turn', desc: 'A tall single column of twelve rounded bars standing for the turns of an agent conversation, newest at the top, most of them short and dim blue, the three newest and one much older turn far down the column drawn taller and solid green, and a single thick green band running out of that older turn, up the outside of the column and into the newest bar behind an arrowhead, representing an agent conversation held in Valkey out of which an older turn is loaded back into the next context window.', art: agentContextRecallArc },
-  { name: 'fbtree-soft-two-levels', seed: 66627, zoom: 1.98, center: [960, 518], title: 'Valkey sorted sets in one wide tree', desc: 'One wide hollow green node at the top, divided by three thin vertical separator lines into four child slots each holding a small green routing bar, a thin green pointer fanning out of every slot onto one of four small hollow green leaf nodes in a row below, every leaf holding three blue entries packed side by side, and each pair of neighbouring leaves joined by a short green link, representing the ordered index behind a large sorted set as a high-fanout B+ tree two levels deep.', art: fbtreeSoftWideTree },
-  { name: 'fbtree-soft-leaf-rail', seed: 66631, zoom: 1.883, center: [970, 532], title: 'Valkey reading a sorted set in order', desc: 'A faint wide green node of three child slots at the top, each slot holding a small green routing bar, with barely visible pointers fanning down to three small hollow green leaf nodes in a row below, each holding three blue entries, and one thick bright green rail running horizontally through all three leaves and out past the last of them behind a single arrowhead, representing an ordered read of a large sorted set walking along the linked leaves instead of climbing back into the tree between members.', art: fbtreeSoftOrderedWalk },
-  { name: 'fbtree-soft-scatter-run', seed: 66643, zoom: 1.461, center: [960, 524], title: 'Valkey the same members, fewer nodes', desc: 'Above, twelve small blue member cells spread far apart along a row with gaps between them, each carrying a short stack of purple forward-pointer cells with thin purple links skipping between the stacks at every level; below, unconnected to it, the same twelve cells three to a leaf inside four small hollow green leaf nodes joined by short green links, under one wide hollow green node divided into four child slots, each holding a small green routing bar and dropping a thin pointer onto one leaf, representing the ordered index moving from one allocation per member to a few wide nodes that hold them packed.', art: fbtreeSoftScatterRun },
+  { name: 'performance', seed: 2207, zoom: 1.22, center: [1160, 515], title: 'Valkey performance', desc: 'Abstract streaks of light converging on the white Valkey hexagon mark at a bright vanishing point, representing throughput and low latency.', art: performance },
+  { name: 'planet-ring', space: true, seed: 51021, zoom: 1.16, center: [960, 540], title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing },
+  { name: 'keyspace-scan', seed: 19087, zoom: 1.26, center: [960, 540], title: 'Valkey keyspace scan', desc: 'A wide field of keys with one bounded window lit in green, the keys behind it dimmed and the keys ahead of it unlit, above a track of uneven cursor steps, representing scanning a keyspace a window at a time instead of reading it all at once.', art: keyspaceScan },
+  { name: 'ai-agent-memory', seed: 35011, zoom: 1.29, center: [960, 540], title: 'Valkey AI agent memory', desc: 'A row of conversation turns with the most recent ones lit inside a bright window, older turns dimmed and parked in an archive below the white Valkey hexagon mark, and two of them arcing back up into the window, representing agent memory with hot recent context and older context recalled on demand.', art: aiAgentMemory },
+  { name: 'tooling-stack', seed: 33311, zoom: 1.25, center: [960, 540], title: 'Valkey primitives and tools', desc: 'A base course of identical small primitives with four differently detailed tools resting on runs of them, two larger composites above those, and the white Valkey hexagon mark at the top, representing tools built out of server primitives.', art: toolingStack },
+  { name: 'bundle-one-install', seed: 33207, zoom: 1.2, center: [975, 540], title: 'Valkey bundle, one install', desc: 'A port marked with the white Valkey hexagon fanning out into four module diagrams: a nested document in brackets, a bit array, a magnifier over a scatter of points, and a padlock, representing one install that delivers all four bundled modules.', art: bundleOneInstall },
+  { name: 'key-prefix-groups', seed: 23299, zoom: 1.3, center: [960, 542], title: 'Valkey key prefix groups', desc: 'A scattered cloud of sampled keys on the left funnelling into a short list of prefix rows with count bars on the right, representing a sample of key names grouped into browsable prefixes.', art: keyPrefixGroups },
+  { name: 'limits-tight-envelope', seed: 42031, zoom: 1.03, center: [960, 540], title: 'Valkey in a tight resource envelope', desc: 'A small bright box packed edge to edge with work around the white Valkey hexagon mark, pushing outward on all four walls, set inside two much larger dashed outlines, representing a full server running in far less space than usual.', art: limitsTightEnvelope },
+  { name: 'slot-migration-lens', seed: 45011, zoom: 1.26, center: [960, 540], title: 'Valkey slot migration under inspection', desc: 'Two Valkey instances drawn as quiet rings around the white hexagon mark with a thin stream running between them, and a large teal magnifying glass over the middle of that stream showing the objects in transit as bars of different lengths and colours, on a flat purple field, representing observability for slot migration.', art: slotMigrationLens },
+  { name: 'atomic-slot-migration-quiet', seed: 46011, zoom: 1.22, center: [960, 528], title: 'Valkey atomic slot migration', desc: 'Two shard slot rings each centred on the white Valkey hexagon mark, the left one showing four contiguous slots vacated in dashed purple and the right one the same four arrived in solid green, a quiet stream of slot segments running between them, a green chevron driving that stream into the destination, and a large magnifier over the middle of the stream resolving the band into separate slots, representing watching one contiguous range migrate atomically.', art: slotMigrationQuiet },
 ];
 
 // The caption is on by default, because a banner with no words on it is the rarer

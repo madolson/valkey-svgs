@@ -43,23 +43,6 @@ can't drift, and regenerating is a no-op diff.
 | `key-size-card-flat` | The same card with the artwork short and wide, sitting clear of the title rather than under it | The big-keys post, when the title should not cross the chart |
 | `k8s-desired-count` | Six declared slots, four filled, one rising into place, one still empty | Replica counts, scaling to a desired state, reconciliation |
 | `limits-gauge-pinned` | A gauge sweeping into gold and stopping short of a red end zone | Running right up to a limit, headroom, saturation |
-| `prometheus-scrape-wall` | Six flat dashboard panels and one big one whose trace climbs away in red | Dashboards, Grafana, finding the one metric that moved |
-| `llm-kv-cache-new-tail` | One prompt as a run of chunks, most of it loaded from the store below, only the tail fed by the processor above | KV caching for LLM inference, prefix reuse, skipping prefill |
-| `exporter-two-views-many-and-one` | A deck of per-node readout cards beside one cluster-wide card with per-slot counters | Per-pod series versus per-slot series, exporter choice |
-| `keyspace-gui-safe-refusal` | Read lanes crossing the server's boundary, one write turned back at it | ACL users, read-only access, NOPERM, server-side authorisation |
-| `commands-replace-lua-round-trips` | Four thin messages crossing between caller and server, one thick call below them carrying the condition | Command options that collapse an exchange into one call |
-| `commands-replace-lua-one-line` | A quiet block of script lines giving way to one long command bar with a condition on its end | New command options that replace a Lua script |
-| `ai-advisory-surge-reproducer` | Five candidate bugs, four struck out, the survivor dropping into its reproducer | Adversarial audits, LLM-found bugs, verification before a human |
-| `ai-advisory-surge-backport-rails` | Five version rails with one fix node aligned on every one of them | Backports, patch releases, shipping a fix to every supported version |
-| `big-value-latency-copy-block` | One thread's timeline with a large value sitting on it, and the waits hanging underneath deepening into a wedge exactly across its span | Tail latency, head-of-line blocking, p99.9, one slow operation on a shared thread |
-| `big-value-latency-stalled-queue` | A large value standing across all three lanes out of the server, the small requests packed nose to tail behind it | Noisy neighbours, large values, one path out of the server |
-| `client-compression-packed-run` | One value's eight fields filling a row, then the same eight taking a fifth of it on the way to the server | Client-side compression, when the point is how much smaller the value gets |
-| `client-compression-twin-sends` | The same six-field value on two wires of equal length, filling a quarter of one and most of the other | The same, when the point is how much of the network the value stops using |
-| `scan-cursor-pages` | Five stacked pages of keys tiling a keyspace, exactly one of them lit | `SCAN`, cursors, iterating a keyspace without holding it all at once |
-| `agent-context-recall-arc` | A dim column of turns with the newest lit, and one thick band carrying an older turn back up into them | Agent memory, recall, fetching an older turn back into the context window |
-| `fbtree-soft-two-levels` | One wide node of separator keys over a row of linked leaves of packed members, drawn hollow and thin | fbtree, B+ trees, the ordered index behind a sorted set |
-| `fbtree-soft-leaf-rail` | The same tree with one rail running through the leaf row and out past the last leaf | Range reads, `ZRANGE`, linked leaves, walking a sorted set in order |
-| `fbtree-soft-scatter-run` | Members spread out under their own pointer towers, above the same members packed three to a leaf | Replacing the skiplist with fbtree, one allocation per member becoming a few wide nodes |
 
 Rasters are in [`images/`](images/) at 1920x1080 WebP. Every one also gets a chrome-free
 copy in [`images/plain/`](images/plain/), the same art with no corner lockup and no title
@@ -282,6 +265,16 @@ from thousands of overlapping glows and taper into nothing, and SVG cannot build
 | `blackhole-particles` | The accretion disk as thousands of orbiting points of light, the lensed ring closing all the way round the shadow | Talks, keynotes, anything that wants one striking abstract image |
 | `cluster-gossip` | Six shards at the corners of a hexagon trading messages across a mesh, enclosing the mark in silhouette | Cluster mode, gossip, replication, membership |
 | `eclipse-corona` | The moon's ragged edge over the sun, Baily's beads flickering in its valleys, the corona hanging in equatorial lobes and shimmering in place | Talks, keynotes, launches, anything wanting one striking abstract image |
+| `performance` | Command traffic warping into the mark at a vanishing point | Throughput, latency, speed work |
+| `planet-ring` | A wireframe Valkey globe ringed by article cards, one data structure each | Planet Valkey, community blog roundups, the wider ecosystem |
+| `keyspace-scan` | Cursor holding one lit window of a key field, uneven hop track below | `SCAN`, cursors, iterating a keyspace without blocking |
+| `ai-agent-memory` | Conversation turns on a tape, recent ones lit in a window, older ones archived below and arcing back | Agent memory, chat history, context windows, mem0 |
+| `tooling-stack` | Identical primitives at the base, differently detailed tools resting on them, the mark on top | Server primitives, what gets built on them, extensibility |
+| `bundle-one-install` | A single strap arriving at the mark and branching into the same four modules | valkey-bundle, one install that delivers several capabilities |
+| `key-prefix-groups` | Sampled keys funnelling into prefix rows with count bars | Key naming, prefixes, keyspace browsing and clients |
+| `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
+| `slot-migration-lens` | A big lens over the migration stream, instances and stream quiet | Observability for migration, inspecting data in transit |
+| `atomic-slot-migration-quiet` | The same two rings and lens, with the lens given the frame | Slot migration when the point is watching it happen |
 
 Each one produces three files:
 
