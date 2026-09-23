@@ -81,5 +81,5 @@ function observability(r) {
 // Data structures: hash buckets chaining out, with a skiplist underneath.
 
 export const themes = [
-    { name: 'benchmarks', order: 7, seed: 7741, zoom: 1.12, center: [900, 568], title: 'Valkey benchmarks', desc: 'A bar chart of throughput climbing left to right, beneath two flat latency series labelled P99 in green and P50 in red, representing benchmarking and observability.', art: observability, motif: "Throughput bars climbing under flat P50/P99 latency", use: "Benchmark results, observability, metrics" },
+    { name: 'benchmarks', noCaption: true, order: 7, seed: 7741, zoom: 1.12, center: [900, 568], title: 'Valkey benchmarks', desc: 'A bar chart of throughput climbing left to right, beneath two flat latency series labelled P99 in green and P50 in red, representing benchmarking and observability.', art: observability, motif: "Throughput bars climbing under flat P50/P99 latency", use: "Benchmark results, observability, metrics" },
 ];

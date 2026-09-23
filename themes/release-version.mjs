@@ -64,5 +64,5 @@ function releaseVersion(r, { text }) {
 // Shared by the shield themes so they are one silhouette under four treatments.
 
 export const themes = [
-    { name: 'release-version', order: 4, seed: 5528, zoom: 1.3, center: [960, 520], title: 'Valkey release with a caption', text: '9.0', desc: 'A golden burst centred on the white Valkey hexagon mark above a large caption, representing a specific Valkey release.', art: releaseVersion, motif: "The same burst with a caption you set", use: "A specific release. See [Captions](#captions)" },
+    { name: 'release-version', noCaption: true, order: 4, seed: 5528, zoom: 1.3, center: [960, 520], title: 'Valkey release with a caption', text: '9.0', desc: 'A golden burst centred on the white Valkey hexagon mark above a large caption, representing a specific Valkey release.', art: releaseVersion, motif: "The same burst with a caption you set", use: "A specific release. See [Captions](#captions)" },
 ];

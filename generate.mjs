@@ -45,10 +45,11 @@ BASE_THEMES.sort((a, b) => a.order - b.order);
 // The caption is on by default, because a banner with no words on it is the rarer case.
 // Excluded: themes that draw their own text, and the captioned theme whose caption is the
 // whole point.
-const NO_CAPTION = new Set(['benchmarks', 'release-version']);
-
+// Whether a theme draws its own text is a property of that theme, so it is declared in
+// the theme's file. The pipeline used to hold the list, which meant adding a
+// self-captioning theme required editing this file.
 const THEMES = BASE_THEMES.map((t) =>
-  NO_CAPTION.has(t.name)
+  t.noCaption
     ? t
     : {
         ...t,
