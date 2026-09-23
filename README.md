@@ -69,6 +69,27 @@ pulls this repo in as a submodule and renders from it.
 common, the faults that got others deleted, and the blind read that decides. Read it before adding
 a theme and again before committing one.
 
+## Looking at the whole set
+
+```sh
+node gallery.mjs                 # writes gallery.html
+node gallery.mjs --open          # and opens it
+node gallery.mjs --out /tmp/g.html
+```
+
+One self-contained page, no server and no dependencies, viewable straight off `file://`. It reads
+`themes.json` rather than `generate.mjs`, so it cannot drift from the set: a theme in the manifest
+with no rendered file is called out in a banner at the top rather than showing as a broken image.
+
+It shows all three artifacts side by side per theme, labelled with which one carries the title,
+because that is the thing that is easy to get wrong. Crops are done live with
+`object-fit: cover` at the real aspect ratios rather than by pre-cutting files, which is exactly
+what the website does, so what you see is what ships. Switch between the four crops with the
+buttons; **narrow** is the one that matters, since it keeps only the middle 70% of the width and is
+where framing bugs show.
+
+`gallery.html` is gitignored: it is derived, and it embeds nothing you cannot regenerate.
+
 ## Regenerating
 
 ```sh
