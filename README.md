@@ -296,6 +296,9 @@ from thousands of overlapping glows and taper into nothing, and SVG cannot build
 | `limits-tight-envelope` | A small box packed edge to edge, pushing out, inside far larger outlines | Constrained hardware, small instances, resource ceilings |
 | `slot-migration-lens` | A big lens over the migration stream, instances and stream quiet | Observability for migration, inspecting data in transit |
 | `atomic-slot-migration-quiet` | The same two rings and lens, with the lens given the frame | Slot migration when the point is watching it happen |
+| `path-hash` | A walk down a tree of shared prefixes, the deepest matching node lit | Longest-prefix match, routing tables, CIDR and config scopes |
+| `acl-roles` | One definition fanning out to identical holders | Roles, shared permission sets, many users one grant |
+| `dual-cert-tls` | Arriving connections sorting themselves between two credentials | TLS certificates, migration without a flag day, per-connection choice |
 
 Each one produces three files:
 

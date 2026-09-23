@@ -1,6 +1,6 @@
 {
   "generatedBy": "generate.mjs",
-  "count": 38,
+  "count": 41,
   "themes": [
     {
       "name": "community",
@@ -531,6 +531,48 @@
       "svg": "svg/atomic-slot-migration-quiet.svg",
       "captioned": false,
       "caption": "Atomic slot migration",
+      "space": false,
+      "experimental": false
+    },
+    {
+      "name": "path-hash",
+      "title": "Valkey path hash",
+      "desc": "A branching prefix tree with one bright path walked left to right from the root to a queried key at a leaf, the stored prefixes along that path drawn as blue nodes and the deepest one that still covers the key given a gold halo, the branches the walk did not take left faint, representing longest-prefix match finding the single most specific stored prefix that covers a key. The title \"Valkey path hash\" is set on solid light blocks in the lower left.",
+      "motif": "A walk down a tree of shared prefixes, the deepest matching node lit",
+      "useFor": "Longest-prefix match, routing tables, CIDR and config scopes",
+      "image": "images/path-hash.webp",
+      "plain": "images/plain/path-hash.webp",
+      "svg": "svg/path-hash.svg",
+      "captioned": false,
+      "caption": "Path hash",
+      "space": false,
+      "experimental": false
+    },
+    {
+      "name": "acl-roles",
+      "title": "Valkey ACL roles",
+      "desc": "A gold-outlined role definition panel on the left with one of its permission grants picked out in green, green lines fanning out of that one grant to five identical accounts on the right that each carry the same green grant, representing a permission set edited in one place and reaching every user holding it. The title \"Valkey ACL roles\" is set on solid light blocks in the lower left.",
+      "motif": "One definition fanning out to identical holders",
+      "useFor": "Roles, shared permission sets, many users one grant",
+      "image": "images/acl-roles.webp",
+      "plain": "images/plain/acl-roles.webp",
+      "svg": "svg/acl-roles.svg",
+      "captioned": false,
+      "caption": "ACL roles",
+      "space": false,
+      "experimental": false
+    },
+    {
+      "name": "dual-cert-tls",
+      "title": "Valkey dual TLS certificates",
+      "desc": "Four connection lanes arriving from the left edge, two green and two purple, drawing together at the white Valkey hexagon mark and crossing there so both green lanes leave for a green certificate plate above and both purple lanes for a purple certificate plate below, the green plate drawn with a clipped corner, a doubled border and a ring seal and the purple one with square corners, a single border and a filled seal, representing one server offering two certificates and each connection being served the one it can validate. The title \"Valkey dual TLS certificates\" is set on solid light blocks in the lower left.",
+      "motif": "Arriving connections sorting themselves between two credentials",
+      "useFor": "TLS certificates, migration without a flag day, per-connection choice",
+      "image": "images/dual-cert-tls.webp",
+      "plain": "images/plain/dual-cert-tls.webp",
+      "svg": "svg/dual-cert-tls.svg",
+      "captioned": false,
+      "caption": "Dual TLS certificates",
       "space": false,
       "experimental": false
     }
