@@ -114,10 +114,22 @@ function planetRing(r) {
     const th = (i / 720) * 2 * Math.PI;
     railPts.push(proj(R * Math.cos(th), 0, R * Math.sin(th)));
   }
-  const rail = (far, opacity) =>
-    runs(railPts, (p) => (far ? p.z < 0 : p.z >= 0))
-      .map((run) => `<path d="${path(run)}" fill="none" stroke="${C.ice}" stroke-width="3" opacity="${opacity}"/>`)
-      .join('');
+  // Drawn as short butt-capped pieces whose opacity follows depth, so the rail dims
+  // smoothly toward the back instead of stepping where the far and near halves meet, and
+  // no two pieces overlap to double up the alpha.
+  const zMax = R * ce;
+  const rail = (far) => {
+    const out = [];
+    const STEP = 6;
+    for (let i = 0; i < railPts.length - 1; i += STEP) {
+      const seg = railPts.slice(i, Math.min(i + STEP, railPts.length - 1) + 1);
+      const zMid = seg[seg.length >> 1].z;
+      if (far ? zMid >= 0 : zMid < 0) continue;
+      const opacity = 0.26 + 0.22 * (0.5 + 0.5 * zMid / zMax);
+      out.push(`<path d="${path(seg)}" fill="none" stroke="${C.ice}" stroke-width="3" opacity="${n(opacity)}"/>`);
+    }
+    return out.join('');
+  };
 
   const cards = [];
   for (let i = 0; i < COUNT; i++) {
@@ -162,10 +174,10 @@ function planetRing(r) {
   return [
     `  <g>${starfield(r, 45)}</g>`,
     `  <circle cx="${cx}" cy="${cy}" r="${n(rad * 1.1)}" fill="url(#h-ice)" opacity="0.4"/>`,
-    `  <g>${rail(true, 0.3)}</g>`,
+    `  <g>${rail(true)}</g>`,
     `  <g>${half(true)}</g>`,
     `  <g>${body}</g>`,
-    `  <g>${rail(false, 0.45)}</g>`,
+    `  <g>${rail(false)}</g>`,
     `  <g>${half(false)}</g>`,
   ].join('\n');
 }
