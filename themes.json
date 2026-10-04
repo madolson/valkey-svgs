@@ -411,7 +411,7 @@
     {
       "name": "planet-ring",
       "title": "Planet Valkey",
-      "desc": "A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring. The title \"Planet Valkey\" is set on solid light blocks in the lower left.",
+      "desc": "A globe with its front graticule carrying the white Valkey hexagon mark, inside a tilted ring of evenly spaced article cards seen in perspective, passing behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring. The title \"Planet Valkey\" is set on solid light blocks in the lower left.",
       "motif": "A wireframe Valkey globe ringed by article cards, one data structure each",
       "useFor": "Planet Valkey, community blog roundups, the wider ecosystem",
       "image": "images/planet-ring.webp",

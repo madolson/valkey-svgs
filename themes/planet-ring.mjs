@@ -1,40 +1,4 @@
 import { C, mark, n, starfield } from '../lib/core.mjs';
-import { globe } from '../lib/shapes.mjs';
-// The planet body plus its wireframe plus the mark, the object all three planet
-// candidates are built around.
-function planetBody(cx, cy, rad, markH) {
-  return (
-    // The body is lit from the upper left, which is what makes a wireframe read as a
-    // sphere rather than as a wire ball. The gradient interpolates within C.
-    `<radialGradient id="p-lit" cx="0.36" cy="0.3" r="0.82">` +
-      `<stop offset="0" stop-color="${C.cyan}" stop-opacity="0.3"/>` +
-      `<stop offset="0.5" stop-color="${C.mid}" stop-opacity="0.72"/>` +
-      `<stop offset="1" stop-color="${C.ink}" stop-opacity="0.94"/>` +
-    `</radialGradient>` +
-    // An opaque backing under the gradient, or whatever passes behind the planet
-    // shows through it.
-    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(rad)}" fill="${C.ink}"/>` +
-    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(rad)}" fill="url(#p-lit)"/>` +
-    globe(cx, cy, rad) +
-    // The limb is the planet's edge, not part of the graticule, so it gets its own
-    // weight and the only bright stroke on the object.
-    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(rad)}" fill="none" stroke="${C.ice}" ` +
-      `stroke-width="5" opacity="0.8"/>` +
-    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(markH * 0.72)}" fill="url(#scrim)"/>` +
-    mark(cx, cy, markH)
-  );
-}
-// Half of an ellipse, so an orbit or a ring can pass behind the planet: `top`
-// draws the far half, the other draws the near one.
-
-// Half of an ellipse, so an orbit or a ring can pass behind the planet: `top`
-// draws the far half, the other draws the near one.
-function ellipseHalf(cx, cy, rx, ry, top) {
-  // Sweep is 1 either way: clockwise from the left point goes over the top, and
-  // clockwise from the right point goes under the bottom.
-  const [x0, x1] = top ? [cx - rx, cx + rx] : [cx + rx, cx - rx];
-  return `M ${n(x0)} ${n(cy)} A ${n(rx)} ${n(ry)} 0 0 1 ${n(x1)} ${n(cy)}`;
-}
 // Idea: Planet Valkey collects what the community writes, and the writing goes
 // round the project in a ring.
 // Focal: the wireframe globe carrying the mark.
@@ -98,10 +62,10 @@ function articleCard(cx, cy, size, kind, tilt) {
     });
   }
   return (
-    `<g transform="rotate(${n(tilt)} ${n(cx)} ${n(cy)})" opacity="0.85">` +
+    // Flat and opaque: the rail and the globe must not show through a card.
+    `<g transform="rotate(${n(tilt)} ${n(cx)} ${n(cy)})">` +
     `<rect x="${n(cx - half)}" y="${n(cy - half)}" width="${n(size)}" height="${n(size)}" ` +
-      `rx="${n(size * 0.16)}" fill="${C.ink}" fill-opacity="0.72" stroke="${C.cyanLt}" ` +
-      `stroke-width="${n(size * 0.038)}" opacity="0.9"/>` +
+      `rx="${n(size * 0.16)}" fill="${C.mid}" stroke="${C.cyanLt}" stroke-width="${n(size * 0.038)}"/>` +
     glyph.join('') +
     `</g>`
   );
@@ -109,52 +73,104 @@ function articleCard(cx, cy, size, kind, tilt) {
 // Performance: command traffic streaking toward a vanishing point, the same
 // gesture as the hero background but without the command names.
 
+// The ring and the globe share one camera: the ring lies in the planet's equatorial plane,
+// the camera sits a little above that plane at a finite distance, and the view is rolled by
+// TILT. Projecting both through the same transform is what keeps the parallax honest: the
+// near side of the ring comes out lower, wider and larger than the far side, the cards scale
+// with depth, and the globe's equator follows the ring. Cards are spaced evenly in 3D and none
+// are dropped; the opaque globe hides whatever passes behind it. Only the front half of the
+// graticule is drawn, so the globe reads as solid rather than as a wire cage.
 function planetRing(r) {
-  const cx = 960;
-  const cy = 540;
-  const rad = 300;
-  const rrx = 690;
-  const rry = 190;
-  const TILT = -13;
-  const COUNT = 12;
-  const SIZE = 78;
+  const cx = 960, cy = 540, rad = 300;
+  const R = 700;                        // ring radius, in the same units as rad
+  const ELEV = (16 * Math.PI) / 180;    // camera height above the ring plane
+  const DCAM = 4.2 * R;                 // camera distance: finite, so there is perspective
+  const TILT = (-13 * Math.PI) / 180;
+  const COUNT = 12, SIZE = 78, MARK_H = 260;
+  const ce = Math.cos(ELEV), se = Math.sin(ELEV), ct = Math.cos(TILT), st = Math.sin(TILT);
+  // 3D (x right, y up, z toward the viewer) to screen, keeping depth for order and scale.
+  const proj = (x, y, z) => {
+    const yv = y * ce - z * se, zv = y * se + z * ce;
+    const k = DCAM / (DCAM - zv);
+    const sx = x * k, sy = -yv * k;
+    return { x: cx + sx * ct - sy * st, y: cy + sx * st + sy * ct, z: zv, k };
+  };
+  const path = (pts) => pts.map((p, i) => `${i ? 'L' : 'M'} ${n(p.x)} ${n(p.y)}`).join(' ');
+  // Split a sampled curve into the runs that pass `keep`, for front and back drawing.
+  const runs = (pts, keep) => {
+    const out = [];
+    let cur = [];
+    for (const p of pts) {
+      if (keep(p)) cur.push(p);
+      else { if (cur.length > 1) out.push(cur); cur = []; }
+    }
+    if (cur.length > 1) out.push(cur);
+    return out;
+  };
 
-  // The rail the articles ride. Thin, because the articles are the content and the
-  // rail is only what holds them in one orbit.
-  const rail = (top, opacity) =>
-    `<path d="${ellipseHalf(cx, cy, rrx, rry, top)}" fill="none" stroke="${C.ice}" ` +
-    `stroke-width="3" opacity="${opacity}"/>`;
+  // The rail the articles ride. Thin, because the articles are the content.
+  const railPts = [];
+  for (let i = 0; i <= 720; i++) {
+    const th = (i / 720) * 2 * Math.PI;
+    railPts.push(proj(R * Math.cos(th), 0, R * Math.sin(th)));
+  }
+  const rail = (far, opacity) =>
+    runs(railPts, (p) => (far ? p.z < 0 : p.z >= 0))
+      .map((run) => `<path d="${path(run)}" fill="none" stroke="${C.ice}" stroke-width="3" opacity="${opacity}"/>`)
+      .join('');
 
-  // Position on the untilted ellipse, then rotated with it, so the cards sit on the
-  // rail rather than near it.
-  const a = (TILT * Math.PI) / 180;
   const cards = [];
   for (let i = 0; i < COUNT; i++) {
     const th = (2 * Math.PI * i) / COUNT + Math.PI / COUNT;
-    const ex = rrx * Math.cos(th);
-    const ey = rry * Math.sin(th);
-    const px = cx + ex * Math.cos(a) - ey * Math.sin(a);
-    const py = cy + ex * Math.sin(a) + ey * Math.cos(a);
-    // A card whose centre falls behind the globe would show as a sliver poking out
-    // from the limb, which reads as a rendering fault. Dropping them leaves the ring
-    // openly interrupted where it passes behind the planet, which is what a ring does.
-    if (Math.hypot(px - cx, py - cy) < rad + SIZE * 0.6) continue;
-    cards.push({ far: Math.sin(th) < 0, svg: articleCard(px, py, SIZE, i % 4, TILT) });
+    const p = proj(R * Math.cos(th), 0, R * Math.sin(th));
+    cards.push({ z: p.z, svg: articleCard(p.x, p.y, SIZE * p.k, i % 4, (TILT * 180) / Math.PI) });
   }
-  const half = (far) => cards.filter((c) => c.far === far).map((c) => c.svg).join('');
+  cards.sort((a, b) => a.z - b.z);
+  const half = (far) => cards.filter((c) => (far ? c.z < 0 : c.z >= 0)).map((c) => c.svg).join('');
+
+  // Three latitudes and four meridians, front halves only.
+  const grid = [];
+  const stroke = (pts) => `<path d="${path(pts)}" fill="none" stroke="${C.cyanLt}" stroke-width="3.6"/>`;
+  const sphere = (lat, lon) => proj(rad * Math.cos(lat) * Math.cos(lon), rad * Math.sin(lat), rad * Math.cos(lat) * Math.sin(lon));
+  for (const lat of [-0.5, 0, 0.5]) {
+    const pts = [];
+    for (let i = 0; i <= 360; i++) pts.push(sphere(lat, (i / 360) * 2 * Math.PI));
+    for (const run of runs(pts, (p) => p.z > 0)) grid.push(stroke(run));
+  }
+  for (let m = 0; m < 4; m++) {
+    const lon = (m * Math.PI) / 4 + 0.35;
+    const pts = [];
+    for (let i = 0; i <= 360; i++) pts.push(sphere((i / 360) * 2 * Math.PI, lon));
+    for (const run of runs(pts, (p) => p.z > 0)) grid.push(stroke(run));
+  }
+
+  // Lit from the upper left, which is what makes the lines read as a sphere. The opaque
+  // backing keeps whatever passes behind the planet from showing through.
+  const body =
+    `<radialGradient id="p-lit" cx="0.36" cy="0.3" r="0.82">` +
+      `<stop offset="0" stop-color="${C.cyan}" stop-opacity="0.3"/>` +
+      `<stop offset="0.5" stop-color="${C.mid}" stop-opacity="0.72"/>` +
+      `<stop offset="1" stop-color="${C.ink}" stop-opacity="0.96"/>` +
+    `</radialGradient>` +
+    `<circle cx="${cx}" cy="${cy}" r="${rad}" fill="${C.ink}"/>` +
+    `<circle cx="${cx}" cy="${cy}" r="${rad}" fill="url(#p-lit)"/>` +
+    `<g opacity="0.55">${grid.join('')}</g>` +
+    `<circle cx="${cx}" cy="${cy}" r="${rad}" fill="none" stroke="${C.ice}" stroke-width="5" opacity="0.8"/>` +
+    `<circle cx="${cx}" cy="${cy}" r="${n(MARK_H * 0.72)}" fill="url(#scrim)"/>` +
+    mark(cx, cy, MARK_H);
 
   return [
     `  <g>${starfield(r, 45)}</g>`,
     `  <circle cx="${cx}" cy="${cy}" r="${n(rad * 1.1)}" fill="url(#h-ice)" opacity="0.4"/>`,
-    `  <g transform="rotate(${TILT} ${cx} ${cy})">${rail(true, 0.3)}</g>`,
+    `  <g>${rail(true, 0.3)}</g>`,
     `  <g>${half(true)}</g>`,
-    `  <g>${planetBody(cx, cy, rad, 260)}</g>`,
-    `  <g transform="rotate(${TILT} ${cx} ${cy})">${rail(false, 0.45)}</g>`,
+    `  <g>${body}</g>`,
+    `  <g>${rail(false, 0.45)}</g>`,
     `  <g>${half(false)}</g>`,
   ].join('\n');
 }
 // below it steps in uneven bites, because COUNT is a hint and not a batch size.
 
 export const themes = [
-    { name: 'planet-ring', order: 29, space: true, seed: 51021, zoom: 1.16, center: [960, 540], title: 'Planet Valkey', desc: 'A wireframe globe carrying the white Valkey hexagon mark, encircled by a thick tilted ring broken into even segments that passes behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing, motif: "A wireframe Valkey globe ringed by article cards, one data structure each", use: "Planet Valkey, community blog roundups, the wider ecosystem" },
+    { name: 'planet-ring', order: 29, space: true, seed: 51021, zoom: 1.16, center: [960, 612], captionScale: 1.25, title: 'Planet Valkey', desc: 'A globe with its front graticule carrying the white Valkey hexagon mark, inside a tilted ring of evenly spaced article cards seen in perspective, passing behind the globe and in front of it again, against a sparse starfield, representing one Valkey world wearing its whole keyspace as a ring.', art: planetRing, motif: "A wireframe Valkey globe ringed by article cards, one data structure each", use: "Planet Valkey, community blog roundups, the wider ecosystem" },
 ];
