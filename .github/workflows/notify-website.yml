@@ -1,0 +1,46 @@
+name: Notify website
+
+# The madelynolson.com banner gallery (madolson/madolson-website) embeds this
+# repo as a git submodule and renders from it. When this repo's main moves, tell
+# the website to pick up the change: fire a repository_dispatch that triggers the
+# website's auto-bump workflow, which advances the submodule pin on a PR and
+# auto-merges on green.
+#
+# Cross-repo dispatch cannot use the default GITHUB_TOKEN (it is scoped to this
+# repo only). It needs a token with 'contents: write' on madolson-website, stored
+# here as the WEBSITE_DISPATCH_TOKEN secret. A fine-grained PAT scoped to just
+# that one repo is the least-privilege choice.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notify-website
+  cancel-in-progress: true
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fire repository_dispatch to madolson-website
+        env:
+          GH_TOKEN: ${{ secrets.WEBSITE_DISPATCH_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "WEBSITE_DISPATCH_TOKEN is not set; cannot notify the website." >&2
+            echo "Add a fine-grained PAT (contents: write on madolson/madolson-website) as that secret." >&2
+            exit 1
+          fi
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            repos/madolson/madolson-website/dispatches \
+            -f event_type=valkey-svgs-updated \
+            -F "client_payload[sha]=${GITHUB_SHA}"
+          echo "Dispatched valkey-svgs-updated to madolson-website."
